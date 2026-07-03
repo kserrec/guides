@@ -11,6 +11,16 @@
 //                           multiple parameters with spaces: λx y.M
 //   (λx.x) λy.y             a trailing abstraction may appear unparenthesized
 //                           as the final argument of an application
+//   0, 1, 42                numerals are built-in names for Church numerals
+//                           (expanded on demand; cannot be λ-parameters)
+//   -- comment              line comments (program level only)
+//
+// Programs (evalProgram) are definition lines `NAME = expr` followed by one
+// final expression; indented lines continue the statement above (offside
+// rule). Definitions may reference earlier definitions and the prelude;
+// they cannot be recursive (use Y) or reference later definitions.
+// User definitions shadow prelude names (Under the Hood redefines SUCC etc.
+// Scott-style, so shadowing must work); a warning is recorded when they do.
 
 (function (global, factory) {
   const api = factory();
@@ -68,6 +78,16 @@
         i = j;
         continue;
       }
+      if (/[0-9]/.test(c)) {
+        let j = i + 1;
+        while (j < src.length && /[0-9]/.test(src[j])) j++;
+        if (j < src.length && isIdentChar(src[j])) {
+          throw new ParseError(`Invalid name '${src.slice(i, j + 1)}…' — names cannot start with a digit`, i);
+        }
+        tokens.push({ kind: 'ident', text: src.slice(i, j), pos: i });
+        i = j;
+        continue;
+      }
       throw new ParseError(`Unexpected character '${c}'`, i);
     }
     tokens.push({ kind: 'eof', text: '', pos: src.length });
@@ -107,7 +127,13 @@
     function parseLam() {
       next(); // consume λ
       const params = [];
-      while (peek().kind === 'ident') params.push(next().text);
+      while (peek().kind === 'ident') {
+        const t = next();
+        if (isNumeralName(t.text)) {
+          throw new ParseError(`Cannot use numeral '${t.text}' as a parameter`, t.pos);
+        }
+        params.push(t.text);
+      }
       if (params.length === 0) {
         throw new ParseError(`Expected a parameter name after λ, found ${describe(peek())}`, peek().pos);
       }
@@ -288,8 +314,256 @@
     return go(a, b, new Map(), new Map(), 0);
   }
 
+  // ── Numerals ──────────────────────────────────────────────────────────
+  // Digit tokens (0, 1, 42 …) are ordinary names whose definitions are
+  // generated on demand as Church numerals.
+
+  function isNumeralName(s) { return /^[0-9]+$/.test(s); }
+
+  function churchNumeral(n) {
+    let body = Var('x');
+    for (let i = 0; i < n; i++) body = App(Var('f'), body);
+    return Lam('f', Lam('x', body));
+  }
+
+  // ── Prelude ───────────────────────────────────────────────────────────
+  // Every definition is verbatim from the Foundations course (each may
+  // reference only earlier prelude names and numerals). Note the course's
+  // names: ADD (not PLUS), IS_NIL (not ISNIL); no IF (booleans are applied
+  // directly) and no TAIL (fold-encoded lists don't get one).
+
+  const PRELUDE_SRC = [
+    // Booleans — Lesson 5
+    ['TRUE',       'λx.λy.x'],
+    ['FALSE',      'λx.λy.y'],
+    ['NOT',        'λb.b FALSE TRUE'],
+    ['AND',        'λb.λc.b c FALSE'],
+    ['OR',         'λb.λc.b TRUE c'],
+    // Numerals & arithmetic — Lessons 6–7
+    ['SUCC',       'λn.λf.λx.f (n f x)'],
+    ['ADD',        'λm.λn.λf.λx.m f (n f x)'],
+    ['MULT',       'λm.λn.λf.m (n f)'],
+    ['ISZERO',     'λn.n (λx.FALSE) TRUE'],
+    // Pairs & subtraction — Lessons 8–9
+    ['PAIR',       'λx.λy.λf.f x y'],
+    ['FST',        'λp.p TRUE'],
+    ['SND',        'λp.p FALSE'],
+    ['SHIFT',      'λp.PAIR (SUCC (FST p)) (FST p)'],
+    ['PRED',       'λn.SND (n SHIFT (PAIR 0 0))'],
+    ['SUB',        'λm.λn.n PRED m'],
+    ['LEQ',        'λm.λn.ISZERO (SUB m n)'],
+    ['EQ',         'λm.λn.AND (LEQ m n) (LEQ n m)'],
+    // Recursion — Lessons 10–11
+    ['Y',          'λf.(λx.f (x x)) (λx.f (x x))'],
+    ['FACT_STEP',  'λrec.λn.ISZERO n 1 (MULT n (rec (PRED n)))'],
+    ['FACT',       'Y FACT_STEP'],
+    ['DIV_STEP',   'λrec.λm.λn.LEQ n m (SUCC (rec (SUB m n) n)) 0'],
+    ['DIV',        'Y DIV_STEP'],
+    ['MOD_STEP',   'λrec.λm.λn.LEQ n m (rec (SUB m n) n) m'],
+    ['MOD',        'Y MOD_STEP'],
+    // Lists (fold-encoded) — Lessons 12–15
+    ['NIL',        'λc.λn.n'],
+    ['CONS',       'λh.λt.λc.λn.c h (t c n)'],
+    ['IS_NIL',     'λl.l (λh.λt.FALSE) TRUE'],
+    ['HEAD',       'λl.l (λh.λt.h) FALSE'],
+    ['MAP',        'λf.λl.l (λh.λr.CONS (f h) r) NIL'],
+    ['FILTER',     'λf.λl.l (λh.λr.f h (CONS h r) r) NIL'],
+    ['LENGTH',     'λl.l (λh.λr.SUCC r) 0'],
+    ['SUM',        'λl.l ADD 0'],
+    ['APPEND',     'λl1.λl2.l1 CONS l2'],
+    ['REVERSE',    'λl.l (λh.λacc.APPEND acc (CONS h NIL)) NIL'],
+    ['FLATTEN',    'λl.l APPEND NIL'],
+    ['ANY',        'λf.λl.l (λh.λr.OR (f h) r) FALSE'],
+    ['ALL',        'λf.λl.l (λh.λr.AND (f h) r) TRUE'],
+    ['RANGE_STEP', 'λrec.λn.ISZERO n NIL (APPEND (rec (PRED n)) (CONS n NIL))'],
+    ['RANGE',      'Y RANGE_STEP'],
+  ];
+
+  const PRELUDE = new Map(PRELUDE_SRC.map(([name, src]) => [name, parse(src)]));
+
+  // ── Programs: definitions + one expression ────────────────────────────
+
+  class ProgramError extends Error {
+    constructor(message, line) {
+      super(line ? `Line ${line}: ${message}` : message);
+      this.name = 'ProgramError';
+      this.line = line; // 1-based, when known
+    }
+  }
+
+  // First (leftmost-outermost) free variable of `t` for which isDefined
+  // holds, or null.
+  function findDefinedFree(t, isDefined, bound = new Set()) {
+    switch (t.type) {
+      case 'var':
+        return !bound.has(t.name) && isDefined(t.name) ? t.name : null;
+      case 'lam': {
+        const inner = new Set(bound);
+        inner.add(t.param);
+        return findDefinedFree(t.body, isDefined, inner);
+      }
+      case 'app':
+        return findDefinedFree(t.fn, isDefined, bound)
+            ?? findDefinedFree(t.arg, isDefined, bound);
+    }
+  }
+
+  // Delta-expansion: replace defined names with their definitions, one name
+  // per step (all its occurrences at once), until none remain. Terminates
+  // because definitions may only reference strictly earlier ones.
+  function expandNames(term, lookup, isDefined) {
+    const deltas = [];
+    for (let guard = 0; guard < 10000; guard++) {
+      const name = findDefinedFree(term, isDefined);
+      if (name === null) return { term, deltas };
+      term = subst(term, name, lookup(name));
+      deltas.push({ name, term });
+    }
+    throw new ProgramError('Name expansion did not finish — the program expands to an enormous term');
+  }
+
+  // Evaluate a program: `NAME = expr` definition lines, then one final
+  // expression. A line starting with whitespace continues the previous
+  // statement (offside rule); a line at column 0 starts a new one.
+  // `--` starts a comment. Returns:
+  //   { definitions, warnings, status: 'no-expression' }               or
+  //   { definitions, warnings, expr, deltas, expanded,
+  //     steps, result, status: 'normal'|'fuel-exhausted', readback }
+  function evalProgram(src, { maxSteps = 5000 } = {}) {
+    const lines = src.split('\n').map((l) => l.replace(/--.*$/, ''));
+    const defLine = /^\s*([A-Za-z_][A-Za-z0-9_']*)\s*=\s*(.*)$/;
+
+    const stmts = [];
+    let current = null;
+    lines.forEach((raw, idx) => {
+      if (raw.trim() === '') { current = null; return; }
+      if (current && /^[ \t]/.test(raw)) { current.text += '\n' + raw; return; }
+      const m = raw.match(defLine);
+      current = m
+        ? { kind: 'def', name: m[1], text: m[2], line: idx + 1 }
+        : { kind: 'expr', text: raw, line: idx + 1 };
+      stmts.push(current);
+    });
+
+    const defs  = stmts.filter((s) => s.kind === 'def');
+    const exprs = stmts.filter((s) => s.kind === 'expr');
+    if (exprs.length > 1) {
+      throw new ProgramError('A program is definitions plus ONE final expression — found a second expression', exprs[1].line);
+    }
+
+    const userEnv  = new Map();
+    const warnings = [];
+    const defIndex = new Map(defs.map((d, i) => [d.name, i]));
+    defs.forEach((d, i) => {
+      if (userEnv.has(d.name)) {
+        throw new ProgramError(`'${d.name}' is defined twice`, d.line);
+      }
+      let term;
+      try { term = parse(d.text); }
+      catch (e) { throw new ProgramError(`in definition of '${d.name}': ${e.message}`, d.line); }
+      for (const f of freeVars(term)) {
+        if (f === d.name) {
+          throw new ProgramError(`'${d.name}' refers to itself — definitions cannot be recursive. Build recursion with Y instead`, d.line);
+        }
+        const j = defIndex.get(f);
+        if (j !== undefined && j > i) {
+          throw new ProgramError(`'${d.name}' uses '${f}' before it is defined`, d.line);
+        }
+      }
+      if (PRELUDE.has(d.name)) warnings.push(`'${d.name}' shadows the built-in definition`);
+      userEnv.set(d.name, term);
+    });
+
+    const definitions = defs.map((d) => ({ name: d.name, term: userEnv.get(d.name) }));
+    if (exprs.length === 0) return { definitions, warnings, status: 'no-expression' };
+
+    let expr;
+    try { expr = parse(exprs[0].text); }
+    catch (e) { throw new ProgramError(e.message, exprs[0].line); }
+
+    const isDefined = (n) => userEnv.has(n) || PRELUDE.has(n) || isNumeralName(n);
+    const lookup    = (n) => userEnv.get(n) ?? PRELUDE.get(n) ?? churchNumeral(parseInt(n, 10));
+
+    const { term: expanded, deltas } = expandNames(expr, lookup, isDefined);
+    const r = reduce(expanded, { maxSteps });
+    return {
+      definitions, warnings, expr, deltas, expanded,
+      steps: r.steps, result: r.result, status: r.status,
+      readback: readback(r.result),
+    };
+  }
+
+  // ── Readback ──────────────────────────────────────────────────────────
+  // Recognize encoded values in normal forms for friendly display.
+
+  // λf.λx.f (f … x) → n, else null.
+  function numeralValue(t) {
+    if (t.type !== 'lam' || t.body.type !== 'lam') return null;
+    const f = t.param, x = t.body.param;
+    let cur = t.body.body, count = 0;
+    while (cur.type === 'app' && cur.fn.type === 'var' && cur.fn.name === f) {
+      if (f === x) return null; // both binders share a name: only 0 is unambiguous
+      count++;
+      cur = cur.arg;
+    }
+    return cur.type === 'var' && cur.name === x ? count : null;
+  }
+
+  function isTrueTerm(t) {
+    return t.type === 'lam' && t.body.type === 'lam'
+        && t.param !== t.body.param
+        && t.body.body.type === 'var' && t.body.body.name === t.param;
+  }
+
+  // λc.λn.c h₁ (c h₂ (… n)) → [h₁, h₂, …] (nonempty), else null.
+  function listElements(t) {
+    if (t.type !== 'lam' || t.body.type !== 'lam') return null;
+    const c = t.param, n = t.body.param;
+    if (c === n) return null;
+    const elems = [];
+    let cur = t.body.body;
+    while (cur.type === 'app' && cur.fn.type === 'app'
+        && cur.fn.fn.type === 'var' && cur.fn.fn.name === c) {
+      const h = cur.fn.arg;
+      const fv = freeVars(h);
+      if (fv.has(c) || fv.has(n)) return null;
+      elems.push(h);
+      cur = cur.arg;
+    }
+    return cur.type === 'var' && cur.name === n && elems.length > 0 ? elems : null;
+  }
+
+  // λf.f A B → [A, B], else null.
+  function pairParts(t) {
+    if (t.type !== 'lam') return null;
+    const b = t.body;
+    if (b.type !== 'app' || b.fn.type !== 'app'
+     || b.fn.fn.type !== 'var' || b.fn.fn.name !== t.param) return null;
+    const fst = b.fn.arg, snd = b.arg;
+    if (freeVars(fst).has(t.param) || freeVars(snd).has(t.param)) return null;
+    return [fst, snd];
+  }
+
+  // Friendly rendering of an encoded value, or null for a plain function.
+  // λa.λb.b is simultaneously 0, FALSE, and NIL (the course makes a point
+  // of this pun); at top level we show all three, inside containers just 0.
+  function readback(t, { nested = false } = {}) {
+    const rb = (e) => readback(e, { nested: true }) ?? print(e);
+    const n = numeralValue(t);
+    if (n === 0) return nested ? '0' : '0 ≡ FALSE ≡ NIL';
+    if (n !== null) return String(n);
+    if (isTrueTerm(t)) return 'TRUE';
+    const els = listElements(t);
+    if (els) return `[${els.map(rb).join(', ')}]`;
+    const p = pairParts(t);
+    if (p) return `⟨${p.map(rb).join(', ')}⟩`;
+    return null;
+  }
+
   return {
     Var, Lam, App, termEq, ParseError, tokenize, parse, print,
     freeVars, freshName, subst, step, reduce, getAt, alphaEq,
+    isNumeralName, churchNumeral, PRELUDE, PRELUDE_SRC,
+    ProgramError, evalProgram, readback,
   };
 });

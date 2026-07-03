@@ -5,6 +5,7 @@ const assert = require('node:assert');
 const {
   Var, Lam, App, termEq, ParseError, parse, print,
   freeVars, subst, step, reduce, getAt, alphaEq,
+  churchNumeral, PRELUDE, PRELUDE_SRC, ProgramError, evalProgram, readback,
 } = require('./lambda.js');
 
 let passed = 0, failed = 0;
@@ -268,6 +269,177 @@ test('alphaEq: bound vs free with same name', () =>
 
 test('alphaEq: deep structural', () =>
   assert.ok(alphaEq(parse('λf.λx.f (f x)'), parse('λg.λy.g (g y)'))));
+
+// ── Numerals ──────────────────────────────────────────────────────────────
+
+test('numeral literal parses as a name', () => parsesTo('2', Var('2')));
+test('numeral cannot start an identifier', () => failsWith('2x', 'cannot start with a digit'));
+test('numeral cannot be a parameter', () => failsWith('λ2.x', "numeral '2'"));
+test('churchNumeral shape', () =>
+  assert.ok(alphaEq(churchNumeral(2), parse('λf.λx.f (f x)'))));
+
+// ── Program evaluation ────────────────────────────────────────────────────
+
+function run(src, opts) { return evalProgram(src, opts); }
+
+function programFails(src, msgPart) {
+  assert.throws(() => evalProgram(src), (e) => {
+    assert.ok(e instanceof ProgramError, `expected ProgramError, got ${e.name}: ${e.message}`);
+    assert.ok(e.message.includes(msgPart), `message "${e.message}" should include "${msgPart}"`);
+    return true;
+  });
+}
+
+test('program: ADD 2 3 = 5', () => {
+  const r = run('ADD 2 3');
+  assert.strictEqual(r.status, 'normal');
+  assert.strictEqual(r.readback, '5');
+});
+
+test('program: delta steps are recorded per name', () => {
+  const r = run('ADD 2 3');
+  assert.deepStrictEqual(r.deltas.map((d) => d.name), ['ADD', '2', '3']);
+});
+
+test('program: user definition', () => {
+  const r = run('DOUBLE = λn.MULT 2 n\nDOUBLE 4');
+  assert.strictEqual(r.readback, '8');
+});
+
+test('program: definitions chain in order', () => {
+  const r = run('SQ = λn.MULT n n\nQUAD = λn.SQ (SQ n)\nQUAD 2');
+  assert.strictEqual(r.readback, '16');
+});
+
+test('program: shadowing prelude warns and wins', () => {
+  const r = run('TRUE = λx.λy.y\nTRUE a b');
+  assert.strictEqual(print(r.result), 'b');
+  assert.ok(r.warnings.some((w) => w.includes('shadows')));
+});
+
+test('program: self-reference suggests Y', () =>
+  programFails('F = λn.F n\nF 1', 'Build recursion with Y'));
+
+test('program: forward reference', () =>
+  programFails('A = B x\nB = λx.x\nA', "uses 'B' before"));
+
+test('program: duplicate definition', () =>
+  programFails('A = λx.x\nA = λy.y\nA', 'defined twice'));
+
+test('program: two expressions rejected with line number', () =>
+  programFails('x y\n\nz', 'Line 3'));
+
+test('program: defs-only', () => {
+  const r = run('ID = λx.x');
+  assert.strictEqual(r.status, 'no-expression');
+  assert.strictEqual(r.definitions.length, 1);
+});
+
+test('program: comments and blank lines', () => {
+  const r = run('-- doubles a number\nD = λn.ADD n n  -- via ADD\n\nD 3');
+  assert.strictEqual(r.readback, '6');
+});
+
+test('program: definition spanning lines', () => {
+  const r = run('COMPOSE = λf.λg.\n  λx.f (g x)\nCOMPOSE SUCC SUCC 1');
+  assert.strictEqual(r.readback, '3');
+});
+
+test('program: parse error carries definition line', () =>
+  programFails('ID = λx.x\nBAD = λx.\nID 1', 'Line 2'));
+
+test('program: free variables stay free', () => {
+  const r = run('(λx.x) someUnknown');
+  assert.strictEqual(print(r.result), 'someUnknown');
+});
+
+test('program: omega exhausts fuel', () => {
+  const r = run('(λx.x x) (λx.x x)', { maxSteps: 30 });
+  assert.strictEqual(r.status, 'fuel-exhausted');
+});
+
+// ── Prelude agrees with the course ────────────────────────────────────────
+
+test('prelude: parses and is acyclic (only earlier names)', () => {
+  const seen = new Set();
+  for (const [name, src] of PRELUDE_SRC) {
+    const t = parse(src);
+    for (const f of freeVars(t)) {
+      assert.ok(seen.has(f) || /^[0-9]+$/.test(f),
+        `${name} references ${f}, which is not defined before it`);
+    }
+    seen.add(name);
+  }
+  assert.strictEqual(PRELUDE.size, PRELUDE_SRC.length);
+});
+
+test('prelude: NOT TRUE = FALSE', () =>
+  assert.strictEqual(run('NOT TRUE').readback, '0 ≡ FALSE ≡ NIL'));
+test('prelude: AND TRUE TRUE = TRUE', () =>
+  assert.strictEqual(run('AND TRUE TRUE').readback, 'TRUE'));
+test('prelude: SUCC 2 = 3', () =>
+  assert.strictEqual(run('SUCC 2').readback, '3'));
+test('prelude: MULT 3 4 = 12', () =>
+  assert.strictEqual(run('MULT 3 4').readback, '12'));
+test('prelude: PRED 3 = 2', () =>
+  assert.strictEqual(run('PRED 3').readback, '2'));
+test('prelude: SUB 5 2 = 3', () =>
+  assert.strictEqual(run('SUB 5 2').readback, '3'));
+test('prelude: ISZERO 0 = TRUE', () =>
+  assert.strictEqual(run('ISZERO 0').readback, 'TRUE'));
+test('prelude: LEQ 2 3 = TRUE', () =>
+  assert.strictEqual(run('LEQ 2 3').readback, 'TRUE'));
+test('prelude: EQ 2 2 = TRUE', () =>
+  assert.strictEqual(run('EQ 2 2').readback, 'TRUE'));
+test('prelude: EQ 2 3 = FALSE', () =>
+  assert.strictEqual(run('EQ 2 3').readback, '0 ≡ FALSE ≡ NIL'));
+test('prelude: FACT 3 = 6', () =>
+  assert.strictEqual(run('FACT 3', { maxSteps: 20000 }).readback, '6'));
+test('prelude: DIV 6 2 = 3', () =>
+  assert.strictEqual(run('DIV 6 2', { maxSteps: 20000 }).readback, '3'));
+test('prelude: MOD 5 2 = 1', () =>
+  assert.strictEqual(run('MOD 5 2', { maxSteps: 20000 }).readback, '1'));
+test('prelude: pairs', () =>
+  assert.strictEqual(run('PAIR 1 2').readback, '⟨1, 2⟩'));
+test('prelude: FST (PAIR 1 2) = 1', () =>
+  assert.strictEqual(run('FST (PAIR 1 2)').readback, '1'));
+test('prelude: list literal', () =>
+  assert.strictEqual(run('CONS 1 (CONS 2 NIL)').readback, '[1, 2]'));
+test('prelude: HEAD', () =>
+  assert.strictEqual(run('HEAD (CONS 1 (CONS 2 NIL))').readback, '1'));
+test('prelude: IS_NIL NIL = TRUE', () =>
+  assert.strictEqual(run('IS_NIL NIL').readback, 'TRUE'));
+test('prelude: MAP SUCC [1,2] = [2,3]', () =>
+  assert.strictEqual(run('MAP SUCC (CONS 1 (CONS 2 NIL))').readback, '[2, 3]'));
+test('prelude: FILTER ISZERO [0,1,0]', () =>
+  assert.strictEqual(run('FILTER ISZERO (CONS 0 (CONS 1 (CONS 0 NIL)))').readback, '[0, 0]'));
+test('prelude: LENGTH [1,2,3] = 3', () =>
+  assert.strictEqual(run('LENGTH (CONS 1 (CONS 2 (CONS 3 NIL)))').readback, '3'));
+test('prelude: SUM [1,2,3] = 6', () =>
+  assert.strictEqual(run('SUM (CONS 1 (CONS 2 (CONS 3 NIL)))').readback, '6'));
+test('prelude: APPEND [1] [2] = [1, 2]', () =>
+  assert.strictEqual(run('APPEND (CONS 1 NIL) (CONS 2 NIL)').readback, '[1, 2]'));
+test('prelude: REVERSE [1,2,3] = [3,2,1]', () =>
+  assert.strictEqual(run('REVERSE (CONS 1 (CONS 2 (CONS 3 NIL)))', { maxSteps: 20000 }).readback, '[3, 2, 1]'));
+test('prelude: RANGE 3 = [1,2,3]', () =>
+  assert.strictEqual(run('RANGE 3', { maxSteps: 50000 }).readback, '[1, 2, 3]'));
+test('prelude: ANY ISZERO [1,0] = TRUE', () =>
+  assert.strictEqual(run('ANY ISZERO (CONS 1 (CONS 0 NIL))').readback, 'TRUE'));
+test('prelude: ALL ISZERO [1,0] = FALSE', () =>
+  assert.strictEqual(run('ALL ISZERO (CONS 1 (CONS 0 NIL))').readback, '0 ≡ FALSE ≡ NIL'));
+
+// ── Readback edge cases ───────────────────────────────────────────────────
+
+test('readback: plain function is null', () =>
+  assert.strictEqual(readback(parse('λx.x')), null));
+test('readback: Y-shaped term is null', () =>
+  assert.strictEqual(readback(parse('λf.(λx.f (x x)) (λx.f (x x))')), null));
+test('readback: numeral is alpha-insensitive', () =>
+  assert.strictEqual(readback(parse('λg.λy.g (g y)')), '2'));
+test('readback: fake numeral with shared binder names rejected', () =>
+  assert.strictEqual(readback(parse('λa.λa.a a')), null));
+test('readback: nested pair of lists', () =>
+  assert.strictEqual(run('PAIR (CONS 1 NIL) 2').readback, '⟨[1], 2⟩'));
 
 // ── Summary ───────────────────────────────────────────────────────────────
 

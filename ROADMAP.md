@@ -72,17 +72,19 @@ Extend `lambda.js` + tests.
 - Alpha-equivalence predicate (needed for tests now, exercise-checking later).
 - Tests: Church arithmetic (`PLUS 2 3 → 5` shape), Ω hits the fuel limit, classic capture cases.
 
-### A3. Definitions & readback 🔲
-Extend `lambda.js` + tests.
-- Multi-line programs: `NAME = expr` definition lines, final expression is the program result;
-  definitions may reference earlier ones. Names are expanded (delta-reduced) before beta reduction,
-  but each expansion is recorded as its own visible step.
-- Built-in prelude matching the courses: booleans (`TRUE FALSE AND OR NOT IF`), numerals + arithmetic
-  (`SUCC PLUS MULT PRED SUB ISZERO LEQ EQ`), pairs (`PAIR FST SND`), recursion (`Y`), lists
-  (`NIL CONS ISNIL HEAD TAIL MAP FILTER FOLD APPEND REVERSE`). **Cross-check every name and
-  definition against both `curriculum.js` files** — the lab must agree with the lessons.
-- Readback: recognize Church numerals / booleans / pairs / lists in results and annotate
-  (e.g. `λf.λx.f (f (f x))  ≡ 3`).
+### A3. Definitions & readback ✅
+Implementation notes (decisions made during the cross-check):
+- Course names differ from the original sketch: `ADD` (not PLUS), `IS_NIL` (not ISNIL);
+  the course defines **no IF or TAIL** — prelude matches the course exactly, including
+  `SHIFT`, `FACT/DIV/MOD/RANGE` with their `_STEP` helpers, `ANY ALL LENGTH SUM FLATTEN`.
+- Digit literals (`0`, `1`, `42`) are built-in names for Church numerals, expanded on demand
+  (the course uses them in definitions, e.g. `PRED`). They cannot be λ-parameters.
+- Programs use the offside rule: indented lines continue a statement; `--` comments.
+- User definitions may shadow the prelude (needed for Under the Hood's Scott encodings) with
+  a warning; self-reference errors suggest Y; forward references are errors.
+- Readback: numerals, TRUE, pairs `⟨a, b⟩`, fold-lists `[1, 2]`; `λa.λb.b` reads back as
+  `0 ≡ FALSE ≡ NIL` (the course's own pun).
+- Fuel data for A5: FACT 3 ≈ 1.5k betas, FACT 5 ≈ 78k — the UI needs a "keep going" action.
 
 ### A4. Panel layout 🔲
 `style.css` + both lambda course `index.html` files.
