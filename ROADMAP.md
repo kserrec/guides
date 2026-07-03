@@ -107,10 +107,14 @@ Clicking a chip opens the lab, loads, and runs. Examples dropdown curated per co
 (8 for Foundations, 4 for Under the Hood). Verified headlessly incl. the observer path.
 
 ### A7. Verification & polish 🔲
-- Drive every named combinator and representative expressions from all 23 lessons through the
-  lab; fix prelude mismatches and reducer bugs found.
-- Mobile pass (slide-over usability, keyboard behavior), long-trace performance guard
-  (cap rendered steps, "show more").
+Audit already run (2026-07-03, all 91 syntax boxes through the engine): Foundations 43/50
+runnable with zero fuel issues; Under the Hood 16/41 (skips are all correct — schematics,
+pseudocode, deliberate non-definitions). Remaining worklist:
+- Identifiers should accept Unicode letters other than λ — the courses use `ω`/`Ω` as names
+  (`ω = λx.x x` currently fails to parse). Add course-faithful `ω`/`Ω` prelude entries.
+- Error-caret display under parse errors (deferred from A5).
+- Mobile pass: slide-over usability, keyboard behavior.
+- After completion: publish via GitHub Pages (user-approved; repo must go public first).
 
 ### A8 (future, optional). `write-expression` exercise kind
 Reuse the A1–A3 engine to power free-input exercises checked by alpha/beta equivalence.
