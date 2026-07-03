@@ -99,12 +99,12 @@ mark the expanding name, β steps mark the firing redex via `printHtml` (pure, i
 unit-tested). Fuel exhaustion offers "Keep going ×10"; `\`→λ preserves cursor; buffer keyed
 by pathname in localStorage. Deferred to A7: caret-position display under parse errors.
 
-### A6. Lesson integration 🔲
-`engine.js` + curriculum touch-ups + `lab.js`.
-- Concept-block code examples become "try it" affordances: engine adds a small ▸ button to
-  designated expressions (opt-in via a curriculum field or a CSS class in authored HTML —
-  decide during implementation) that opens the lab pre-loaded with that expression.
-- Examples menu in the lab with a handful of curated programs per course.
+### A6. Lesson integration ✅
+Implemented with zero engine.js/curriculum changes: lab.js watches `#stage` with a
+MutationObserver and adds a "▸ try" chip to every `.syntax-box` whose text parses as a
+valid lab program (schematics/tables fail the parse and are skipped automatically).
+Clicking a chip opens the lab, loads, and runs. Examples dropdown curated per course
+(8 for Foundations, 4 for Under the Hood). Verified headlessly incl. the observer path.
 
 ### A7. Verification & polish 🔲
 - Drive every named combinator and representative expressions from all 23 lessons through the

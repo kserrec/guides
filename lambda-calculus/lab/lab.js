@@ -43,11 +43,45 @@
   const outputEl = h('div', { className: 'lab-output' });
   const closeBtn = h('button', { className: 'lab-close', title: 'Close' }, '×');
 
+  // ── Examples menu ───────────────────────────────────────────────────────
+
+  const EXAMPLES = {
+    'foundations': [
+      ['Beta reduction',      '(λx.λy.x) a b'],
+      ['Arithmetic',          'ADD 2 3'],
+      ['Booleans',            'AND TRUE (NOT FALSE)'],
+      ['Pairs',               'FST (PAIR 1 2)'],
+      ['Your own definition', 'DOUBLE = λn.ADD n n\nDOUBLE 4'],
+      ['Recursion with Y',    'FACT 3'],
+      ['Lists',               'MAP SUCC (CONS 1 (CONS 2 NIL))'],
+      ['Ω — never halts',     '(λx.x x) (λx.x x)'],
+    ],
+    'under-the-hood': [
+      ['Normal order wins',   '(λx.λy.y) ((λx.x x) (λx.x x)) z'],
+      ['Scott numerals',      "ZERO' = λz.λs.z\nSUCC' = λn.λz.λs.s n\nISZERO' = λn.n TRUE (λm.FALSE)\nISZERO' (SUCC' ZERO')"],
+      ['Continuation style',  'ADD_CPS = λm.λn.λk.k (ADD m n)\nADD_CPS 1 2 (λr.MULT r 10)'],
+      ['S K K = identity',    'S = λf.λg.λx.f x (g x)\nK = λx.λy.x\nS K K a'],
+    ],
+  };
+  const courseKey = location.pathname.includes('under-the-hood')
+    ? 'under-the-hood' : 'foundations';
+
+  const examplesSel = h('select', { className: 'lab-examples', title: 'Load an example' },
+    h('option', { value: '' }, 'Examples…'),
+    ...EXAMPLES[courseKey].map(([label], i) =>
+      h('option', { value: String(i) }, label)));
+  examplesSel.addEventListener('change', () => {
+    if (examplesSel.value === '') return;
+    loadIntoLab(EXAMPLES[courseKey][+examplesSel.value][1]);
+    examplesSel.value = '';
+  });
+
   root.append(
     h('div', { className: 'lab-header' },
       h('span', { className: 'lab-title' }, 'λ Lab'),
       closeBtn),
     h('div', { className: 'lab-body' },
+      examplesSel,
       editor,
       h('div', { className: 'lab-actions' },
         runBtn,
@@ -88,6 +122,14 @@
   let fuel = DEFAULT_FUEL;
 
   runBtn.addEventListener('click', () => { fuel = DEFAULT_FUEL; run(); });
+
+  function loadIntoLab(src) {
+    editor.value = src;
+    store.set(SRC_KEY, src);
+    setOpen(true);
+    fuel = DEFAULT_FUEL;
+    run();
+  }
 
   function run() {
     const src = editor.value;
@@ -201,5 +243,38 @@
         `… ${terms.length - shown} more steps not shown`));
     }
     return trace;
+  }
+
+  // ── "Try it" buttons on lesson code ─────────────────────────────────────
+  // Any .syntax-box whose text parses as a valid lab program gets a chip
+  // that loads it into the lab. Schematic notation ((λx.M) N → M[x := N],
+  // tables, prose) fails the parse and is skipped — no authoring flags
+  // needed in the curricula.
+
+  function isRunnable(text) {
+    if (!text || text.length > 500) return false;
+    try { L.evalProgram(text, { maxSteps: 1 }); return true; }
+    catch (e) { return false; }
+  }
+
+  function addTryButtons(scope) {
+    for (const box of scope.querySelectorAll('.syntax-box')) {
+      if ('labTry' in box.dataset) continue;
+      box.dataset.labTry = '';
+      if (box.querySelector('table')) continue;
+      const text = box.textContent.trim();
+      if (!isRunnable(text)) continue;
+      const btn = h('button', { className: 'lab-try', title: 'Open in the λ Lab' }, '▸ try');
+      btn.addEventListener('click', () => loadIntoLab(text));
+      box.prepend(btn);
+    }
+  }
+
+  const stage = document.getElementById('stage');
+  if (stage) {
+    addTryButtons(stage);
+    // Lessons render blocks incrementally; catch each newly revealed block.
+    new MutationObserver(() => addTryButtons(stage))
+      .observe(stage, { childList: true, subtree: true });
   }
 })();
