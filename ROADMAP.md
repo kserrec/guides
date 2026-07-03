@@ -53,7 +53,7 @@ Architecture: pure-logic module `lambda-calculus/lab/lambda.js` (no DOM; node-te
 UI module `lambda-calculus/lab/lab.js`, styles appended to `style.css`, tests in
 `lambda-calculus/lab/lambda.test.js` run with plain `node`.
 
-### A1. Parser core 🔲
+### A1. Parser core ✅
 `lambda-calculus/lab/lambda.js` + `lambda.test.js`.
 - AST: `Var`, `Lam`, `App`.
 - Tokenizer/parser: accept both `λ` and `\`; multi-arg sugar `λx y.M` / `λxy.M` (single-letter
@@ -136,8 +136,8 @@ commutation/association laws placement) as they come up in the relevant lesson's
 
 ## Track C — Housekeeping
 
-- **C1** 🔲 `git init`, add `.gitignore` (`.DS_Store`), remove stray `.DS_Store` files, initial commit.
-- **C2** 🔲 Consistency pass: unify hub back-link labels, real home page content (subject cards
+- **C1** ✅ `git init`, add `.gitignore` (`.DS_Store`), remove stray `.DS_Store` files, initial commit.
+- **C2** ✅ Consistency pass: unify hub back-link labels, real home page content (subject cards
   instead of bare hero), verify lesson-count tags.
 
 ---
