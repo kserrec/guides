@@ -889,6 +889,18 @@ header p {
   margin-bottom: 1rem;
 }
 
+/* Purple accent for the TFL card on the neutral home page */
+.subject-card--purple .subject-card-icon,
+.subject-card--purple .subject-card-tag,
+.subject-card--purple .subject-card-cta {
+  color: #7c3aed;
+}
+.subject-card--purple .subject-card-tag { background: #ede9fe; }
+.subject-card--purple:hover {
+  border-color: #7c3aed;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.12);
+}
+
 .subject-card-cta {
   font-size: 0.9rem;
   font-weight: 700;
