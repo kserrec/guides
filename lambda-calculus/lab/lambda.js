@@ -560,10 +560,54 @@
     return null;
   }
 
+  // ── HTML printer ──────────────────────────────────────────────────────
+  // print() with HTML escaping and an optional highlight for the trace UI:
+  //   { path: [...] }  wraps the subterm at that redex path in <mark>
+  //   { name: 'ADD' }  wraps free occurrences of the name in <mark>
+  // Parenthesization matches print() exactly.
+
+  function escHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function printHtml(t, mark = null) {
+    const MARK = (s) => `<mark class="lab-mark">${s}</mark>`;
+    // path: remaining moves to the marked redex, or null (not on the path)
+    const sub = (path, move) =>
+      path !== null && path.length > 0 && path[0] === move ? path.slice(1) : null;
+
+    function go(t, path, bound) {
+      const here = path !== null && path.length === 0;
+      let out;
+      switch (t.type) {
+        case 'var':
+          out = escHtml(t.name);
+          if (mark && mark.name === t.name && !bound.has(t.name)) out = MARK(out);
+          break;
+        case 'lam': {
+          const inner = new Set(bound);
+          inner.add(t.param);
+          out = `λ${escHtml(t.param)}.${go(t.body, sub(path, 'body'), inner)}`;
+          break;
+        }
+        case 'app': {
+          const fnH  = go(t.fn,  sub(path, 'fn'),  bound);
+          const argH = go(t.arg, sub(path, 'arg'), bound);
+          const fnW  = t.fn.type === 'lam'  ? `(${fnH})`  : fnH;
+          const argW = t.arg.type === 'var' ? argH        : `(${argH})`;
+          out = `${fnW} ${argW}`;
+          break;
+        }
+      }
+      return here ? MARK(out) : out;
+    }
+    return go(t, mark && mark.path ? mark.path : null, new Set());
+  }
+
   return {
     Var, Lam, App, termEq, ParseError, tokenize, parse, print,
     freeVars, freshName, subst, step, reduce, getAt, alphaEq,
     isNumeralName, churchNumeral, PRELUDE, PRELUDE_SRC,
-    ProgramError, evalProgram, readback,
+    ProgramError, evalProgram, readback, printHtml,
   };
 });

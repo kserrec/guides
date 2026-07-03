@@ -86,22 +86,18 @@ Implementation notes (decisions made during the cross-check):
   `0 ≡ FALSE ≡ NIL` (the course's own pun).
 - Fuel data for A5: FACT 3 ≈ 1.5k betas, FACT 5 ≈ 78k — the UI needs a "keep going" action.
 
-### A4. Panel layout 🔲
-`style.css` + both lambda course `index.html` files.
-- Wide screens (≳1100px): two-column grid — lesson column keeps its 720px measure, lab is a
-  sticky right panel. Narrow screens: floating toggle button opens the lab as a slide-over.
-- Open/closed state persisted in localStorage. Static placeholder content only; no behavior yet.
-- Must not disturb TFL pages or the hub/home pages (lab styles scoped under a `.lab` root class).
+### A4. Panel layout ✅
+Implemented as a fixed right panel (400px) rather than a grid rework: opening it adds
+`padding-right` to the body on ≥1200px screens (content re-centers in the remaining space);
+below that it's a slide-over. Floating "λ Lab" toggle button; open state in localStorage;
+styles scoped under `.lab*` classes; TFL pages untouched (no markup there).
+Verified via headless-Chrome screenshots at 1440px and 420px.
 
-### A5. Editor wire-up 🔲
-`lambda-calculus/lab/lab.js`; wire into both course pages.
-- Textarea input; `\` auto-replaced with `λ` while typing; Run button + Ctrl/Cmd+Enter.
-- Output area: final term + readback annotation only, by default. Trace is opt-in via a
-  "show steps" button (user decision 2026-07-03): expands to one line per step — delta
-  expansions and beta reductions — with the reduced redex highlighted (uses A2's redex path);
-  step count; clear messaging for parse errors (with caret position) and fuel exhaustion
-  ("did not terminate after N steps" + a "keep going" action).
-- Editor buffer persisted per course in localStorage.
+### A5. Editor wire-up ✅
+As specced: trace opt-in behind "Show steps" (renders lazily, capped at 200 lines), δ steps
+mark the expanding name, β steps mark the firing redex via `printHtml` (pure, in lambda.js,
+unit-tested). Fuel exhaustion offers "Keep going ×10"; `\`→λ preserves cursor; buffer keyed
+by pathname in localStorage. Deferred to A7: caret-position display under parse errors.
 
 ### A6. Lesson integration 🔲
 `engine.js` + curriculum touch-ups + `lab.js`.

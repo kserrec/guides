@@ -6,6 +6,7 @@ const {
   Var, Lam, App, termEq, ParseError, parse, print,
   freeVars, subst, step, reduce, getAt, alphaEq,
   churchNumeral, PRELUDE, PRELUDE_SRC, ProgramError, evalProgram, readback,
+  printHtml,
 } = require('./lambda.js');
 
 let passed = 0, failed = 0;
@@ -440,6 +441,44 @@ test('readback: fake numeral with shared binder names rejected', () =>
   assert.strictEqual(readback(parse('λa.λa.a a')), null));
 test('readback: nested pair of lists', () =>
   assert.strictEqual(run('PAIR (CONS 1 NIL) 2').readback, '⟨[1], 2⟩'));
+
+// ── HTML printer ──────────────────────────────────────────────────────────
+
+test('printHtml: no mark equals print', () => {
+  for (const src of ['λx.x', '(λx.x) y', 'f (x y)', 'λf.(λx.f (x x)) (λx.f (x x))']) {
+    assert.strictEqual(printHtml(parse(src)), print(parse(src)));
+  }
+});
+
+test('printHtml: marks redex at root', () =>
+  assert.strictEqual(printHtml(parse('(λx.x) y'), { path: [] }),
+    '<mark class="lab-mark">(λx.x) y</mark>'));
+
+test('printHtml: marks redex at path', () =>
+  assert.strictEqual(printHtml(parse('f ((λx.x) y)'), { path: ['arg'] }),
+    'f (<mark class="lab-mark">(λx.x) y</mark>)'));
+
+test('printHtml: marks redex under lambda', () =>
+  assert.strictEqual(printHtml(parse('λz.(λx.x) y'), { path: ['body'] }),
+    'λz.<mark class="lab-mark">(λx.x) y</mark>'));
+
+test('printHtml: marks free name occurrences only', () =>
+  assert.strictEqual(printHtml(parse('ADD x (λADD.ADD)'), { name: 'ADD' }),
+    '<mark class="lab-mark">ADD</mark> x (λADD.ADD)'));
+
+test('printHtml: marks repeated free names', () =>
+  assert.strictEqual(printHtml(parse('ADD ADD'), { name: 'ADD' }),
+    '<mark class="lab-mark">ADD</mark> <mark class="lab-mark">ADD</mark>'));
+
+test('printHtml: trace invariant — every beta step marks a redex', () => {
+  const r = evalProgram('ADD 2 3');
+  const terms = [r.expr, ...r.deltas.map((d) => d.term), ...r.steps.map((s) => s.term)];
+  r.steps.forEach((s, j) => {
+    const before = terms[r.deltas.length + j];
+    const html = printHtml(before, { path: s.redexPath });
+    assert.ok(html.includes('<mark'), `step ${j} produced no mark`);
+  });
+});
 
 // ── Summary ───────────────────────────────────────────────────────────────
 
