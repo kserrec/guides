@@ -96,9 +96,11 @@ Implementation notes (decisions made during the cross-check):
 ### A5. Editor wire-up 🔲
 `lambda-calculus/lab/lab.js`; wire into both course pages.
 - Textarea input; `\` auto-replaced with `λ` while typing; Run button + Ctrl/Cmd+Enter.
-- Output area: final term + readback annotation; collapsible full trace, one line per step with
-  the reduced redex highlighted (uses A2's redex path); step count; clear messaging for parse
-  errors (with caret position) and fuel exhaustion ("did not terminate after N steps").
+- Output area: final term + readback annotation only, by default. Trace is opt-in via a
+  "show steps" button (user decision 2026-07-03): expands to one line per step — delta
+  expansions and beta reductions — with the reduced redex highlighted (uses A2's redex path);
+  step count; clear messaging for parse errors (with caret position) and fuel exhaustion
+  ("did not terminate after N steps" + a "keep going" action).
 - Editor buffer persisted per course in localStorage.
 
 ### A6. Lesson integration 🔲
