@@ -63,7 +63,7 @@ UI module `lambda-calculus/lab/lab.js`, styles appended to `style.css`, tests in
 - Pretty-printer emitting minimal parentheses; round-trip property (parse ∘ print = id) in tests.
 - Plain-assert tests runnable via `node lambda.test.js`.
 
-### A2. Evaluator 🔲
+### A2. Evaluator ✅
 Extend `lambda.js` + tests.
 - Free variables; capture-avoiding substitution with fresh-name generation (`x` → `x'`).
 - Single-step **normal-order** reduction returning the new term plus the path of the reduced

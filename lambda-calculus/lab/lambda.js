@@ -167,5 +167,129 @@
     }
   }
 
-  return { Var, Lam, App, termEq, ParseError, tokenize, parse, print };
+  // ── Evaluator ─────────────────────────────────────────────────────────
+
+  function freeVars(t, acc = new Set(), bound = new Set()) {
+    switch (t.type) {
+      case 'var':
+        if (!bound.has(t.name)) acc.add(t.name);
+        return acc;
+      case 'lam': {
+        const inner = new Set(bound);
+        inner.add(t.param);
+        return freeVars(t.body, acc, inner);
+      }
+      case 'app':
+        freeVars(t.fn, acc, bound);
+        return freeVars(t.arg, acc, bound);
+    }
+  }
+
+  // Smallest primed variant of `base` not in `avoid`: x → x' → x'' → …
+  function freshName(base, avoid) {
+    let name = base;
+    do { name += "'"; } while (avoid.has(name));
+    return name;
+  }
+
+  // Capture-avoiding substitution: t[name := replacement].
+  // When a binder would capture a free variable of `replacement`, the
+  // binder is alpha-renamed to a fresh primed name first.
+  function subst(t, name, replacement) {
+    switch (t.type) {
+      case 'var':
+        return t.name === name ? replacement : t;
+      case 'app':
+        return App(subst(t.fn, name, replacement), subst(t.arg, name, replacement));
+      case 'lam': {
+        if (t.param === name) return t; // binder shadows the substitution
+        const bodyFree = freeVars(t.body);
+        if (!bodyFree.has(name)) return t; // nothing to replace below
+        if (freeVars(replacement).has(t.param)) {
+          const avoid = new Set([...bodyFree, ...freeVars(replacement), name]);
+          const renamed = freshName(t.param, avoid);
+          const body = subst(t.body, t.param, Var(renamed));
+          return Lam(renamed, subst(body, name, replacement));
+        }
+        return Lam(t.param, subst(t.body, name, replacement));
+      }
+    }
+  }
+
+  // One normal-order (leftmost-outermost) beta step.
+  // Returns { term, path } where `path` locates the reduced redex in the
+  // INPUT term as a list of 'fn' | 'arg' | 'body' moves from the root.
+  // Returns null when the term is in normal form.
+  function step(t) {
+    switch (t.type) {
+      case 'var':
+        return null;
+      case 'lam': {
+        const s = step(t.body);
+        return s ? { term: Lam(t.param, s.term), path: ['body', ...s.path] } : null;
+      }
+      case 'app': {
+        if (t.fn.type === 'lam') {
+          return { term: subst(t.fn.body, t.fn.param, t.arg), path: [] };
+        }
+        let s = step(t.fn);
+        if (s) return { term: App(s.term, t.arg), path: ['fn', ...s.path] };
+        s = step(t.arg);
+        if (s) return { term: App(t.fn, s.term), path: ['arg', ...s.path] };
+        return null;
+      }
+    }
+  }
+
+  // Reduce to normal form, or stop after maxSteps.
+  // steps[i].redexPath locates the redex in the term BEFORE that step
+  // (steps[0]'s path refers to `initial`); steps[i].term is the result.
+  function reduce(term, { maxSteps = 1000 } = {}) {
+    const steps = [];
+    let current = term;
+    for (let n = 0; n < maxSteps; n++) {
+      const s = step(current);
+      if (!s) return { initial: term, steps, result: current, status: 'normal' };
+      steps.push({ redexPath: s.path, term: s.term });
+      current = s.term;
+    }
+    return { initial: term, steps, result: current, status: 'fuel-exhausted' };
+  }
+
+  // The subterm of `t` at `path` (a list of 'fn' | 'arg' | 'body' moves).
+  function getAt(t, path) {
+    let cur = t;
+    for (const move of path) {
+      cur = move === 'fn' ? cur.fn : move === 'arg' ? cur.arg : cur.body;
+    }
+    return cur;
+  }
+
+  // Alpha-equivalence: equal up to consistent renaming of bound variables.
+  function alphaEq(a, b) {
+    function go(a, b, envA, envB, depth) {
+      if (a.type !== b.type) return false;
+      switch (a.type) {
+        case 'var': {
+          const da = envA.get(a.name), db = envB.get(b.name);
+          if (da !== undefined || db !== undefined) return da === db;
+          return a.name === b.name; // both free
+        }
+        case 'lam': {
+          const ea = new Map(envA); ea.set(a.param, depth);
+          const eb = new Map(envB); eb.set(b.param, depth);
+          return go(a.body, b.body, ea, eb, depth + 1);
+        }
+        case 'app':
+          return go(a.fn, b.fn, envA, envB, depth)
+              && go(a.arg, b.arg, envA, envB, depth);
+      }
+    }
+    return go(a, b, new Map(), new Map(), 0);
+  }
+
+  return {
+    Var, Lam, App, termEq, ParseError, tokenize, parse, print,
+    freeVars, freshName, subst, step, reduce, getAt, alphaEq,
+  };
 });
