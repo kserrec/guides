@@ -1072,3 +1072,178 @@ header p {
   .syl-label { min-width: 0; }
   .subject-card { flex-direction: column; gap: 0.75rem; }
 }
+
+/* ── Lambda Lab panel ──────────────────────────────────────────────────── */
+
+.lab-toggle {
+  position: fixed;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  z-index: 60;
+  border: none;
+  border-radius: 999px;
+  padding: 0.75rem 1.3rem;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  transition: transform 0.1s, background 0.15s;
+}
+.lab-toggle:hover { background: var(--accent-hover); transform: translateY(-1px); }
+body.lab-open .lab-toggle { display: none; }
+
+.lab {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  width: 400px;
+  max-width: 100vw;
+  background: #fff;
+  border-left: 2px solid var(--border);
+  box-shadow: -6px 0 24px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(102%);
+  transition: transform 0.22s ease;
+}
+body.lab-open .lab { transform: none; }
+
+/* Wide screens: shift the page over instead of covering it */
+@media (min-width: 1200px) {
+  body { transition: padding-right 0.22s ease; }
+  body.lab-open { padding-right: 400px; }
+}
+
+.lab-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.1rem;
+  border-bottom: 2px solid var(--border);
+}
+.lab-title { font-weight: 800; font-size: 1.05rem; color: var(--dark); }
+.lab-close {
+  border: none;
+  background: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0 0.2rem;
+}
+.lab-close:hover { color: var(--dark); }
+
+.lab-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.1rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.lab-editor {
+  width: 100%;
+  min-height: 150px;
+  resize: vertical;
+  font-family: 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  padding: 0.7rem 0.8rem;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--dark);
+}
+.lab-editor:focus { outline: none; border-color: var(--accent-border); }
+
+.lab-actions { display: flex; align-items: center; gap: 0.75rem; }
+.lab-run {
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1.1rem;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+.lab-run:hover { background: var(--accent-hover); }
+.lab-hint { font-size: 0.75rem; color: var(--muted); }
+
+.lab-output { display: flex; flex-direction: column; gap: 0.6rem; }
+.lab-readback {
+  font-family: 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--dark);
+}
+.lab-code {
+  display: block;
+  font-size: 0.85rem;
+  background: #f6f8fa;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.7rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.lab-statusline { font-size: 0.78rem; color: var(--muted); }
+.lab-note { font-size: 0.85rem; color: var(--text-secondary); }
+.lab-warning {
+  font-size: 0.85rem;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1.5px solid #fde68a;
+  border-radius: 8px;
+  padding: 0.6rem 0.7rem;
+}
+.lab-error {
+  font-size: 0.85rem;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1.5px solid #fecaca;
+  border-radius: 8px;
+  padding: 0.6rem 0.7rem;
+  white-space: pre-wrap;
+}
+
+.lab-steps-btn, .lab-more {
+  align-self: flex-start;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 0.35rem 0.8rem;
+  background: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.lab-steps-btn:hover, .lab-more:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+.lab-more { display: inline-block; margin-left: 0.4rem; }
+
+.lab-trace {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  border-top: 1.5px solid var(--border);
+  padding-top: 0.6rem;
+}
+.lab-step { display: flex; gap: 0.5rem; align-items: baseline; font-size: 0.82rem; }
+.lab-step-badge {
+  flex-shrink: 0;
+  width: 1.4rem;
+  text-align: right;
+  font-family: 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.lab-step code { overflow-wrap: anywhere; }
+mark.lab-mark { background: #fde68a; border-radius: 3px; padding: 0 1px; }
