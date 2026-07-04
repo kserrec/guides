@@ -93,7 +93,7 @@ Book: Ch. 7 + Ch. 8
 | 2 | Direct Proofs and the Tree Method | Ch. 7 §§6–13 | ✅ |
 | 3 | DNF and the Subsumption of Statement Logic | Ch. 7 §§8, 16–17 | ✅ |
 | 4 | MPL's Syntax and the Predicate Way | Ch. 8 §§1–6 | ✅ |
-| 5 | Translating Between TFL and MPL | Ch. 8 §§7–10, 12–13 | 🔲 |
+| 5 | Translating Between TFL and MPL | Ch. 8 §§7–10, 12–13 | ✅ |
 | 6 | The Limits and Power of TFL | Ch. 8 §§14–19 | 🔲 |
 
 ---

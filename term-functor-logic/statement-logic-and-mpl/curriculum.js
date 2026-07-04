@@ -1447,6 +1447,381 @@ const CURRICULUM = {
         }
 
       ]
+    },
+
+    // ════════════════════════════════════════════════════════════════════════
+    // LESSON 5: Translating Between TFL and MPL
+    // ════════════════════════════════════════════════════════════════════════
+    {
+      id: "lesson-05",
+      title: "Lesson 5: Translating Between TFL and MPL",
+      navTitle: "The Bridge",
+      description: "Build the bridge: systematic procedures for carrying any statement between TFL's signed terms and MPL's quantified formulas — categoricals, compounds, singulars, and the relational cases where the two notations mark scope in different places.",
+      completionText: "The bridge stands, and traffic runs both ways: subject signs become quantifiers, quantities pick their connectives, starred singulars become names, and left-to-right sign order becomes left-to-right quantifier order. Both directions preserve validity — TFL and MPL are two notations for one logic across everything this course has treated. One lesson remains: stepping back from the bridge to survey both banks — what each notation says easily, what it says awkwardly, and what, if anything, lies beyond TFL's reach.",
+      blocks: [
+
+        // ── Concept: The Dictionary ───────────────────────────────────────────
+        {
+          type: "concept",
+          id: "translation-dictionary",
+          title: "1. The Dictionary",
+          content: `
+            <p>Everything this course has built now assembles into a two-column dictionary.
+            The four categorical forms, the singular form, and the statement compounds all
+            have entries on both sides:</p>
+
+            <div class="syntax-box">
+              <table>
+                <tr><td>every S is P</td><td><code>−S+P</code></td><td><code>∀x(Sx → Px)</code></td></tr>
+                <tr><td>no S is P</td><td><code>−S−P</code></td><td><code>∀x(Sx → ¬Px)</code></td></tr>
+                <tr><td>some S is P</td><td><code>+S+P</code></td><td><code>∃x(Sx ∧ Px)</code></td></tr>
+                <tr><td>some S isn't P</td><td><code>+S−P</code></td><td><code>∃x(Sx ∧ ¬Px)</code></td></tr>
+                <tr><td>Socrates is P</td><td><code>±s*+P</code></td><td><code>Ps</code></td></tr>
+              </table>
+            </div>
+
+            <div class="grammar-rule">
+              <span class="g-label">TFL → MPL, in Four Moves</span>
+              1. The <strong>subject sign</strong> picks the quantifier: − becomes ∀,
+              + becomes ∃.&ensp;
+              2. The quantity picks the connective: ∀ pairs with →, ∃ with ∧ — Lesson 4's
+              asymmetry, now working for you.&ensp;
+              3. A negative <strong>predicate quality</strong> becomes ¬.&ensp;
+              4. Starred singular terms become <strong>names</strong> — no quantifier at all.
+            </div>
+
+            <p>What about structure <em>inside</em> a term? TFL's term operations translate
+            into MPL's connectives applied to open sentences:</p>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>(−T)</code><span>the negative term ↔ <code>¬Tx</code></span></div>
+              <div class="ex-row"><code>+A+B</code><span>the compound term ↔ <code>Ax ∧ Bx</code></span></div>
+            </div>
+
+            <p>So "every white horse is gentle," with its compound subject, crosses the bridge
+            in one pass: <code>−(+White+Horse)+Gentle</code> becomes
+            <code>∀x((Wx ∧ Hx) → Gx)</code> — the subject's minus chose ∀, the ∀ chose →, and
+            the compound term unpacked into a conjunction of open sentences.</p>
+
+            <p>Statement compounds need no new entries at all: Lesson 4's connective table
+            (<code>−p+q</code> ↔ <code>p → q</code> and the rest) already runs in both
+            directions.</p>
+          `
+        },
+
+        // ── Concept: Reading Back ─────────────────────────────────────────────
+        {
+          type: "concept",
+          id: "reading-back",
+          title: "2. Reading Back: Drive the Negation In",
+          content: `
+            <p>MPL → TFL is pattern-matching in reverse: <code>∀…(… → …)</code> is a
+            universal, <code>∃…(… ∧ …)</code> is a particular, a <code>¬</code> on the
+            consequent or right conjunct is negative quality. But MPL formulas do not always
+            arrive in one of the four shapes — most often a negation sits out front. Two laws
+            drive it inward:</p>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>¬∀x φ &nbsp;↔&nbsp; ∃x ¬φ</code><span>"not everything is thus" = "something is not thus"</span></div>
+              <div class="ex-row"><code>¬∃x φ &nbsp;↔&nbsp; ∀x ¬φ</code><span>"nothing is thus" = "everything is not thus"</span></div>
+            </div>
+
+            <p>Watch them work on "not every senator is a politician":</p>
+
+            <div class="step-trace">
+              <div class="step"><code>¬∀x(Sx → Px)</code><span class="step-note">the denied A-form</span></div>
+              <div class="step step-reduce"><code>∃x ¬(Sx → Px)</code><span class="step-note">negation through the quantifier</span></div>
+              <div class="step step-reduce"><code>∃x(Sx ∧ ¬Px)</code><span class="step-note">a conditional fails only one way: antecedent true, consequent false</span></div>
+              <div class="step step-reduce"><code>+S−P</code><span class="step-note">the O-form — read off the dictionary</span></div>
+            </div>
+
+            <p>Three MPL steps — and now recall how TFL performs the same computation. The
+            contradictory of <code>−S+P</code> is: flip both leading signs. <code>+S−P</code>.
+            One move.</p>
+
+            <div class="grammar-rule">
+              <span class="g-label">The Flip, Exported</span>
+              MPL's quantifier-negation laws plus its negated-connective rewrites compute
+              exactly what TFL's flip-both-leading-signs rule computes. The bridge doesn't
+              just carry statements across — it shows the same inference wearing different
+              costs on each side.
+            </div>
+          `
+        },
+
+        // ── Exercise: The Dictionary ─────────────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-dictionary",
+          title: "Quick Check: The Dictionary",
+          instruction: "Translate in both directions, using the four moves and the negation laws.",
+          kind: "multiple-choice",
+          items: [
+            {
+              promptHtml: mcPrompt("Translate to MPL:", "−(+White+Horse)+Gentle"),
+              choices: [
+                "∀x((Wx ∧ Hx) ∧ Gx)",
+                "∀x((Wx ∧ Hx) → Gx)",
+                "∃x((Wx ∧ Hx) → Gx)",
+                "∀x(Wx → (Hx ∧ Gx))"
+              ],
+              answer: 1,
+              explanation: "Subject sign − picks ∀, so the connective is →; the compound subject term +White+Horse unpacks to Wx ∧ Hx as the antecedent. The first choice claims everything is a gentle white horse; the third is Lesson 4's too-weak trap; the last makes 'white' the subject and 'gentle horse' the predicate."
+            },
+            {
+              promptHtml: mcPrompt("Translate to TFL:", "∃x(Px ∧ ¬Wx)"),
+              choices: [
+                "+P−W — some P isn't W: the O-form",
+                "−P+W — every P is W",
+                "+P+W — some P is W",
+                "−P−W — no P is W"
+              ],
+              answer: 0,
+              explanation: "∃ with ∧ is a particular; the ¬ on the right conjunct is negative quality. Particular quantity (+ subject), negative quality (− predicate): +P−W."
+            },
+            {
+              prompt: "MPL computes the contradictory of an A-form in three steps: negation through the quantifier, then the negated-conditional rewrite, then read off the form. TFL's equivalent is:",
+              choices: [
+                "Obverting the predicate term",
+                "Contraposing the conditional",
+                "Flipping both leading signs — one move",
+                "Running the tree method on the counterclaim"
+              ],
+              choicesAreCode: false,
+              answer: 2,
+              explanation: "The contradictory of −S+P is +S−P: flip the two leading signs. What MPL spreads across quantifier-negation laws and connective rewrites, the sign algebra does in a single stroke — the same computation, priced differently."
+            },
+            {
+              promptHtml: mcPrompt("Translate to MPL:", "±John*+(Lov±Mary*)"),
+              choices: [
+                "∃x(Jx ∧ Lxm)",
+                "Lmj",
+                "∀x(Jx → Lxm)",
+                "Ljm"
+              ],
+              answer: 3,
+              explanation: "Both participants are starred singulars, so both become names — no quantifiers at all: Ljm, an atomic formula. Argument order encodes the roles: Lmj would say Mary loves John. TFL's wild quantity simply vanishes into the constants."
+            }
+          ]
+        },
+
+        // ── Concept: Relationals Across the Bridge ────────────────────────────
+        {
+          type: "concept",
+          id: "relationals-bridge",
+          title: "3. Relationals Across the Bridge",
+          content: `
+            <p>Relational statements are where the two notations divide the labor most
+            differently — and where the translation rule is most illuminating:</p>
+
+            <div class="grammar-rule">
+              <span class="g-label">The Relational Rule</span>
+              Take the signed terms <strong>left to right</strong>; each general term
+              contributes its quantifier (by its sign) and its connective (by its quantity),
+              nested in that order. The relation becomes a many-place predicate whose
+              <strong>variable order records the roles</strong>.
+            </div>
+
+            <p>Watch it on the pair Course 2 used to warn about scope:</p>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>−Man+(Lov+Woman)</code><span>every man loves some woman ↔ <code>∀x(Mx → ∃y(Wy ∧ Lxy))</code></span></div>
+              <div class="ex-row"><code>+Woman+(Lov−Man)</code><span>some woman is loved by every man ↔ <code>∃y(Wy ∧ ∀x(Mx → Lxy))</code></span></div>
+            </div>
+
+            <p>Course 2's passive-transformation lesson warned that this pair says different
+            things — each man may love a different woman in the first, one woman collects all
+            the love in the second — and flagged it with sign positions. On the MPL side the
+            difference is Lesson 4's quantifier order, visible at a glance: <code>∀∃</code>
+            against <code>∃∀</code>. The bridge pays in both directions: MPL makes TFL's scope
+            warnings syntactically loud, and TFL packs MPL's nested formulas into three signed
+            symbols.</p>
+
+            <p>A full worked crossing — "some boy envies every astronaut":</p>
+
+            <div class="step-trace">
+              <div class="step"><code>+Boy+(Env−Astronaut)</code><span class="step-note">TFL: signs in place</span></div>
+              <div class="step step-reduce"><code>∃x(Bx ∧ …)</code><span class="step-note">first signed term: + picks ∃, ∃ picks ∧</span></div>
+              <div class="step step-reduce"><code>∃x(Bx ∧ ∀y(Ay → …))</code><span class="step-note">second signed term: − picks ∀, ∀ picks →</span></div>
+              <div class="step step-reduce"><code>∃x(Bx ∧ ∀y(Ay → Exy))</code><span class="step-note">the relation, variables in role order</span></div>
+            </div>
+
+            <p>And the singular relational case runs the other way in difficulty:
+            <code>±John*+(Lov±Mary*)</code> — TFL's most decorated-looking form — crosses to
+            <code>Ljm</code>, MPL's simplest. Names need no quantifiers; wild quantity was
+            precisely the mark of a term that never needed one.</p>
+          `
+        },
+
+        // ── Concept: One Logic, Two Notations ────────────────────────────────
+        {
+          type: "concept",
+          id: "one-logic",
+          title: "4. One Logic, Two Notations",
+          content: `
+            <p>One more correspondence completes the picture. When Course 3 needed to track an
+            individual through an indirect proof, it introduced <strong>proterms</strong> —
+            pronouns with fixed reference and wild quantity, deployed only when an argument
+            demanded them. MPL's bound variables are the same device made compulsory: every
+            general statement carries its pronouns, whether or not any inference will use
+            them. Course 3 said it already: distributed proterms are TFL's answer to MPL's
+            instantiation rules.</p>
+
+            <p>Now the payoff of having a systematic bridge. Translate an argument premise by
+            premise, conclusion included, and <strong>validity survives the crossing — in both
+            directions</strong>. A cancellation proof on the TFL side certifies the MPL
+            argument; a quantifier derivation on the MPL side certifies the TFL one. Across
+            everything this course has treated, the two systems disagree on no verdict:</p>
+
+            <div class="grammar-rule">
+              <span class="g-label">One Logic</span>
+              TFL and MPL are not rival logics but two notations for one logic. What differs
+              is where each marks the logical work — and what each charges for it.
+            </div>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>quantity</code><span>TFL: a sign on the term · MPL: a quantifier prefix</span></div>
+              <div class="ex-row"><code>scope</code><span>TFL: left-to-right sign order · MPL: left-to-right quantifier order</span></div>
+              <div class="ex-row"><code>pronouns</code><span>TFL: proterms, on demand · MPL: bound variables, mandatory</span></div>
+              <div class="ex-row"><code>inference</code><span>TFL: algebraic cancellation · MPL: instantiation and generalization rules</span></div>
+            </div>
+
+            <p>What translation cannot settle is the question behind the whole comparison: is
+            there anything one notation says that the other cannot? And which handles its own
+            territory more powerfully — the algebra that cancels, or the calculus that
+            instantiates? That reckoning — the limits and the power of TFL — is the final
+            lesson.</p>
+          `
+        },
+
+        // ── Exercise: Relationals Across the Bridge ──────────────────────────
+        {
+          type: "exercise",
+          id: "ex-relational-bridge",
+          title: "Quick Check: Relationals Across the Bridge",
+          instruction: "Left-to-right signs become left-to-right quantifiers. Translate carefully.",
+          kind: "multiple-choice",
+          items: [
+            {
+              promptHtml: mcPrompt("Translate to MPL:", "−Man+(Lov+Woman)"),
+              choices: [
+                "∃y(Wy ∧ ∀x(Mx → Lxy))",
+                "∀x(Mx ∧ ∃y(Wy → Lxy))",
+                "∀x(Mx → ∃y(Wy ∧ Lxy))",
+                "∀x∀y((Mx ∧ Wy) → Lxy)"
+              ],
+              answer: 2,
+              explanation: "Left to right: −Man gives ∀x(Mx → …), +Woman gives ∃y(Wy ∧ …), and Lxy records who loves whom. The first choice reverses the scope; the second crosses the connectives; the last says every man loves every woman."
+            },
+            {
+              promptHtml: mcPrompt("Translate to TFL:", "∃y(Wy ∧ ∀x(Mx → Lxy))"),
+              choices: [
+                "−Man+(Lov+Woman) — every man loves some woman",
+                "+Woman+(Lov−Man) — some woman is loved by every man",
+                "+Woman+(Lov+Man) — some woman is loved by some man",
+                "−Woman+(Lov−Man) — every woman is loved by every man"
+              ],
+              answer: 1,
+              explanation: "The outer ∃ over women comes first, so Woman leads with +; the inner ∀ over men puts −Man in object position. Quantifier order and sign order tell the same left-to-right story: one woman, loved by all."
+            },
+            {
+              promptHtml: "Are " + mcPrompt("", "∀x(Mx → ∃y(Wy ∧ Lxy))") + " and " + mcPrompt("", "∃y(Wy ∧ ∀x(Mx → Lxy))") + " equivalent?",
+              choices: [
+                "No — the second entails the first, not conversely: Course 2's passive-transformation warning, now visible as quantifier order",
+                "Yes — commuting a relational term never changes meaning",
+                "No — they are contradictories",
+                "Yes — both reduce to the same DNF"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "One woman loved by every man gives each man a beloved; each man loving his own woman crowns no common favorite. TFL marked the difference with sign positions, MPL with ∀∃ versus ∃∀ — same distinction, different notation."
+            },
+            {
+              promptHtml: mcPrompt("Translate:", "some boy envies every astronaut"),
+              choices: [
+                "∃x(Bx → ∀y(Ay ∧ Exy))",
+                "∃x(Bx ∧ ∀y(Ay → Exy))",
+                "∀y(Ay → ∃x(Bx ∧ Exy))",
+                "∃x∃y(Bx ∧ Ay ∧ Exy)"
+              ],
+              answer: 1,
+              explanation: "TFL first: +Boy+(Env−Astronaut). Then the rule: + picks ∃ with ∧, − picks ∀ with →, nested in order. The first choice crosses the connectives both ways; the third puts the astronauts in charge of scope ('every astronaut is envied by some boy'); the last says merely that some boy envies some astronaut."
+            }
+          ]
+        },
+
+        // ── Exercise: Final Review ───────────────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-translation-final",
+          isFinal: true,
+          title: "Final Review: The Bridge",
+          instruction: "The four moves, term operations, singulars, and what survives translation.",
+          kind: "multiple-choice",
+          items: [
+            {
+              promptHtml: mcPrompt("Translate to MPL:", "−S−P"),
+              choices: [
+                "∃x(Sx ∧ ¬Px)",
+                "∀x(¬Sx → ¬Px)",
+                "¬∀x(Sx → Px)",
+                "∀x(Sx → ¬Px)"
+              ],
+              answer: 3,
+              explanation: "The E-form: subject − picks ∀ (so →), predicate − becomes ¬. The first choice is the O-form; the second says every non-S is non-P; the third denies the A-form — which is O again, not E."
+            },
+            {
+              prompt: "How do TFL's term operations translate into MPL?",
+              choices: [
+                "(−T) becomes ¬Tx, and the compound term +A+B becomes Ax ∧ Bx — connectives applied to open sentences",
+                "(−T) becomes ∀x¬Tx, a quantified denial",
+                "Term operations have no MPL counterpart",
+                "+A+B becomes Ax → Bx"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "Inside a term, TFL's minus is MPL's ¬ and TFL's conjunction is MPL's ∧ — applied to open sentences, not statements. That is how −(+White+Horse)+Gentle crosses in one pass to ∀x((Wx ∧ Hx) → Gx)."
+            },
+            {
+              prompt: "TFL forms a contradictory by flipping both leading signs. The corresponding MPL computation is:",
+              choices: [
+                "Swapping ∀ and ∃ while keeping the connectives",
+                "Driving ¬ through the quantifier (¬∀ = ∃¬), then rewriting the negated connective",
+                "Adding ¬ to every predicate letter",
+                "Reversing the order of the quantifiers"
+              ],
+              choicesAreCode: false,
+              answer: 1,
+              explanation: "¬∀x(Sx → Px) becomes ∃x¬(Sx → Px), and the failed conditional becomes Sx ∧ ¬Px: quantifier flips, connective flips, quality flips — three rewrites for TFL's one stroke. Swapping quantifiers alone, without touching the connective, produces the too-strong and too-weak traps."
+            },
+            {
+              prompt: "What happens to TFL's starred singular terms at the bridge?",
+              choices: [
+                "They become bound variables",
+                "They become one-place predicates",
+                "They become MPL names, and the wild ± vanishes — names take no quantifier, which is what wild quantity marked all along",
+                "They cannot be translated without the identity predicate"
+              ],
+              choicesAreCode: false,
+              answer: 2,
+              explanation: "±John*+(Lov±Mary*) crosses to the atomic Ljm. A term with wild quantity is one whose all/some distinction carries no information — exactly the terms MPL exempts from quantifiers by making them constants."
+            },
+            {
+              prompt: "What does the translation bridge establish about TFL and MPL?",
+              choices: [
+                "They are two notations for one logic: validity survives translation in both directions, and the systems differ in where they mark quantity, scope, and pronouns — not in their verdicts",
+                "TFL is a fragment of MPL that omits relations",
+                "MPL is inconsistent where TFL is not",
+                "The two systems agree on universal statements but disagree on particulars"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "Premise-by-premise translation preserves validity both ways across everything this course has treated: categoricals, compounds, singulars, relationals. Signs versus quantifiers, sign order versus quantifier order, proterms versus variables — different bookkeeping, one logic. Whether either notation out-reaches the other is the final lesson's question."
+            }
+          ]
+        }
+
+      ]
     }
 
   ]
