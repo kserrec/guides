@@ -287,4 +287,7 @@
     new MutationObserver(() => addTryButtons(stage))
       .observe(stage, { childList: true, subtree: true });
   }
+
+  // Minimal public surface for other lab-side modules (write-exercise.js).
+  window.LambdaLab = { load: loadIntoLab };
 })();

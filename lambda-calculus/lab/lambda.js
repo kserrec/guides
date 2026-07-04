@@ -569,6 +569,67 @@
     return null;
   }
 
+  // ── Answer checking (write-expression exercises) ──────────────────────
+  // Three modes:
+  //   tests: [{args, expect}] — apply the user's expression to each args
+  //     list and compare normal forms with `expect` (the sound way to grade
+  //     function-writing: different implementations of the same function
+  //     have different normal forms, but agree on applications).
+  //   mode 'beta' (default) — user and expected reduce to alpha-equivalent
+  //     normal forms.
+  //   mode 'alpha' — the expression as written is alpha-equivalent to the
+  //     expected one (no reduction; for syntax drills).
+  // Returns { ok } or { ok: false, message } (message names no answers).
+
+  function checkExpression(userSrc, expectedSrc, { mode = 'beta', tests = null, maxSteps = 20000 } = {}) {
+    const show = (t) => {
+      const r = readback(t);
+      return r !== null ? `${r}` : print(t);
+    };
+
+    let userProg;
+    try { userProg = evalProgram(userSrc, { maxSteps }); }
+    catch (e) { return { ok: false, message: e.message }; }
+    if (userProg.status === 'no-expression') {
+      return { ok: false, message: 'Enter an expression (definitions alone have nothing to check).' };
+    }
+
+    if (tests && tests.length) {
+      if (userProg.definitions.length > 0) {
+        return { ok: false, message: 'Enter a single expression (no definition lines) for this one.' };
+      }
+      for (const t of tests) {
+        const argsSrc = t.args.join(' ');
+        let got;
+        try { got = evalProgram(`(${userSrc.trim()}) ${argsSrc}`, { maxSteps }); }
+        catch (e) { return { ok: false, message: e.message }; }
+        if (got.status !== 'normal') {
+          return { ok: false, message: `Applied to ${argsSrc}, your expression never reached a normal form.` };
+        }
+        const want = evalProgram(t.expect, { maxSteps });
+        if (!alphaEq(got.result, want.result)) {
+          return { ok: false, message: `Applied to ${argsSrc} it gives ${show(got.result)}, but should give ${show(want.result)}.` };
+        }
+      }
+      return { ok: true };
+    }
+
+    if (mode === 'alpha') {
+      const expected = parse(expectedSrc);
+      return alphaEq(userProg.expr, expected)
+        ? { ok: true }
+        : { ok: false, message: 'Not the same expression (allowing renamed bound variables). Check the structure.' };
+    }
+
+    if (userProg.status !== 'normal') {
+      return { ok: false, message: 'Your expression never reaches a normal form.' };
+    }
+    const expProg = evalProgram(expectedSrc, { maxSteps });
+    return alphaEq(userProg.result, expProg.result)
+      ? { ok: true }
+      : { ok: false, message: `Your expression reduces to ${show(userProg.result)} — not what's asked for.` };
+  }
+
   // ── HTML printer ──────────────────────────────────────────────────────
   // print() with HTML escaping and an optional highlight for the trace UI:
   //   { path: [...] }  wraps the subterm at that redex path in <mark>
@@ -617,6 +678,6 @@
     Var, Lam, App, termEq, ParseError, tokenize, parse, print,
     freeVars, freshName, subst, step, reduce, getAt, alphaEq,
     isNumeralName, churchNumeral, PRELUDE, PRELUDE_SRC,
-    ProgramError, evalProgram, readback, printHtml,
+    ProgramError, evalProgram, readback, printHtml, checkExpression,
   };
 });

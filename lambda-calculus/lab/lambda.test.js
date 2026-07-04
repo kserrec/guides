@@ -6,7 +6,7 @@ const {
   Var, Lam, App, termEq, ParseError, parse, print,
   freeVars, subst, step, reduce, getAt, alphaEq,
   churchNumeral, PRELUDE, PRELUDE_SRC, ProgramError, evalProgram, readback,
-  printHtml,
+  printHtml, checkExpression,
 } = require('./lambda.js');
 
 let passed = 0, failed = 0;
@@ -521,6 +521,73 @@ test('printHtml: trace invariant — every beta step marks a redex', () => {
     const html = printHtml(before, { path: s.redexPath });
     assert.ok(html.includes('<mark'), `step ${j} produced no mark`);
   });
+});
+
+// ── checkExpression (A8) ──────────────────────────────────────────────────
+
+test('check beta: equivalent expression accepted', () =>
+  assert.ok(checkExpression('NOT TRUE', 'FALSE').ok));
+
+test('check beta: prelude names and raw lambdas interchangeable', () =>
+  assert.ok(checkExpression('(λx.x) (λa.λb.a)', 'TRUE').ok));
+
+test('check beta: wrong answer names no answers in message', () => {
+  const r = checkExpression('AND TRUE TRUE', 'FALSE');
+  assert.strictEqual(r.ok, false);
+  assert.ok(r.message.includes('reduces to TRUE'));
+  assert.ok(!r.message.includes('FALSE'), 'must not leak the expected answer');
+});
+
+test('check beta: divergent input reported', () => {
+  const r = checkExpression('Ω', 'TRUE', { maxSteps: 50 });
+  assert.strictEqual(r.ok, false);
+  assert.ok(r.message.includes('normal form'));
+});
+
+test('check alpha: renamed binders accepted', () =>
+  assert.ok(checkExpression('λa.λb.a', 'λx.λy.x', { mode: 'alpha' }).ok));
+
+test('check alpha: name is not its expansion', () =>
+  assert.strictEqual(checkExpression('TRUE', 'λx.λy.x', { mode: 'alpha' }).ok, false));
+
+test('check alpha: beta-equivalent but structurally different rejected', () =>
+  assert.strictEqual(checkExpression('(λz.z) (λx.λy.x)', 'λx.λy.x', { mode: 'alpha' }).ok, false));
+
+const XOR_TESTS = [
+  { args: ['TRUE', 'TRUE'],   expect: 'FALSE' },
+  { args: ['TRUE', 'FALSE'],  expect: 'TRUE' },
+  { args: ['FALSE', 'TRUE'],  expect: 'TRUE' },
+  { args: ['FALSE', 'FALSE'], expect: 'FALSE' },
+];
+
+test('check tests: reference implementation passes', () =>
+  assert.ok(checkExpression('λb.λc.b (NOT c) c', 'unused', { tests: XOR_TESTS }).ok));
+
+test('check tests: DIFFERENT correct implementation also passes', () =>
+  assert.ok(checkExpression('λb.λc.OR (AND b (NOT c)) (AND (NOT b) c)', 'unused', { tests: XOR_TESTS }).ok));
+
+test('check tests: wrong implementation fails with the failing case', () => {
+  const r = checkExpression('λb.λc.AND b c', 'unused', { tests: XOR_TESTS });
+  assert.strictEqual(r.ok, false);
+  assert.ok(r.message.includes('TRUE TRUE'));
+});
+
+test('check tests: definitions rejected in tests mode', () => {
+  const r = checkExpression('F = λx.x\nF', 'unused', { tests: XOR_TESTS });
+  assert.strictEqual(r.ok, false);
+  assert.ok(r.message.includes('single expression'));
+});
+
+test('check: parse error surfaces cleanly', () => {
+  const r = checkExpression('λx.(x', 'TRUE');
+  assert.strictEqual(r.ok, false);
+  assert.ok(r.message.includes("Expected ')'"));
+});
+
+test('check: defs-only input rejected', () => {
+  const r = checkExpression('F = λx.x', 'TRUE');
+  assert.strictEqual(r.ok, false);
+  assert.ok(r.message.includes('definitions alone'));
 });
 
 // ── Summary ───────────────────────────────────────────────────────────────

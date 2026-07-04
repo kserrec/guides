@@ -1293,3 +1293,47 @@ mark.lab-mark { background: #fde68a; border-radius: 3px; padding: 0 1px; }
   .lab-editor { font-size: 16px; } /* prevents iOS focus auto-zoom */
   .lab-body { padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px)); }
 }
+
+/* Write-expression exercises */
+.we-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.we-input {
+  flex: 1;
+  min-width: 12rem;
+  font-family: 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.95rem;
+  padding: 0.5rem 0.7rem;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  color: var(--dark);
+}
+.we-input:focus { outline: none; border-color: var(--accent-border); }
+.we-input:disabled { background: #f8fafc; color: var(--muted); }
+.we-check {
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+.we-check:hover:not(:disabled) { background: var(--accent-hover); }
+.we-check:disabled { opacity: 0.5; cursor: default; }
+.we-reveal {
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.9rem;
+  background: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+}
+.we-reveal:hover { border-color: var(--accent-border); color: var(--accent); }
+.feedback .lab-try { float: none; margin: 0 0 0 0.6rem; }
+@media (max-width: 520px) { .we-input { font-size: 16px; } }
+.we-prompt {
+  color: var(--text-body);
+  font-size: 0.92rem;
+  margin-bottom: 0.7rem;
+}

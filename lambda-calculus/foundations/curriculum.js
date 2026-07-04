@@ -1225,6 +1225,40 @@ const CURRICULUM = {
           `
         },
 
+        // ── Exercise: Write It Yourself ─────────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-write-booleans",
+          title: "Write It Yourself",
+          instruction: "Now write the expressions — type \\ to get λ. Your answer is checked by reducing it, so any equivalent expression counts.",
+          kind: "write-expression",
+          items: [
+            {
+              prompt: "Write TRUE as a raw lambda expression — no names, just λ, variables, and parentheses.",
+              answer: "λx.λy.x",
+              check: "alpha",
+              explanation: "TRUE = λx.λy.x — take two arguments, return the first. Any variable names work: λa.λb.a is the same expression."
+            },
+            {
+              prompt: "Using the names you've learned (NOT, AND, OR, TRUE, FALSE), write an expression that reduces to FALSE — without writing FALSE itself.",
+              answer: "NOT TRUE",
+              check: "beta",
+              explanation: "NOT TRUE → TRUE FALSE TRUE → FALSE is the shortest route, but anything that reduces to λx.λy.y counts."
+            },
+            {
+              prompt: "Write XOR — a function of two booleans that gives TRUE exactly when they differ. It's checked by applying it to all four input pairs.",
+              answer: "λb.λc.b (NOT c) c",
+              tests: [
+                { args: ["TRUE", "TRUE"],   expect: "FALSE" },
+                { args: ["TRUE", "FALSE"],  expect: "TRUE" },
+                { args: ["FALSE", "TRUE"],  expect: "TRUE" },
+                { args: ["FALSE", "FALSE"], expect: "FALSE" },
+              ],
+              explanation: "One way: λb.λc.b (NOT c) c — if b is TRUE the answer is NOT c; if b is FALSE the answer is c itself. Any implementation passing all four cases is correct."
+            },
+          ]
+        },
+
         // ── Final Review ────────────────────────────────────────────────────
         {
           type: "exercise",

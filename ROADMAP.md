@@ -115,9 +115,17 @@ Fixes: identifiers accept Unicode letters except λ (courses use `ω`/`Ω`), cou
 `ω`/`Ω` prelude entries, parse-error caret in the panel (ProgramError carries
 source/offset), iOS focus-zoom prevention + safe-area insets. 140 tests.
 
-### A8 (future, optional). `write-expression` exercise kind
-Reuse the A1–A3 engine to power free-input exercises checked by alpha/beta equivalence.
-Big pedagogical win; deliberately out of scope until the lab is stable.
+### A8. `write-expression` exercise kind ✅
+Free-input exercises graded by the lab engine. Three modes per item: `tests`
+(apply the user's expression to argument lists and compare outputs — required for
+function-writing tasks, since different correct implementations have different normal
+forms), `beta` (normal-form equivalence, default), `alpha` (as-written, for syntax drills).
+Registered into `ExerciseHandlers` from `lab/write-exercise.js` — engine.js and TFL
+untouched. Retries allowed; "Show answer" after 3 misses scores as incorrect; wrong-answer
+feedback never leaks the expected answer; scoring reuses the engine's countCorrect
+convention. First real usage: "Write It Yourself" in Foundations Lesson 5 (TRUE from
+scratch, reduce-to-FALSE, XOR graded by truth table). Authoring pattern for future
+lessons: add `kind: "write-expression"` blocks — no new wiring needed.
 
 ---
 
