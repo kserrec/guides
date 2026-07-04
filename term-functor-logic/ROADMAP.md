@@ -72,9 +72,13 @@ Book: Ch. 6
 
 | # | Title | Book | Status |
 |---|-------|------|--------|
-| 1 | The Dictum Applied to Relational Arguments | Ch. 6 §§1–2 | 🔲 |
+| 1 | The Dictum Applied to Relational Arguments | Ch. 6 §§1–2 | ✅ |
 | 2 | Distributed Terms and DDO | Ch. 6 §§3–5 | 🔲 |
 | 3 | Indirect Proofs and Distributed Proterms | Ch. 6 §§6–9 | 🔲 |
+
+L1 conventions to carry forward: donor/host vocabulary from Course 2 L6; "cancellation is
+position-blind"; the tautology move `−(R+T)+(R+T)`; L1 defers *computing* distribution inside
+complexes (net signs, sign multiplication) to L2 — L1 only uses "+ occurrence vs − occurrence."
 
 ---
 

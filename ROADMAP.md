@@ -134,7 +134,7 @@ lessons: add `kind: "write-expression"` blocks — no new wiring needed.
 Lesson-level content plan lives in `term-functor-logic/ROADMAP.md` (source: Sommers &
 Englebretsen, *An Invitation to Formal Reasoning*). Steps here are execution-sized:
 
-- **B1** 🔲 Scaffold Course 3 (`relational-syllogisms/`: index.html, curriculum skeleton, hub card) + write Lesson 1 (Dictum applied to relational arguments).
+- **B1** ✅ Scaffold Course 3 (`relational-syllogisms/`: index.html, curriculum skeleton, hub card) + write Lesson 1 (Dictum applied to relational arguments — position-blind cancellation, failure modes, the De Morgan horse's-head via the tautology move).
 - **B2** 🔲 Lesson 2 (Distributed terms and DDO).
 - **B3** 🔲 Lesson 3 (Indirect proofs and distributed proterms).
 - **B4** 🔲 Scaffold Course 4 (`statement-logic-and-mpl/`) + Lesson 1 (Contradictions, tautologies, contingency).
