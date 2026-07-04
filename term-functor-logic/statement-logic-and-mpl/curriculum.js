@@ -370,6 +370,324 @@ const CURRICULUM = {
         }
 
       ]
+    },
+
+    // ════════════════════════════════════════════════════════════════════════
+    // LESSON 2: Direct Proofs and the Tree Method
+    // ════════════════════════════════════════════════════════════════════════
+    {
+      id: "lesson-02",
+      title: "Lesson 2: Direct Proofs and the Tree Method",
+      navTitle: "Proofs & Trees",
+      description: "Derive conclusions line by line with the one rule you already own — then meet the tree method, a systematic search for consistency that finds counterexamples when they exist and certifies validity when they don't.",
+      completionText: "Two working tools, one signature. Direct proofs derive the conclusion by cancellation — every classical statement rule is Barbara wearing different clothes. Trees decompose a set of statements into every world that could satisfy it: all branches closing certifies a contradiction, an open branch hands you the counterexample. Next lesson: disjunctive normal form, and the striking result that statement logic is not a rival system but a branch of the syllogistic.",
+      blocks: [
+
+        // ── Concept: Proving, Not Just Checking ──────────────────────────────
+        {
+          type: "concept",
+          id: "direct-proofs",
+          title: "1. Proving, Not Just Checking",
+          content: `
+            <p>Lesson 1 gave you the target: validity means the counterclaim is a contradiction.
+            This lesson gives you two ways to <em>demonstrate</em> it. The first is the
+            <strong>direct proof</strong>: start from the premises and derive the conclusion by
+            the cancellation you have used since the Introduction.</p>
+
+            <p>One recall makes statement proofs run (Introduction, Lesson 8): a bare premise
+            <em>p</em> — "p is true" — transcribes as the I-form self-predication:</p>
+
+            <div class="syntax-box"><code>p &nbsp;=&nbsp; +p+p</code></div>
+
+            <p>With that, watch a three-premise argument fall to pure algebra —
+            <em>if p then q; if q then r; p; therefore r</em>:</p>
+
+            <div class="proof-box">
+              <div class="proof-row"><code>1.&nbsp; −p+q</code><span class="proof-note">premise</span></div>
+              <div class="proof-row"><code>2.&nbsp; −q+r</code><span class="proof-note">premise</span></div>
+              <div class="proof-row"><code>3.&nbsp; +p+p</code><span class="proof-note">premise: p</span></div>
+              <div class="proof-row"><code>4.&nbsp; +p+q</code><span class="proof-note">DDO 1, 3 — p cancels (modus ponens)</span></div>
+              <div class="proof-row"><code>5.&nbsp; +q+q</code><span class="proof-note">simplification of 4: q holds</span></div>
+              <div class="proof-row"><code>6.&nbsp; +q+r</code><span class="proof-note">DDO 2, 5 — q cancels</span></div>
+              <div class="proof-row proof-conclusion"><span class="proof-therefore">∴</span><code>+r+r</code><span class="proof-note">simplification of 6: r ✓</span></div>
+            </div>
+
+            <p>Every line is one of two moves: a <strong>DDO cancellation</strong> (a universal
+            conditional donating into a host, exactly as with terms) or a
+            <strong>simplification</strong> (from "p and q," keep a conjunct). There are no
+            special statement-logic rules to memorize — the syllogistic engine runs unmodified
+            on propositional terms.</p>
+          `
+        },
+
+        // ── Concept: One Rule, Many Names ────────────────────────────────────
+        {
+          type: "concept",
+          id: "one-rule",
+          title: "2. One Rule, Many Names",
+          content: `
+            <p>The classical rules of statement logic are this same cancellation viewed from
+            different angles:</p>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>−p+q, +p+p ⊢ +p+q</code><span><strong>Modus ponens</strong> — Barbara with middle term p</span></div>
+              <div class="ex-row"><code>−p+q ⊢ −(−q)+(−p)</code><span><strong>Contraposition</strong> — the A-form's valid immediate inference (Introduction L4)</span></div>
+              <div class="ex-row"><code>−(−q)+(−p), +(−q)+(−q) ⊢ +(−q)+(−p)</code><span><strong>Modus tollens</strong> — ponens on the contrapositive: not-q yields not-p</span></div>
+              <div class="ex-row"><code>−p+q, −q+r ⊢ −p+r</code><span><strong>Hypothetical syllogism</strong> — Barbara pure and simple</span></div>
+              <div class="ex-row"><code>−(−p)+q, +(−p)+(−p) ⊢ +(−p)+q</code><span><strong>Disjunctive syllogism</strong> — "p or q" in conditional form, fed with not-p</span></div>
+            </div>
+
+            <p>Note the pattern in tollens and the disjunctive syllogism: negative terms like
+            <code>(−p)</code> are just terms. "Not-q" enters a proof as <code>+(−q)+(−q)</code> —
+            the bare-premise form of the term (−q) — and cancels like anything else.</p>
+
+            <div class="grammar-rule">
+              <span class="g-label">Key Idea</span>
+              Statement logic adds vocabulary, not machinery: propositional terms, negative
+              terms, and the transcriptions of "and," "or," "if." The inference engine —
+              DDO, contraposition, simplification — is the one you have had all along.
+            </div>
+          `
+        },
+
+        // ── Exercise: Proof Steps ────────────────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-proof-steps",
+          title: "Quick Check: Justify the Step",
+          instruction: "Each item shows premises or a proof situation. Pick the correct next line or diagnosis.",
+          kind: "multiple-choice",
+          items: [
+            {
+              promptHtml: mcPrompt("From", "−rain+wet &nbsp;and&nbsp; +rain+rain"),
+              choices: ["+rain+wet — DDO, rain cancels", "+wet−rain", "−rain−wet", "Nothing follows"],
+              answer: 0,
+              explanation: "Modus ponens as Barbara: the bare premise +rain+rain hosts, the conditional donates. Rain cancels: +rain+wet, and simplification then yields wet."
+            },
+            {
+              promptHtml: mcPrompt("From", "−p+q &nbsp;and&nbsp; +(−q)+(−q)"),
+              choices: [
+                "+(−q)+(−p) — contrapose 1, then DDO (modus tollens)",
+                "+p+q — modus ponens",
+                "+q+q — simplification",
+                "Nothing follows — (−q) is not a term"
+              ],
+              answer: 0,
+              explanation: "Contrapose the conditional: −(−q)+(−p). The bare not-q premise hosts it; (−q) cancels, leaving +(−q)+(−p) — not-p holds. Modus tollens is ponens on the contrapositive."
+            },
+            {
+              promptHtml: mcPrompt("'p or q' with premise not-p:", "−(−p)+q &nbsp;and&nbsp; +(−p)+(−p)"),
+              choices: ["+(−p)+q — so q holds", "+p+q", "+(−q)+(−p)", "−p+(−q)"],
+              answer: 0,
+              explanation: "The disjunction in conditional form says 'if not-p then q.' The bare not-p premise hosts it; (−p) cancels: +(−p)+q, and simplification gives q. The disjunctive syllogism is one more Barbara."
+            },
+            {
+              promptHtml: mcPrompt("What is wrong with: from", "−p+q &nbsp;and&nbsp; +q+q &nbsp;infer&nbsp; +p+p"),
+              choices: [
+                "q occurs + in both statements — no cancellation licenses the step (affirming the consequent)",
+                "Nothing — this is modus ponens",
+                "The premise +q+q is ill-formed",
+                "The inference is valid but needs three premises"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "The middle term q is undistributed in both — the same failed signature as the undistributed middle from Course 2. Knowing 'if p then q' and 'q' tells you nothing about p; this is the classic fallacy of affirming the consequent."
+            }
+          ]
+        },
+
+        // ── Concept: The Tree Method ─────────────────────────────────────────
+        {
+          type: "concept",
+          id: "tree-method",
+          title: "3. The Tree Method",
+          content: `
+            <p>Direct proofs need insight — you choose which cancellation to make next. The
+            <strong>tree method</strong> needs none: it mechanically decomposes a set of
+            statements into every kind of world that could satisfy it. If every path dies,
+            no world satisfies the set: it is a contradiction.</p>
+
+            <p>Three decomposition rules, straight from the transcriptions:</p>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>+p+q</code><span><strong>and — stack:</strong> the branch gets both p and q</span></div>
+              <div class="ex-row"><code>−p+q</code><span><strong>if — branch:</strong> split into (−p) &nbsp;|&nbsp; q — the two ways a conditional is true</span></div>
+              <div class="ex-row"><code>−(−p)−(−q)</code><span><strong>or — branch:</strong> split into p &nbsp;|&nbsp; q</span></div>
+            </div>
+
+            <p>A branch <strong>closes</strong> (×) when it contains a term and its negation —
+            the +X−X signature surfacing as X and (−X) on one path. To test an argument, tree
+            its <em>counterclaim</em>. Modus ponens:</p>
+
+            <div class="syntax-box"><pre>
+1.  −p+q      (premise)
+2.  p         (premise)
+3.  (−q)      (denied conclusion)
+
+     ┌────┴────┐
+   (−p)        q
+    ×          ×
+ closes: 2  closes: 3</pre></div>
+
+            <p>Line 1 branches: either (−p) or q. The left path holds both p (line 2) and (−p) —
+            closed. The right path holds both (−q) (line 3) and q — closed. Every path dies:
+            the counterclaim is a contradiction, and modus ponens is valid.</p>
+
+            <div class="grammar-rule">
+              <span class="g-label">Tree Verdicts</span>
+              All branches closed ⇒ the set is <strong>inconsistent</strong> (for a
+              counterclaim: the argument is <strong>valid</strong>). At least one completed
+              open branch ⇒ the set is <strong>consistent</strong> — and the open branch tells
+              you exactly which world satisfies it.
+            </div>
+          `
+        },
+
+        // ── Concept: Reading Open Branches ───────────────────────────────────
+        {
+          type: "concept",
+          id: "open-branches",
+          title: "4. What an Open Branch Tells You",
+          content: `
+            <p>Trees do more than certify validity — they <em>build counterexamples</em>. Take
+            the fallacy of affirming the consequent: <em>if p then q; q; therefore p</em>.
+            Tree the counterclaim:</p>
+
+            <div class="syntax-box"><pre>
+1.  −p+q      (premise)
+2.  q         (premise)
+3.  (−p)      (denied conclusion)
+
+     ┌────┴────┐
+   (−p)        q
+   open       open</pre></div>
+
+            <p>Neither path contains a clash — the left branch holds (−p), q, (−p); the right
+            holds q, (−p), q. Read either open branch as a world: <strong>p false, q true</strong>.
+            In that world both premises are true and the conclusion is false. The tree did not
+            just say "invalid" — it handed you the world that proves it.</p>
+
+            <p>And the same machine classifies single statements into Lesson 1's bins:</p>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>tree of S closes</code><span>S is a <strong>contradiction</strong></span></div>
+              <div class="ex-row"><code>tree of S's contradictory closes</code><span>S is a <strong>tautology</strong></span></div>
+              <div class="ex-row"><code>both trees stay open</code><span>S is <strong>contingent</strong> — each open branch is a witnessing world</span></div>
+            </div>
+
+            <div class="callout-note">
+              <span class="cn-label">Why It Terminates</span>
+              Each rule application strictly shrinks what remains to decompose — a compound
+              becomes its parts, never anything larger. Finitely many statements, finitely many
+              parts: every tree finishes, and every verdict is mechanical. Logic's three bins,
+              sorted by a procedure.
+            </div>
+          `
+        },
+
+        // ── Exercise: Tree Verdicts ──────────────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-tree-verdicts",
+          title: "Quick Check: Valid or Invalid?",
+          instruction: "Tree each counterclaim in your head: branch the conditionals and disjunctions, close on any clash. All branches close = valid.",
+          kind: "valid-or-invalid",
+          items: [
+            {
+              exprHtml: syl([["−p+q", "if p then q"], ["+p+p", "p"]], ["+q+q", "q"]),
+              answer: "valid",
+              explanation: "Counterclaim {−p+q, p, (−q)}. The conditional branches into (−p) | q; the left closes against p, the right against (−q). All closed — modus ponens is valid."
+            },
+            {
+              exprHtml: syl([["−p+q", "if p then q"], ["+q+q", "q"]], ["+p+p", "p"]),
+              answer: "invalid",
+              explanation: "Counterclaim {−p+q, q, (−p)}. Both branches of the conditional stay open — the world p-false, q-true satisfies the whole set. Affirming the consequent, with the counterexample handed to you."
+            },
+            {
+              exprHtml: syl([["−(−p)+q", "p or q"], ["+(−p)+(−p)", "not-p"]], ["+q+q", "q"]),
+              answer: "valid",
+              explanation: "Counterclaim {−(−p)+q, (−p), (−q)}. The disjunction branches into p | q; the left closes against (−p), the right against (−q). All closed — the disjunctive syllogism is valid."
+            },
+            {
+              exprHtml: syl([["−p+q", "if p then q"], ["+(−p)+(−p)", "not-p"]], ["+(−q)+(−q)", "not-q"]),
+              answer: "invalid",
+              explanation: "Counterclaim {−p+q, (−p), q}. The conditional branches into (−p) | q — both consistent with what the branch already holds. Open branch: p false, q true. Denying the antecedent fails, and the tree shows the world where it fails."
+            },
+            {
+              exprHtml: syl([["−p+q", "if p then q"], ["−q+r", "if q then r"]], ["−p+r", "if p then r"]),
+              answer: "valid",
+              explanation: "Counterclaim {−p+q, −q+r, +p−r}. The particular conjunct stacks p and (−r); the first conditional branches (−p)|q — left closes on p; the survivor's second conditional branches (−q)|r — both close. Hypothetical syllogism, certified by tree."
+            }
+          ]
+        },
+
+        // ── Exercise: Final Review ───────────────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-proofs-trees-final",
+          isFinal: true,
+          title: "Final Review: Proofs and Trees",
+          instruction: "Direct proof moves, tree rules, and what open branches mean.",
+          kind: "multiple-choice",
+          items: [
+            {
+              promptHtml: mcPrompt("A bare premise p enters a proof as:", "?"),
+              choices: ["+p+p — the I-form self-predication", "−p+p", "+p−p", "(−p)"],
+              answer: 0,
+              explanation: "'p is true' = 'some p-state is a p-state' in the singleton universe. This is what lets bare premises host conditionals in DDO cancellations (Introduction L8)."
+            },
+            {
+              promptHtml: mcPrompt("The tree rule for", "−(−p)−(−q)"),
+              choices: [
+                "Branch into p | q — the two ways a disjunction is true",
+                "Stack both (−p) and (−q)",
+                "Branch into (−p) | (−q)",
+                "Close the branch immediately"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "The four-minus form is 'p or q': a world satisfies it via p or via q. Branching explores both. (Stacking is for conjunctions, where a world must supply both parts.)"
+            },
+            {
+              prompt: "A completed tree of an argument's counterclaim has one open branch. Then:",
+              choices: [
+                "The argument is invalid, and the branch describes a counterexample world",
+                "The argument is valid — one branch is within tolerance",
+                "The counterclaim is a tautology",
+                "The tree must be restarted with the conclusion undenied"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "An open branch is a consistent way for all counterclaim members to be true — premises true, conclusion false. That is the definition of a counterexample, read directly off the branch."
+            },
+            {
+              promptHtml: mcPrompt("To show a statement S is a tautology by tree, you tree:", "?"),
+              choices: [
+                "S's contradictory, and find every branch closes",
+                "S itself, and find every branch closes",
+                "S itself, and find an open branch",
+                "Both S and its contradictory, and find both open"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "Tautology = contradictory is a contradiction (Lesson 1's test). The tree certifies contradiction by closing every branch. Treeing S itself and closing everything would show S is a contradiction instead."
+            },
+            {
+              promptHtml: mcPrompt("In the proof of r from", "−p+q, −q+r, p"),
+              choices: [
+                "Every line is DDO cancellation or simplification — no new rules",
+                "Modus ponens and modus tollens are primitive rules added for statements",
+                "The tree method must be used first",
+                "The proof requires pronominalization"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "Statement logic adds vocabulary (propositional and negative terms, the transcriptions) but no machinery. MP, MT, hypothetical and disjunctive syllogism are all the one cancellation — Barbara — in different dress."
+            }
+          ]
+        }
+
+      ]
     }
 
   ]

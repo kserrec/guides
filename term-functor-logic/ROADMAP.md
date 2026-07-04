@@ -90,7 +90,7 @@ Book: Ch. 7 + Ch. 8
 | # | Title | Book | Status |
 |---|-------|------|--------|
 | 1 | Contradictions, Tautologies, and Contingency | Ch. 7 §§1–5 | ✅ |
-| 2 | Direct Proofs and the Tree Method | Ch. 7 §§6–13 | 🔲 |
+| 2 | Direct Proofs and the Tree Method | Ch. 7 §§6–13 | ✅ |
 | 3 | DNF and the Subsumption of Statement Logic | Ch. 7 §§8, 16–17 | 🔲 |
 | 4 | MPL's Syntax and the Predicate Way | Ch. 8 §§1–6 | 🔲 |
 | 5 | Translating Between TFL and MPL | Ch. 8 §§7–10, 12–13 | 🔲 |
