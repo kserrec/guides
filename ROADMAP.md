@@ -238,7 +238,9 @@ bolted on. Learners get to *run* the algebra all four courses taught.
   documented in-code.
 - **D5** 🔲 Panel UI on TFL course pages, mirroring the λ Lab: toggle button, right panel,
   per-pathname localStorage buffer, editor + query line + derivation pane with rule names,
-  parse-error caret; input palette for − + ± ( ) *.
+  parse-error caret; input palette for − + ± ( ) *. Import/export of fact files: load a
+  plain-text `.tfl` document into the editor via file picker (client-side FileReader — the
+  file never leaves the browser) and download the current program back out.
 - **D6** 🔲 Lesson integration: "▸ try" chips on TFL syntax boxes that parse as programs
   (A6's MutationObserver pattern); curated examples per course (Barbara, horse's head, a
   REGAL check, the proterm proof); verified headlessly across all four courses.
