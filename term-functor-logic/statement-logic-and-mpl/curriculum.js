@@ -1055,6 +1055,398 @@ const CURRICULUM = {
         }
 
       ]
+    },
+
+    // ════════════════════════════════════════════════════════════════════════
+    // LESSON 4: MPL's Syntax and the Predicate Way
+    // ════════════════════════════════════════════════════════════════════════
+    {
+      id: "lesson-04",
+      title: "Lesson 4: MPL's Syntax and the Predicate Way",
+      navTitle: "The Predicate Way",
+      description: "Learn to read modern predicate logic natively — names, predicates, quantifiers, and bound variables — and see with TFL-trained eyes what the predicate way of building statements buys, and what it costs.",
+      completionText: "You can now read MPL as its speakers do: atomic predications of names, glued by the statement-logic connectives, generalized by quantifiers whose variables work as full-time pronouns. You have also seen the costs of the predicate way — a caste system separating names from predicates, one categorical form split across two connectives, and vacuous truth settling existential import by fiat. Next lesson the two notations finally meet: systematic translation between TFL's signed terms and MPL's quantified formulas, in both directions.",
+      blocks: [
+
+        // ── Concept: The Predicate Way ────────────────────────────────────────
+        {
+          type: "concept",
+          id: "predicate-way",
+          title: "1. The Predicate Way",
+          content: `
+            <p>Since the Introduction's first lesson, TFL has parsed "every senator is a
+            politician" the <em>term way</em>: two terms, joined by a functor that carries
+            quantity and quality — <code>−Senator+Politician</code>. Modern predicate logic
+            — <strong>MPL</strong>, the logic of Frege, Russell, and every standard textbook
+            since — parses the same sentence the <em>predicate way</em>: as a statement about
+            <em>everything</em>. Take any object whatever: if it is a senator, it is a
+            politician.</p>
+
+            <p>To say such things, MPL builds from a kit with strictly sorted parts:</p>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>s, a, b</code><span><strong>names</strong> (individual constants) — each denotes one individual</span></div>
+              <div class="ex-row"><code>x, y, z</code><span><strong>variables</strong> — pronouns awaiting a quantifier</span></div>
+              <div class="ex-row"><code>W, P, L</code><span><strong>predicates</strong> — each takes a fixed number of subjects</span></div>
+              <div class="ex-row"><code>Ws</code><span>atomic statement: "Socrates is wise" — predicate W applied to name s</span></div>
+              <div class="ex-row"><code>Lab</code><span>atomic statement: "a loves b" — a two-place predicate takes two names</span></div>
+            </div>
+
+            <p>Note the word <em>sorted</em>. In TFL there is one syntactic category — the
+            term — and "Socrates," "wise," and "loves Mary" all belong to it. MPL splits the
+            vocabulary into castes: <strong>names may only occupy subject positions; general
+            terms may only be predicates</strong>. "Socrates is wise" goes through as
+            <code>Ws</code>, but "some philosopher is Socrates" cannot put Socrates in
+            predicate position — MPL must reach for a special identity predicate and write
+            <code>∃x(Px ∧ x = s)</code>.</p>
+
+            <div class="callout-note">
+              <span class="cn-label">Recall</span>
+              TFL needed no identity relation at all: "Twain is Clemens" is an ordinary
+              monadic categorical with a singular predicate term, and the laws of identity
+              fell out as theorems (The Full Language, Lesson 7). Where the caste system
+              forces new machinery, the term way already had room.
+            </div>
+
+            <p>The statement-connectives you know from Lessons 1–2 reappear in MPL's dress,
+            and they are exactly your transcriptions read backward:</p>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>¬p</code><span>not-p — TFL's negative term <code>(−p)</code></span></div>
+              <div class="ex-row"><code>p ∧ q</code><span>p and q — TFL's <code>+p+q</code></span></div>
+              <div class="ex-row"><code>p → q</code><span>if p then q — TFL's <code>−p+q</code></span></div>
+              <div class="ex-row"><code>p ∨ q</code><span>p or q — TFL's four-minus form</span></div>
+            </div>
+          `
+        },
+
+        // ── Concept: Quantifiers and Bound Variables ─────────────────────────
+        {
+          type: "concept",
+          id: "quantifiers-variables",
+          title: "2. Quantifiers and Bound Variables",
+          content: `
+            <p>Atomic predications and connectives only talk about named individuals. To
+            generalize, MPL adds two <strong>quantifiers</strong>, each governing a
+            variable:</p>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>∀x( … x … )</code><span>"everything is such that … it …"</span></div>
+              <div class="ex-row"><code>∃x( … x … )</code><span>"something is such that … it …"</span></div>
+            </div>
+
+            <p>Read the universal A-form the predicate way, step by step:</p>
+
+            <div class="step-trace">
+              <div class="step"><code>∀x(Mx → Tx)</code><span class="step-note">every man is mortal</span></div>
+              <div class="step step-reduce"><span>"Take anything whatever — call it x —</span></div>
+              <div class="step step-reduce"><span>if <em>it</em> is a man, then <em>it</em> is mortal."</span></div>
+            </div>
+
+            <p>The variable is a <strong>pronoun</strong>: it names nothing, refers to no one,
+            and exists to cross-reference the quantifier's "anything" through the formula. You
+            have met this device — Course 3's proterms did precisely this work in indirect
+            proofs. The difference is economy: TFL reaches for a proterm only when an argument
+            needs one; MPL's grammar requires the pronouns <em>everywhere</em>, in every
+            general statement it can write.</p>
+
+            <p>A quantifier binds every occurrence of its variable inside its
+            <strong>scope</strong> — the parenthesized formula it governs. A variable no
+            quantifier binds is <strong>free</strong>, and a formula with a free variable is
+            an <strong>open sentence</strong>: "x is wise" is neither true nor false, any more
+            than "it is wise" said with no antecedent. Only when every variable is bound (or
+            replaced by a name) does the formula become a statement.</p>
+
+            <div class="grammar-rule">
+              <span class="g-label">What Counts as an MPL Statement</span>
+              Atomic predications of names, combined by <code>¬ ∧ ∨ →</code>, generalized by
+              <code>∀</code> and <code>∃</code> — with <strong>no variable left free</strong>.
+            </div>
+          `
+        },
+
+        // ── Exercise: Reading MPL ─────────────────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-reading-mpl",
+          title: "Quick Check: Reading MPL",
+          instruction: "Atomic formulas, quantifier readings, and bound versus free.",
+          kind: "multiple-choice",
+          items: [
+            {
+              promptHtml: mcPrompt("What does this say?", "∀x(Mx → Tx)"),
+              choices: [
+                "Everything is both M and T",
+                "Take anything whatever: if it is M, then it is T — every M is T",
+                "Something is M, and it is T",
+                "The individual named x is M and therefore T"
+              ],
+              choicesAreCode: false,
+              answer: 1,
+              explanation: "∀x reads 'everything is such that,' and the arrow makes the claim conditional on being M. The x is a bound pronoun, not a name — the formula mentions no individual in particular."
+            },
+            {
+              promptHtml: mcPrompt("In", "∃x(Px ∧ Wx)") + " what is x?",
+              choices: [
+                "A name for the particular individual the formula discovered",
+                "A bound variable — a pronoun cross-referencing 'something': something is such that it is P and it is W",
+                "A one-place predicate",
+                "A free variable, so the formula has no truth value"
+              ],
+              choicesAreCode: false,
+              answer: 1,
+              explanation: "The quantifier says 'something'; both occurrences of x are its pronouns, bound inside its scope. No individual is named — the statement is true if at least one thing is both P and W, whoever that may be."
+            },
+            {
+              prompt: "Which of these is an open sentence — no truth value until repaired?",
+              choices: [
+                "∀x(Sx → Px)",
+                "Ws",
+                "∃y Lay",
+                "Px ∧ Wx"
+              ],
+              answer: 3,
+              explanation: "In Px ∧ Wx nothing binds x: it is 'it is P and it is W' with no antecedent for 'it.' The first formula binds x with ∀, the second contains no variable at all, and in the third ∃y binds y while a is a name."
+            },
+            {
+              prompt: "In MPL, 'Socrates is wise' is:",
+              choices: [
+                "Ws — the predicate W applied to the name s",
+                "∃x(Sx ∧ Wx) — names must enter through a quantifier",
+                "±Socrates* + Wise — MPL borrows TFL's wild quantity",
+                "sW — the name applied to the predicate"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "Singular statements are MPL's base case — an atomic predication, no quantifier needed. Contrast TFL, where singulars earned special treatment (wild quantity); and note the caste rule: s could never itself be predicated."
+            }
+          ]
+        },
+
+        // ── Concept: The Four Forms, the Hard Way ─────────────────────────────
+        {
+          type: "concept",
+          id: "four-forms-mpl",
+          title: "3. The Four Forms, the Hard Way",
+          content: `
+            <p>Here are the four categorical forms you have written with two signs since the
+            Introduction, rendered the predicate way:</p>
+
+            <div class="syntax-box">
+              <table>
+                <tr><td>A: every S is P</td><td><code>−S+P</code></td><td><code>∀x(Sx → Px)</code></td></tr>
+                <tr><td>E: no S is P</td><td><code>−S−P</code></td><td><code>∀x(Sx → ¬Px)</code></td></tr>
+                <tr><td>I: some S is P</td><td><code>+S+P</code></td><td><code>∃x(Sx ∧ Px)</code></td></tr>
+                <tr><td>O: some S isn't P</td><td><code>+S−P</code></td><td><code>∃x(Sx ∧ ¬Px)</code></td></tr>
+              </table>
+            </div>
+
+            <p>Look down the MPL column and notice the <strong>asymmetry</strong>: universal
+            forms take the conditional, particular forms take the conjunction. This is not a
+            style choice — cross the wires and the meaning breaks:</p>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>∀x(Sx ∧ Px)</code><span><strong>too strong</strong> — "everything is an S and a P": every object in the universe a senator-politician</span></div>
+              <div class="ex-row"><code>∃x(Sx → Px)</code><span><strong>too weak</strong> — a conditional with a false antecedent is true, so any one non-S in the domain verifies it</span></div>
+            </div>
+
+            <p>The second trap is the classic. "Some senator is a politician" rendered as
+            <code>∃x(Sx → Px)</code> comes out true in a universe containing one teacup and
+            no senators — the teacup fails to be S, the conditional holds, "something" is
+            found. Every student of MPL burns a hand on this stove once.</p>
+
+            <div class="grammar-rule">
+              <span class="g-label">The Asymmetry</span>
+              MPL's quantifiers cannot carry the subject–predicate tie by themselves, so each
+              quantity conscripts a different connective: <em>every</em> pairs with
+              <code>→</code>, <em>some</em> pairs with <code>∧</code>. What TFL writes as one
+              form with different signs, MPL splits across two connectives.
+            </div>
+
+            <p>The asymmetry also settles existential import — by fiat of the truth-functions.
+            In a world with no unicorns, <code>∀x(Ux → Wx)</code> ("all unicorns have wings")
+            is <strong>true</strong>: every instance of the conditional has a false antecedent.
+            Meanwhile <code>∃x(Ux ∧ Wx)</code> is false. So in MPL, A never entails I;
+            universal statements about empty kinds are all true at once — including "all
+            unicorns lack wings."</p>
+          `
+        },
+
+        // ── Concept: Relations, Order, and the Two Towers ─────────────────────
+        {
+          type: "concept",
+          id: "relations-two-towers",
+          title: "4. Relations, Quantifier Order, and the Two Towers",
+          content: `
+            <p>Where MPL earned its reputation is relational generality. A two-place predicate
+            plus nested quantifiers expresses "every man loves some woman":</p>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>−Man+(Lov+Woman)</code><span>TFL — Course 2, Lesson 2: signs inside the relational complex</span></div>
+              <div class="ex-row"><code>∀x(Mx → ∃y(Wy ∧ Lxy))</code><span>MPL — a quantifier per participant, pronouns keeping them apart</span></div>
+            </div>
+
+            <p>With nested quantifiers, <strong>order is meaning</strong>:</p>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>∀x∃y Lxy</code><span>everyone loves someone — each x finds a y, perhaps a different y each time</span></div>
+              <div class="ex-row"><code>∃y∀x Lxy</code><span>someone is loved by everyone — one y serves all x</span></div>
+            </div>
+
+            <p>The second entails the first — one universally-loved y supplies every x with a
+            beloved — but not conversely: from each having their own, no common favorite
+            follows. TFL drew this same distinction with the placement of signs inside the
+            complex; MPL draws it with the left-to-right order of quantifiers. Both notations
+            mark it; they mark it in different places, which is exactly what a translation
+            procedure will have to track.</p>
+
+            <p>Step back and the architecture of Lesson 3 is now visible from both sides.
+            MPL is built exactly the way the moderns describe: the statement-logic connectives
+            are the ground floor, and the quantifier-variable apparatus is erected on top.
+            TFL runs the same materials the other way: the term algebra is the ground floor,
+            and statement logic falls out as the singleton-universe branch. Two towers, same
+            stone.</p>
+
+            <div class="callout-note">
+              <span class="cn-label">What's Next</span>
+              You can now read both notations natively. Next lesson: the bridge — systematic
+              procedures for translating TFL's signed terms into MPL's quantified formulas
+              and back, including the relational cases where the two notations divide the
+              labor most differently.
+            </div>
+          `
+        },
+
+        // ── Exercise: The Four Forms in MPL ──────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-four-forms-mpl",
+          title: "Quick Check: The Four Forms in MPL",
+          instruction: "Pick the right rendering — and diagnose the classic mistranslations.",
+          kind: "multiple-choice",
+          items: [
+            {
+              promptHtml: mcPrompt("Translate:", "every senator is a politician"),
+              choices: [
+                "∀x(Sx ∧ Px)",
+                "∃x(Sx → Px)",
+                "∀x(Sx → Px)",
+                "∀x(Px → Sx)"
+              ],
+              answer: 2,
+              explanation: "Universal quantity conscripts the conditional: anything, if a senator, is a politician. The conjunction version claims everything is a senator-politician; the ∃ version is the too-weak trap; the last converts the terms — every politician a senator."
+            },
+            {
+              promptHtml: "What is wrong with " + mcPrompt("", "∃x(Sx → Px)") + " for \"some S is P\"?",
+              choices: [
+                "It is too weak — a false antecedent makes the conditional true, so any single non-S in the domain verifies it, even if no S is P",
+                "It is too strong — it demands that every S be P",
+                "It is ill-formed — a quantifier cannot govern a conditional",
+                "Nothing — it is the standard I-form"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "One teacup, zero senators: the teacup fails Sx, the conditional holds of it, and the existential is satisfied. Particular quantity needs the conjunction — something is an S and a P."
+            },
+            {
+              promptHtml: mcPrompt("Which is equivalent to:", "¬∃x(Sx ∧ Px)"),
+              choices: [
+                "∃x(Sx ∧ ¬Px)",
+                "∀x(Sx → ¬Px)",
+                "∀x(¬Sx → ¬Px)",
+                "¬∀x(Sx → Px)"
+              ],
+              answer: 1,
+              explanation: "'Nothing is an S-and-P' is the E-form: everything, if S, fails to be P. The first choice is the O-form; the last is O's other dress ('not every S is P'); the third says every non-S is a non-P — a different claim entirely."
+            },
+            {
+              promptHtml: "In a world with no unicorns, " + mcPrompt("", "∀x(Ux → Wx)") + " (\"all unicorns have wings\") is:",
+              choices: [
+                "False — there are no winged unicorns to verify it",
+                "Truth-valueless — the subject term is empty",
+                "True — every instance of the conditional has a false antecedent (vacuous truth)",
+                "True — because ∃x(Ux ∧ Wx) is also true"
+              ],
+              choicesAreCode: false,
+              answer: 2,
+              explanation: "MPL settles existential import by truth-functions: an empty subject verifies every universal about it — winged and wingless alike — while the I-form ∃x(Ux ∧ Wx) stays false. In MPL, A does not entail I."
+            }
+          ]
+        },
+
+        // ── Exercise: Final Review ───────────────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-mpl-syntax-final",
+          isFinal: true,
+          title: "Final Review: The Predicate Way",
+          instruction: "The caste system, binding, the asymmetry, and quantifier order.",
+          kind: "multiple-choice",
+          items: [
+            {
+              prompt: "MPL sorts names and general terms into different syntactic castes. What does that mean?",
+              choices: [
+                "Names occupy subject positions and can never be predicated; general terms are predicates and can never name — so 'some philosopher is Socrates' needs the identity predicate: ∃x(Px ∧ x = s)",
+                "Predicates may bind variables and names may not",
+                "Names have truth values and predicates do not",
+                "There is no such division — MPL, like TFL, has a single category of term"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "The predicate way is built on the split: atomic statements predicate general terms of named individuals, never the reverse. TFL's single term category let 'Socrates' sit in predicate position and got the laws of identity for free (The Full Language, Lesson 7)."
+            },
+            {
+              promptHtml: mcPrompt("Bound or free?", "∃y(Lxy ∧ Py)"),
+              choices: [
+                "y is bound, x is free — the formula is an open sentence",
+                "Both are bound — ∃y binds every variable in its scope",
+                "Both are free — ∃ binds only its first occurrence",
+                "x is bound automatically, y is free"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "∃y binds exactly the y's in its scope. Nothing binds x — it is a pronoun with no antecedent, so the formula has no truth value until x is bound by a quantifier or replaced by a name."
+            },
+            {
+              prompt: "Why do MPL's universal forms take → while its particular forms take ∧?",
+              choices: [
+                "A historical accident; either connective works with either quantifier",
+                "Because the quantifiers alone cannot carry the subject–predicate tie: 'every S is P' must become 'everything is P-if-S,' and 'some S is P' must become 'something is S-and-P' — one categorical form, split across two connectives",
+                "Because → is logically stronger than ∧",
+                "To ensure that A entails I"
+              ],
+              choicesAreCode: false,
+              answer: 1,
+              explanation: "∀ and ∃ speak only of 'everything' and 'something'; the restriction to S must be smuggled in through a connective, and each quantity needs a different one — cross them and you say far too much or almost nothing. TFL's functors carry quantity and the tie together: −S+P, +S+P."
+            },
+            {
+              promptHtml: mcPrompt("Compare:", "∀x∃y Lxy &nbsp;and&nbsp; ∃y∀x Lxy"),
+              choices: [
+                "Equivalent — quantifier order never affects meaning",
+                "The first entails the second — each beloved must be the same",
+                "The second entails the first: one y loved by all supplies each x with a beloved; the converse fails",
+                "They are contradictories"
+              ],
+              choicesAreCode: false,
+              answer: 2,
+              explanation: "'Someone is loved by everyone' gives every x the same y, so everyone loves someone. But 'everyone loves someone' lets each x pick a different y — no common favorite follows. Order is meaning; TFL marked the same distinction with sign placement inside the relational complex."
+            },
+            {
+              prompt: "Which describes MPL's architecture?",
+              choices: [
+                "Statement logic is the ground floor, and the quantifier–variable apparatus is erected on top — the exact inversion of TFL, where statement logic is a derived branch of the term algebra",
+                "Quantifiers are basic, and the truth-functional connectives are derived from them",
+                "MPL derives its connectives from the syllogistic",
+                "MPL is unstructured — connectives and quantifiers are mutually independent primitives"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "Lesson 3 from the other side: the moderns build upward from the propositional calculus; Sommers grows statement logic out of the term algebra as the singleton-universe case. Two towers, same stone — and next lesson builds the bridge between them."
+            }
+          ]
+        }
+
+      ]
     }
 
   ]

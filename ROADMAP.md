@@ -148,7 +148,10 @@ Englebretsen, *An Invitation to Formal Reasoning*). Steps here are execution-siz
 - **B6** ✅ Lesson 3 (DNF and the subsumption of statement logic — world-descriptions, DNF read
   off tree branches, expressive completeness via or/and/not, statements as singular terms of the
   singleton universe with wild quantity; the Frege-inversion framing).
-- **B7–B9** 🔲 Lessons 4–6, one per step (see TFL roadmap for chapter mappings).
+- **B7** ✅ Lesson 4 (MPL's syntax and the predicate way — names/variables/predicates and the
+  caste system, quantifiers with variables-as-pronouns vs proterms, the →/∧ asymmetry with the
+  two classic mistranslations, vacuous truth, quantifier order vs sign placement; two-towers recap).
+- **B8–B9** 🔲 Lessons 5–6, one per step (see TFL roadmap for chapter mappings).
 
 Resolve the open questions listed at the bottom of the TFL roadmap (REGAL acronym,
 commutation/association laws placement) as they come up in the relevant lesson's step.
