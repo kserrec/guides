@@ -137,7 +137,9 @@ Englebretsen, *An Invitation to Formal Reasoning*). Steps here are execution-siz
 - **B1** ✅ Scaffold Course 3 (`relational-syllogisms/`: index.html, curriculum skeleton, hub card) + write Lesson 1 (Dictum applied to relational arguments — position-blind cancellation, failure modes, the De Morgan horse's-head via the tautology move).
 - **B2** ✅ Lesson 2 (Distributed terms and DDO — net sign rule by sign multiplication, classical
   distribution rules as theorems, whole-complex donation; L3 hook: indirect proof + proterms).
-- **B3** 🔲 Lesson 3 (Indirect proofs and distributed proterms).
+- **B3** ✅ Lesson 3 (Indirect proofs and distributed proterms — counterclaim refutation as a
+  procedure, pronominalization rule + anchors, distributed proterms as TFL's instantiation,
+  full 9-line worked proof). **Course 3 complete.**
 - **B4** 🔲 Scaffold Course 4 (`statement-logic-and-mpl/`) + Lesson 1 (Contradictions, tautologies, contingency).
 - **B5–B9** 🔲 Lessons 2–6, one per step (see TFL roadmap for chapter mappings).
 

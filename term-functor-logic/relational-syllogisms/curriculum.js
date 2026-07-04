@@ -637,6 +637,356 @@ const CURRICULUM = {
         }
 
       ]
+    },
+
+    // ════════════════════════════════════════════════════════════════════════
+    // LESSON 3: Indirect Proofs and Distributed Proterms
+    // ════════════════════════════════════════════════════════════════════════
+    {
+      id: "lesson-03",
+      title: "Lesson 3: Indirect Proofs and Distributed Proterms",
+      navTitle: "Indirect Proof",
+      description: "When no single cancellation settles an argument, refute its counterclaim step by step — pronominalize the particulars, let proterms carry fixed reference through the proof, and read their wild quantity distributed exactly where the inference needs it.",
+      completionText: "Course complete! Indirect proof turns the counterclaim principle into a working procedure: pronominalize the particular statements, push consequences through with DDO, and force a proterm contradiction. Distributed proterms are TFL's answer to MPL's instantiation rules — wild quantity on fixed reference, no variables required. Together with the dictum and the net sign rule, you now have the full relational syllogistic of Chapter 6. Course 4 turns to statement logic: proofs, trees, and the bridge between TFL and modern predicate logic.",
+      blocks: [
+
+        // ── Concept: When One Cancellation Isn't Enough ──────────────────────
+        {
+          type: "concept",
+          id: "beyond-direct",
+          title: "1. When One Cancellation Isn’t Enough",
+          content: `
+            <p>Every argument so far fell to a single application of the dictum: sum the
+            premises, cancel the middle, read off the conclusion. But consider:</p>
+
+            ${engSyl("Some boy loves some girl.", "No boy loves any coward.", "Some girl is not a coward.")}
+
+            <div class="proof-box">
+              <div class="proof-row"><code>+Boy+(Lov+Girl)</code><span class="proof-note">Premise 1</span></div>
+              <div class="proof-row"><code>−Boy−(Lov+Coward)</code><span class="proof-note">Premise 2</span></div>
+              <div class="proof-row proof-conclusion"><span class="proof-therefore">∴</span><code>+Girl−Coward</code><span class="proof-note">Conclusion</span></div>
+            </div>
+
+            <p>The argument is valid — if the girl he loves were a coward, the boy would love
+            a coward, which premise 2 forbids. But try to sum the premises: the candidate middle
+            terms tangle. Boy occurs + in premise 1 and − in premise 2, yet what cancels must
+            take the whole complex <code>(Lov+Girl)</code> against <code>(Lov+Coward)</code> —
+            and those are different terms. No single cancellation yields the conclusion.</p>
+
+            <p>The way through is a principle you already own. Recall from The Full Language,
+            Lesson 5:</p>
+
+            <div class="grammar-rule">
+              <span class="g-label">Principle of Validity (PV)</span>
+              An argument is valid if and only if its counterclaim — all premises conjoined
+              with the contradictory of the conclusion — is inconsistent.
+            </div>
+
+            <p>There you <em>checked</em> counterclaims algebraically. Here you will
+            <strong>refute</strong> them: assume the counterclaim outright, derive consequences
+            with the dictum, and force an explicit contradiction. This is <strong>indirect
+            proof</strong> — and to run it, you need a way to hold onto <em>particular
+            individuals</em> across proof steps. That is what proterms were made for.</p>
+
+            <div class="callout-note">
+              <span class="cn-label">Recall</span>
+              Contradictories flip both leading signs — subject quantity and functor quality —
+              and leave the complex internals alone: the contradictory of <code>+Girl−Coward</code>
+              is <code>−Girl+Coward</code>; the contradictory of <code>−Boy+(Lov+Girl)</code>
+              is <code>+Boy−(Lov+Girl)</code>.
+            </div>
+          `
+        },
+
+        // ── Concept: Pronominalization ───────────────────────────────────────
+        {
+          type: "concept",
+          id: "pronominalization",
+          title: "2. Pronominalization: Fixing Reference Mid-Proof",
+          content: `
+            <p>A particular statement asserts that <em>something</em> exists — some boy who loves
+            some girl. In a proof you want to talk about <em>that</em> boy and <em>that</em> girl
+            in later lines. Proterms (The Full Language, Lesson 4) do exactly this: a prime
+            superscript marks co-denoting occurrences, and pronoun occurrences take wild
+            quantity ±.</p>
+
+            <div class="grammar-rule">
+              <span class="g-label">Pronominalization Rule</span>
+              A <strong>particular</strong> statement in a proof may be rewritten with fresh
+              proterms fixing its witnesses: from <code>+Boy+(Lov+Girl)</code> infer
+              <code>±Boy'+(Lov±Girl')</code> — <em>that boy loves that girl</em> — together
+              with the anchor statements <code>±Boy'+Boy</code> and <code>±Girl'+Girl</code>.
+            </div>
+
+            <p>Three points of discipline:</p>
+            <ul>
+              <li><strong>Only particulars introduce individuals.</strong> A universal
+              <code>−S+P</code> says <em>if</em> anything is S it is P — it hands you no witness
+              to name. Pronominalizing a universal is an illegal move.</li>
+              <li><strong>Fresh primes each time.</strong> A second pronominalization in the same
+              proof uses new markers (<code>''</code>) — different witnesses must not be
+              conflated.</li>
+              <li><strong>UDTs need no introduction.</strong> A singular term <code>±Socrates*</code>
+              already has fixed reference; it behaves as its own proterm.</li>
+            </ul>
+
+            <p>The anchor statements are what let the dictum reach the witnesses. From
+            <code>±Boy'+Boy</code> — "that boy is a boy" — any donor about all boys can now be
+            brought to bear on <em>him</em>:</p>
+
+            <div class="step-trace">
+              <div class="step"><code>±Boy'+Boy &nbsp;+&nbsp; (−Boy−(Lov+Coward))</code></div>
+              <div class="step step-reduce"><span>Boy: net + in the anchor (host), net − in the donor — cancel.</span></div>
+              <div class="step step-reduce"><code>±Boy'−(Lov+Coward)</code><span class="step-note">that boy loves no coward ✓</span></div>
+            </div>
+          `
+        },
+
+        // ── Exercise: Contradictories and Pronominalization ──────────────────
+        {
+          type: "exercise",
+          id: "ex-pronominalize",
+          title: "Quick Check: Setting Up the Counterclaim",
+          instruction: "Form contradictories and apply the pronominalization rule correctly.",
+          kind: "multiple-choice",
+          items: [
+            {
+              promptHtml: mcPrompt("The contradictory of:", "+Girl−Coward"),
+              choices: ["−Girl+Coward", "+Girl+Coward", "−Girl−Coward", "+Coward−Girl"],
+              answer: 0,
+              explanation: "Flip both leading signs: quantity + → − and quality − → +. 'Some girl is not a coward' contradicts 'every girl is a coward.'"
+            },
+            {
+              promptHtml: mcPrompt("The contradictory of:", "−Boy+(Lov+Girl)"),
+              choices: ["+Boy−(Lov+Girl)", "−Boy−(Lov+Girl)", "+Boy+(Lov−Girl)", "−Girl+(Lov+Boy)"],
+              answer: 0,
+              explanation: "Flip the subject quantity (− → +) and the functor (+ → −); the complex's internals stay untouched. 'Every boy loves some girl' contradicts 'some boy loves no girl.'"
+            },
+            {
+              promptHtml: mcPrompt("Which statement may be pronominalized?", "−Dog+Pet &nbsp;·&nbsp; +Cat+(Chases+Mouse) &nbsp;·&nbsp; −Bird−(Eats+Seed)"),
+              choices: ["+Cat+(Chases+Mouse) — it is particular", "−Dog+Pet — it is the shortest", "−Bird−(Eats+Seed) — denials introduce witnesses", "All three"],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "Only particular statements assert existence and hand you witnesses to name. The two universals say only what holds if anything is a dog (or bird) — no individual to fix a proterm on."
+            },
+            {
+              promptHtml: mcPrompt("Pronominalizing", "+Boy+(Lov+Girl)"),
+              choices: [
+                "±Boy'+(Lov±Girl'), with anchors ±Boy'+Boy and ±Girl'+Girl",
+                "−Boy'+(Lov−Girl') — proterms are always universal",
+                "±Boy'+(Lov±Boy') — one marker for both terms",
+                "+Boy+(Lov+Girl') — only the object gets a marker"
+              ],
+              answer: 0,
+              explanation: "Fresh markers on both witnessed terms, wild quantity on the pronoun occurrences, and one anchor per proterm tying the witness to its kind. The single-marker option would wrongly identify the boy with the girl."
+            }
+          ]
+        },
+
+        // ── Concept: Distributed Proterms ────────────────────────────────────
+        {
+          type: "concept",
+          id: "distributed-proterms",
+          title: "3. Distributed Proterms",
+          content: `
+            <p>Here is the last piece. Suppose mid-proof you have derived:</p>
+
+            <div class="proof-box">
+              <div class="proof-row"><code>±Boy'+(Lov±Girl')</code><span class="proof-note">that boy loves that girl</span></div>
+              <div class="proof-row"><code>±Girl'+Coward</code><span class="proof-note">that girl is a coward</span></div>
+            </div>
+
+            <p>You want to conclude: <em>that boy loves a coward</em>. The dictum needs a donor
+            with a <strong>distributed</strong> occurrence of Girl′ — but the second statement
+            shows <code>±Girl'</code>, wild. May you read it as −?</p>
+
+            <div class="grammar-rule">
+              <span class="g-label">Distributed Proterms</span>
+              Yes. A proterm's reference is already fixed by its antecedent, so — exactly as
+              with UDTs — the all/some distinction collapses: "she is a coward" and "every one
+              of <em>them</em> (namely, she) is a coward" say the same thing. In a proof, a
+              proterm occurrence may be read with whichever sign the inference requires.
+            </div>
+
+            <div class="step-trace">
+              <div class="step"><code>±Boy'+(Lov±Girl') &nbsp;+&nbsp; (−Girl'+Coward)</code><span class="step-note">reading the donor's ± as −</span></div>
+              <div class="step step-reduce"><span>Girl′: net + in the host complex, net − in the donor — cancel.</span></div>
+              <div class="step step-reduce"><code>±Boy'+(Lov+Coward)</code><span class="step-note">that boy loves a coward ✓</span></div>
+            </div>
+
+            <p>This is TFL's counterpart to MPL's instantiation rules — existential
+            instantiation when you pronominalize a particular, universal instantiation when a
+            donor feeds an anchor — but there are no variables, no scope brackets, and no
+            special quantifier rules. Just terms with fixed reference and a wild sign.</p>
+
+            <div class="callout-note">
+              <span class="cn-label">The One Restriction</span>
+              A ± may be read distributed only when its reference is fixed — by an antecedent
+              proterm occurrence earlier in the proof, or by being a UDT. An unanchored ±
+              plucked from nowhere proves anything; the antecedent requirement is what keeps
+              the wild sign honest.
+            </div>
+          `
+        },
+
+        // ── Concept: A Complete Indirect Proof ───────────────────────────────
+        {
+          type: "concept",
+          id: "full-proof",
+          title: "4. A Complete Indirect Proof",
+          content: `
+            <p>Everything together. To prove: <em>some boy loves some girl; no boy loves any
+            coward; therefore some girl is not a coward.</em> Assume the counterclaim — both
+            premises plus the contradictory of the conclusion — and refute it:</p>
+
+            <div class="proof-box">
+              <div class="proof-row"><code>1.&nbsp; +Boy+(Lov+Girl)</code><span class="proof-note">premise</span></div>
+              <div class="proof-row"><code>2.&nbsp; −Boy−(Lov+Coward)</code><span class="proof-note">premise</span></div>
+              <div class="proof-row"><code>3.&nbsp; −Girl+Coward</code><span class="proof-note">contradictory of conclusion — assume for refutation</span></div>
+              <div class="proof-row"><code>4.&nbsp; ±Boy'+(Lov±Girl')</code><span class="proof-note">pronominalize 1</span></div>
+              <div class="proof-row"><code>5.&nbsp; ±Boy'+Boy</code><span class="proof-note">anchor, from 1</span></div>
+              <div class="proof-row"><code>6.&nbsp; ±Girl'+Girl</code><span class="proof-note">anchor, from 1</span></div>
+              <div class="proof-row"><code>7.&nbsp; ±Girl'+Coward</code><span class="proof-note">DDO: 6 hosts the donor 3 — that girl is a coward</span></div>
+              <div class="proof-row"><code>8.&nbsp; ±Boy'+(Lov+Coward)</code><span class="proof-note">DDO: 4 hosts the donor 7, its ± read as − (distributed proterm)</span></div>
+              <div class="proof-row"><code>9.&nbsp; ±Boy'−(Lov+Coward)</code><span class="proof-note">DDO: 5 hosts the donor 2 — that boy loves no coward</span></div>
+              <div class="proof-row proof-conclusion"><span class="proof-therefore">⊥</span><code>8 contradicts 9</code><span class="proof-note">counterclaim refuted — the argument is valid ✓</span></div>
+            </div>
+
+            <p>Lines 8 and 9 say of the <em>same</em> fixed individual — that boy — that he does
+            and does not love a coward. No interpretation can satisfy the counterclaim, so by PV
+            the original argument is valid.</p>
+
+            <p>Notice the division of labor: pronominalization (line 4–6) names the witnesses,
+            anchors host the universal premises (lines 7, 9), and one distributed proterm
+            (line 8) moves the derived fact into the relational complex. Every step is a
+            cancellation you already know how to check with net signs.</p>
+          `
+        },
+
+        // ── Exercise: Proof Steps ────────────────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-proof-steps",
+          title: "Quick Check: Justify the Step",
+          instruction: "Each item shows a proof situation. Pick the correct step or diagnosis.",
+          kind: "multiple-choice",
+          items: [
+            {
+              promptHtml: mcPrompt("From lines", "±Cat'+Cat &nbsp;and&nbsp; −Cat−(Fears+Dog)"),
+              choices: ["±Cat'−(Fears+Dog)", "±Cat'+(Fears+Dog)", "−Cat'−(Fears−Dog)", "Nothing follows — proterms cannot host"],
+              answer: 0,
+              explanation: "The anchor ±Cat'+Cat hosts (Cat net +); the universal premise donates its whole predicate: that cat fears no dog. Anchors exist precisely to give donors a way to reach the witness."
+            },
+            {
+              promptHtml: mcPrompt("From lines", "±Owl'+(Watches±Mouse') &nbsp;and&nbsp; ±Mouse'+Rodent"),
+              choices: [
+                "±Owl'+(Watches+Rodent) — read the donor's ± as −",
+                "Nothing follows — ±Mouse'+Rodent is particular",
+                "±Owl'+(Watches−Rodent)",
+                "±Mouse'+(Watches+Owl')"
+              ],
+              answer: 0,
+              explanation: "Mouse′ is a proterm with fixed reference, so its ± may be read distributed (−), making the second line a donor. Cancellation inside the complex puts Rodent in Mouse′'s position, undistributed."
+            },
+            {
+              promptHtml: mcPrompt("What is wrong with this step: from", "−Fish+Swimmer &nbsp;infer&nbsp; ±Fish'+Swimmer"),
+              choices: [
+                "Universals cannot be pronominalized — they provide no witness",
+                "Nothing — any statement may be pronominalized",
+                "The prime should be on Swimmer",
+                "The inferred statement needs a − on Fish′"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "A universal says what holds if anything is a fish; it does not assert that any fish exists. Only particular statements (and UDTs, which carry their own reference) introduce individuals a proterm can name."
+            },
+            {
+              promptHtml: mcPrompt("An indirect proof of", "−A+B, −B+C ∴ −A+C &nbsp;(Barbara)"),
+              choices: [
+                "Assume +A−C; pronominalize it; anchors host both premises; derive ±A'+C and ±A'−C — contradiction",
+                "Assume −A+C and cancel it against premise 1",
+                "Assume +A+C; derive +A+B; done",
+                "Barbara cannot be proven indirectly — it has no particular premise"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "The counterclaim's denied conclusion +A−C is particular — it supplies the witness. Pronominalize: ±A'−C with anchor ±A'+A. The anchor hosts premise 1 (±A'+B), whose result hosts premise 2 (±A'+C) — contradicting ±A'−C. Indirect proof recovers the direct cancellation as a special case."
+            }
+          ]
+        },
+
+        // ── Exercise: Final Review ───────────────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-indirect-final",
+          isFinal: true,
+          title: "Final Review: Indirect Proof",
+          instruction: "The counterclaim method, proterm discipline, and the full course in five questions.",
+          kind: "multiple-choice",
+          items: [
+            {
+              prompt: "An indirect proof establishes validity by:",
+              choices: [
+                "Deriving a contradiction from the premises plus the contradictory of the conclusion",
+                "Summing the premises and reading off the conclusion",
+                "Showing the conclusion is a tautology",
+                "Finding an interpretation that makes the premises true"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "PV: valid iff the counterclaim is inconsistent. The indirect proof exhibits the inconsistency — typically as a proterm statement and its denial about one fixed witness."
+            },
+            {
+              promptHtml: mcPrompt("The counterclaim of:", "+Boy+(Lov+Girl), −Boy−(Lov+Coward) ∴ +Girl−Coward"),
+              choices: [
+                "{+Boy+(Lov+Girl), −Boy−(Lov+Coward), −Girl+Coward}",
+                "{+Boy+(Lov+Girl), −Boy−(Lov+Coward), +Girl+Coward}",
+                "{−Boy−(Lov+Girl), +Boy+(Lov+Coward), −Girl+Coward}",
+                "{+Boy+(Lov+Girl), −Boy−(Lov+Coward), −Coward+Girl}"
+              ],
+              answer: 0,
+              explanation: "Keep the premises; replace the conclusion with its contradictory — flip both leading signs of +Girl−Coward to get −Girl+Coward."
+            },
+            {
+              prompt: "Why may a proterm's ± be read as − when the inference needs a donor?",
+              choices: [
+                "Its reference is fixed by an antecedent, so 'some' and 'all' coincide — as with UDTs",
+                "All pronouns are universal in English",
+                "Because the proof would fail otherwise",
+                "It may not — only UDTs can be donors"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "Wild quantity is earned by fixed reference. Once an antecedent pins the witness down, claims about 'it' and about 'every one of it' collapse — the same collapse that gives singular terms their ±."
+            },
+            {
+              promptHtml: mcPrompt("In the worked proof, line 8 (", "±Boy'+(Lov+Coward)") ,
+              choices: [
+                "Uses line 7 as donor with its ± read distributed, feeding the complex in line 4",
+                "Pronominalizes line 2",
+                "Is the contradictory of line 9, assumed for refutation",
+                "Uses the tautology move from Lesson 1"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "±Girl'+Coward (line 7) becomes the donor −Girl'+Coward; the host is Girl′'s net + occurrence inside (Lov±Girl') in line 4. Coward lands in her position: that boy loves a coward."
+            },
+            {
+              prompt: "Which sequence describes the standard indirect-proof recipe?",
+              choices: [
+                "Form the counterclaim → pronominalize its particulars → anchors host the universals via DDO → derive a proterm contradiction",
+                "Pronominalize every statement → sum everything → check regularity",
+                "Form the counterclaim → check that it is P-regular → conclude validity",
+                "Convert all statements to passives → cancel → read the conclusion"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "Counterclaim first (PV), witnesses second (pronominalization), then the dictum does the work through the anchors until one fixed individual is asserted and denied the same thing. Regularity checks moods; proofs refute counterclaims."
+            }
+          ]
+        }
+
+      ]
     }
 
   ]

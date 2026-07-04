@@ -65,7 +65,7 @@ Book: Ch. 4 (Language of Logic II) + Ch. 5 depth
 
 ---
 
-## Course 3: Relational Syllogisms — 4–5 lessons 🔲
+## Course 3: Relational Syllogisms — 3 lessons ✅
 
 Dir: `guides/term-functor-logic/relational-syllogisms/`
 Book: Ch. 6
@@ -74,7 +74,7 @@ Book: Ch. 6
 |---|-------|------|--------|
 | 1 | The Dictum Applied to Relational Arguments | Ch. 6 §§1–2 | ✅ |
 | 2 | Distributed Terms and DDO | Ch. 6 §§3–5 | ✅ |
-| 3 | Indirect Proofs and Distributed Proterms | Ch. 6 §§6–9 | 🔲 |
+| 3 | Indirect Proofs and Distributed Proterms | Ch. 6 §§6–9 | ✅ |
 
 L1 conventions to carry forward: donor/host vocabulary from Course 2 L6; "cancellation is
 position-blind"; the tautology move `−(R+T)+(R+T)`; L1 defers *computing* distribution inside
