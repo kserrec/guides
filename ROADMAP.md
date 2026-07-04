@@ -213,6 +213,18 @@ bolted on. Learners get to *run* the algebra all four courses taught.
   (no DOM, node-tested), UI module `lab.js`, styles appended to `style.css`, plain-node tests.
 - **Scope guard:** the engine's power stays at the courses' until D8 — DON, Simp, Add, and the
   immediate rules; no most/many/few before the numerical steps.
+- **Numerical-ready AST from D1.** Every quantified term occurrence carries a quantity-level
+  field, fixed at 0 (classical some/every) until D8; the printer omits level 0, so classical
+  notation is unchanged forever. D8 then touches only parser, printer, and one validity
+  condition — no AST migration.
+- **Terms are strings, not letters.** Bare identifiers: Unicode letters, digits, underscores,
+  starting with a letter (`Wise`, `German_Shepherd`, `H2O`). No hyphens — ASCII `-` and
+  typographic `−` are normalized to the minus functor, so `non-smoker` cannot lex as one term.
+  Quoted terms `"non-smoker"`, `"head of a horse"` allow anything except the quote char and
+  newline. Whitespace is insignificant; the printer emits typographic `−`.
+- **Quantity levels use an explicit marker**, not the paper's bare trailing digit: ASCII
+  `+V^2+C^0`, pretty-printed `+V²+C⁰`. (With multi-char terms, `+V2` must mean the term "V2",
+  so `^` disambiguates level from name.)
 
 ### Steps
 
@@ -248,9 +260,9 @@ bolted on. Learners get to *run* the algebra all four courses taught.
   — equal up to immediate rules; derive-the-conclusion; find-the-missing-premise); first real
   usage in one existing lesson, wiring pattern documented like A8.
 - **D8** 🔲 Numerical quantifiers, engine half (TFL⁺): quantity levels 0–3 on subject terms
-  (`+V²+C⁰` — "most voters are citizens"), ASCII `+V2+C0`; the three-condition decision
-  method; parser/printer/derivation support. Tests straight from the paper's Tables 10–13:
-  kaa-1 ⊬, akt-4 ⊬, bao-3 ⊢, ekg-2 ⊢.
+  (`+V²+C⁰` — "most voters are citizens"), ASCII `+V^2+C^0` (explicit `^` marker; see design
+  decisions); the three-condition decision method; parser/printer/derivation support. Tests
+  straight from the paper's Tables 10–13: kaa-1 ⊬, akt-4 ⊬, bao-3 ⊢, ekg-2 ⊢.
 - **D9** 🔲 Numerical quantifiers, lesson half: an advanced lesson teaching most/many/few as
   quantity levels (Peterson/Thompson SYLL⁺ → TFL⁺'s algebraic method), lab-integrated
   examples, Murphree's numerical term logic framed as the frontier beyond. Soften Course 4
