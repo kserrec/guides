@@ -225,6 +225,13 @@ bolted on. Learners get to *run* the algebra all four courses taught.
 - **Quantity levels use an explicit marker**, not the paper's bare trailing digit: ASCII
   `+V^2+C^0`, pretty-printed `+V²+C⁰`. (With multi-char terms, `+V2` must mean the term "V2",
   so `^` disambiguates level from name.)
+- **Relationals from day one, n-ary and nested.** The grammar is recursive (a relational
+  complex is a relation plus one or more signed objects, each itself a term), so arity and
+  nesting depth are unbounded — `(Gave+Rose+Girl)` is three-place, and the paper's own first
+  relational example is nested. Restricting to dyadic would cost extra code *and* fail the D1
+  harness. Inference is staged instead: direct relational DON (net-sign distribution) in D2;
+  the subtle machinery — passive transformation, proterms, indirect proof — is its own step
+  (D3). Runaway derivations are bounded by fuel, not by parse-time arity limits.
 
 ### Steps
 
@@ -233,37 +240,44 @@ bolted on. Learners get to *run* the algebra all four courses taught.
   parse the exact notation used across all four TFL curricula plus ASCII aliases;
   pretty-printer with round-trip property; positioned parse errors. Acceptance harness (built
   in this step): drive every TFL syntax-box formula through the parser, A7-style.
-- **D2** 🔲 Inference core: the immediate rules (DN, EN, IN, Com, Assoc, Contrap, PD, It) and
-  mediate rules (DON, Simp, Add) as rewrites producing **traced derivations** (formula + rule
-  + parent lines); REGAL/P–Z validity check for premise sets; formula equality up to
-  Com/Assoc/DN. Tests: Barbara, hypothetical syllogism, the horse's head (tautology premise),
-  Course 3's 9-line indirect proof, undistributed-middle failures.
-- **D3** 🔲 Programs & queries: program = propositions + `--` comments; queries `? s`
+- **D2** 🔲 Inference core (direct derivations): the immediate rules (DN, EN, IN, Com, Assoc,
+  Contrap, PD, It) and mediate rules (DON, Simp, Add) as rewrites producing **traced
+  derivations** (formula + rule + parent lines); net-sign distribution computation so DON
+  reaches inside relational complexes; REGAL/P–Z validity check for premise sets; formula
+  equality up to Com/Assoc/DN. Tests: Barbara, hypothetical syllogism, the horse's head
+  (tautology premise, cancellation in-complex), the paper's nested faster-than derivation,
+  undistributed-middle failures.
+- **D3** 🔲 Deep relational layer: the passive transformation with Course 2 L3's symmetry
+  guard (equivalent only when both participants share quantity or one is singular); proterms
+  with fresh markers, anchors, and wild quantity; the indirect-proof procedure (counterclaim,
+  pronominalize, derive a proterm contradiction). Tests: Course 3's 9-line worked proof,
+  scope-trap cases where naive commuting is invalid.
+- **D4** 🔲 Programs & queries: program = propositions + `--` comments; queries `? s`
   ("what is s" — saturate DON+Simp about a term, fuel-budgeted) and `? −s+P` (yes/no:
   derivable?). Facts and rules share one shape — the language's defining feature. Tests
   reproduce the paper's Socrates/Fido example program in course notation.
-- **D4** 🔲 The Aristotelian layer (what makes it a *database*, not a proof checker):
+- **D5** 🔲 The Aristotelian layer (what makes it a *database*, not a proof checker):
   natural-language explanation per answer ("Because Socrates is a man, and every man is
   mortal…"); volunteer the stronger answer when a weaker one is asked (asked *some*, prove
   *every*); "possibility" answers from I-forms (Mozes' *perhaps*); missing-premise suggestion
   via enthymeme recovery under Course 2 L6's three constraints; negation-by-failure decision
   documented in-code.
-- **D5** 🔲 Panel UI on TFL course pages, mirroring the λ Lab: toggle button, right panel,
+- **D6** 🔲 Panel UI on TFL course pages, mirroring the λ Lab: toggle button, right panel,
   per-pathname localStorage buffer, editor + query line + derivation pane with rule names,
   parse-error caret; input palette for − + ± ( ) *. Import/export of fact files: load a
   plain-text `.tfl` document into the editor via file picker (client-side FileReader — the
   file never leaves the browser) and download the current program back out.
-- **D6** 🔲 Lesson integration: "▸ try" chips on TFL syntax boxes that parse as programs
+- **D7** 🔲 Lesson integration: "▸ try" chips on TFL syntax boxes that parse as programs
   (A6's MutationObserver pattern); curated examples per course (Barbara, horse's head, a
   REGAL check, the proterm proof); verified headlessly across all four courses.
-- **D7** 🔲 `tfl-expression` exercise kind graded by the D2 engine (modes: transcribe-English
+- **D8** 🔲 `tfl-expression` exercise kind graded by the D2 engine (modes: transcribe-English
   — equal up to immediate rules; derive-the-conclusion; find-the-missing-premise); first real
   usage in one existing lesson, wiring pattern documented like A8.
-- **D8** 🔲 Numerical quantifiers, engine half (TFL⁺): quantity levels 0–3 on subject terms
+- **D9** 🔲 Numerical quantifiers, engine half (TFL⁺): quantity levels 0–3 on subject terms
   (`+V²+C⁰` — "most voters are citizens"), ASCII `+V^2+C^0` (explicit `^` marker; see design
   decisions); the three-condition decision method; parser/printer/derivation support. Tests
   straight from the paper's Tables 10–13: kaa-1 ⊬, akt-4 ⊬, bao-3 ⊢, ekg-2 ⊢.
-- **D9** 🔲 Numerical quantifiers, lesson half: an advanced lesson teaching most/many/few as
+- **D10** 🔲 Numerical quantifiers, lesson half: an advanced lesson teaching most/many/few as
   quantity levels (Peterson/Thompson SYLL⁺ → TFL⁺'s algebraic method), lab-integrated
   examples, Murphree's numerical term logic framed as the frontier beyond. Soften Course 4
   L6's "Real Limits" concession accordingly (most/many/few now taught; exact counts remain
@@ -274,8 +288,8 @@ bolted on. Learners get to *run* the algebra all four courses taught.
 ## Suggested order
 
 1. ~~C1~~ · ~~A1–A8~~ · ~~B1–B9~~ · ~~C2~~ — all complete.
-2. **D1 → D2 → D3** (language core, node-testable without UI)
-3. **D4** (the Aristotelian layer — the differentiator)
-4. **D5 → D6** (lab usable end-to-end, integrated into lessons)
-5. **D7** anytime after D2
-6. **D8 → D9** last, in that order (numerical quantifiers: engine, then lesson)
+2. **D1 → D2 → D3 → D4** (language core, node-testable without UI)
+3. **D5** (the Aristotelian layer — the differentiator)
+4. **D6 → D7** (lab usable end-to-end, integrated into lessons)
+5. **D8** anytime after D2
+6. **D9 → D10** last, in that order (numerical quantifiers: engine, then lesson)

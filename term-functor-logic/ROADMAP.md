@@ -117,5 +117,5 @@ Book: Ch. 7 + Ch. 8
 - **Course 2 lesson 1 note:** Compound statements builds on Introduction L8 (propositions as terms, if-then = A-form). Assume that lesson as prerequisite — don't re-teach, just recall.
 - **Penguins item (L6, ex-mixed-final item 6):** Explanation revised in L6 rewrite — cleaner now but keep an eye on it.
 - **Numerical quantifiers (Murphree):** Beyond the core book. Now planned: main roadmap
-  Track D, steps D8 (TFL⁺ quantity levels in the lab engine) and D9 (advanced lesson —
+  Track D, steps D9 (TFL⁺ quantity levels in the lab engine) and D10 (advanced lesson —
   most/many/few via Peterson/Thompson/TFL⁺, Murphree as the frontier).
