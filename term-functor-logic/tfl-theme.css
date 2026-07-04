@@ -1,0 +1,12 @@
+/* tfl-theme.css — purple accent for all Term Functor Logic pages.       */
+/* Overrides the blue defaults in style.css; link after it.              */
+:root {
+  --accent:         #7c3aed;
+  --accent-hover:   #6d28d9;
+  --accent-code:    #5b21b6;
+  --accent-bg:      #ede9fe;
+  --accent-border:  #c4b5fd;
+  --accent-text:    #4c1d95;
+  --accent-code-bg: #ddd6fe;
+  --page-bg:        #f5f3ff;
+}

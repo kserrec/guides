@@ -15,10 +15,6 @@ function h(tag, attrs, ...children) {
   return el;
 }
 
-function escHtml(s) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
 function countCorrect(answers, items) {
   return Object.entries(answers).filter(([i, a]) => a === items[+i].answer).length;
 }
@@ -144,7 +140,10 @@ class CourseApp {
 
     const storageKey = `progress-${curriculum.title}`;
     let stored = [];
-    try { stored = JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch(e) {}
+    try {
+      const parsed = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      if (Array.isArray(parsed)) stored = parsed;
+    } catch(e) {}
     this.completedLessons = new Set(stored);
     this.storageKey = storageKey;
 
