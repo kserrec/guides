@@ -1,5 +1,6 @@
 # Ham Calculus — Project Roadmap
 
+Live site: **https://kserrec.github.io/guides/** (GitHub Pages from `main`; pushes deploy in ~1 min)
 Last updated: 2026-07-03
 
 ## Step-sizing rule
