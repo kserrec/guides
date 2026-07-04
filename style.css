@@ -1277,3 +1277,19 @@ mark.lab-mark { background: #fde68a; border-radius: 3px; padding: 0 1px; }
   cursor: pointer;
 }
 .lab-examples:focus { outline: none; border-color: var(--accent-border); }
+
+.lab-caret {
+  margin-top: 0.45rem;
+  font-family: 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  color: #7f1d1d;
+  overflow-x: auto;
+}
+
+/* Mobile polish for the lab */
+.lab-toggle { bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px)); }
+@media (max-width: 520px) {
+  .lab-editor { font-size: 16px; } /* prevents iOS focus auto-zoom */
+  .lab-body { padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px)); }
+}

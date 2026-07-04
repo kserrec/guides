@@ -442,6 +442,49 @@ test('readback: fake numeral with shared binder names rejected', () =>
 test('readback: nested pair of lists', () =>
   assert.strictEqual(run('PAIR (CONS 1 NIL) 2').readback, '⟨[1], 2⟩'));
 
+// ── Unicode identifiers & omega (A7) ──────────────────────────────────────
+
+test('unicode: ω is a valid identifier', () => parsesTo('ω', Var('ω')));
+test('unicode: λ never joins an identifier', () =>
+  parsesTo('xλy.y', App(Var('x'), Lam('y', Var('y')))));
+test('unicode: course omega definition parses', () => {
+  const r = evalProgram('ω = λx.x x');
+  assert.strictEqual(r.status, 'no-expression');
+});
+test('prelude: Ω diverges', () => {
+  const r = evalProgram('Ω', { maxSteps: 20 });
+  assert.strictEqual(r.status, 'fuel-exhausted');
+});
+test('prelude: normal order discards Ω', () => {
+  const r = evalProgram('(λx.λy.x) z Ω', { maxSteps: 50 });
+  assert.strictEqual(r.status, 'normal');
+  assert.strictEqual(print(r.result), 'z');
+});
+test('prelude: user ω shadows built-in', () => {
+  const r = evalProgram('ω = λx.x\nω y');
+  assert.strictEqual(print(r.result), 'y');
+  assert.ok(r.warnings.some((w) => w.includes('shadows')));
+});
+
+// ── Error caret data (A7) ─────────────────────────────────────────────────
+
+test('caret: definition parse error carries source and offset', () => {
+  try { evalProgram('ID = λx.x\nBAD = λx.\nID 1'); assert.fail('should throw'); }
+  catch (e) {
+    assert.strictEqual(e.source, 'λx.');
+    assert.strictEqual(e.offset, 3);
+    assert.strictEqual(e.line, 2);
+  }
+});
+
+test('caret: expression parse error carries source and offset', () => {
+  try { evalProgram('x @ y'); assert.fail('should throw'); }
+  catch (e) {
+    assert.strictEqual(e.source, 'x @ y');
+    assert.strictEqual(e.offset, 2);
+  }
+});
+
 // ── HTML printer ──────────────────────────────────────────────────────────
 
 test('printHtml: no mark equals print', () => {

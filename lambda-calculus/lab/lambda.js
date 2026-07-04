@@ -58,8 +58,9 @@
   // ── Tokenizer ─────────────────────────────────────────────────────────
   // Token: { kind: 'lambda'|'dot'|'lparen'|'rparen'|'ident'|'eof', text, pos }
 
-  const isIdentStart = (c) => /[A-Za-z_]/.test(c);
-  const isIdentChar  = (c) => /[A-Za-z0-9_']/.test(c);
+  // Any Unicode letter except λ can start a name (the courses use ω and Ω).
+  const isIdentStart = (c) => c !== 'λ' && /[\p{L}_]/u.test(c);
+  const isIdentChar  = (c) => c !== 'λ' && /[\p{L}0-9_']/u.test(c);
 
   function tokenize(src) {
     const tokens = [];
@@ -339,6 +340,9 @@
     ['NOT',        'λb.b FALSE TRUE'],
     ['AND',        'λb.λc.b c FALSE'],
     ['OR',         'λb.λc.b TRUE c'],
+    // Divergence — Lesson 3
+    ['ω',          'λx.x x'],
+    ['Ω',          '(λx.x x) (λx.x x)'],
     // Numerals & arithmetic — Lessons 6–7
     ['SUCC',       'λn.λf.λx.f (n f x)'],
     ['ADD',        'λm.λn.λf.λx.m f (n f x)'],
@@ -384,10 +388,14 @@
   // ── Programs: definitions + one expression ────────────────────────────
 
   class ProgramError extends Error {
-    constructor(message, line) {
+    // Wrapped parse errors also carry `source` (the statement's text) and
+    // `offset` (index into it) so a UI can draw a caret under the error.
+    constructor(message, line, source, offset) {
       super(line ? `Line ${line}: ${message}` : message);
       this.name = 'ProgramError';
-      this.line = line; // 1-based, when known
+      this.line = line;     // 1-based, when known
+      this.source = source; // statement text, when wrapping a ParseError
+      this.offset = offset; // 0-based index into source, when known
     }
   }
 
@@ -431,7 +439,8 @@
   //     steps, result, status: 'normal'|'fuel-exhausted', readback }
   function evalProgram(src, { maxSteps = 5000 } = {}) {
     const lines = src.split('\n').map((l) => l.replace(/--.*$/, ''));
-    const defLine = /^\s*([A-Za-z_][A-Za-z0-9_']*)\s*=\s*(.*)$/;
+    // Name charset must mirror the tokenizer's: Unicode letters except λ.
+    const defLine = /^\s*((?!λ)[\p{L}_](?:(?!λ)[\p{L}0-9_'])*)\s*=\s*(.*)$/u;
 
     const stmts = [];
     let current = null;
@@ -460,7 +469,7 @@
       }
       let term;
       try { term = parse(d.text); }
-      catch (e) { throw new ProgramError(`in definition of '${d.name}': ${e.message}`, d.line); }
+      catch (e) { throw new ProgramError(`in definition of '${d.name}': ${e.message}`, d.line, d.text, e.pos); }
       for (const f of freeVars(term)) {
         if (f === d.name) {
           throw new ProgramError(`'${d.name}' refers to itself — definitions cannot be recursive. Build recursion with Y instead`, d.line);
@@ -479,7 +488,7 @@
 
     let expr;
     try { expr = parse(exprs[0].text); }
-    catch (e) { throw new ProgramError(e.message, exprs[0].line); }
+    catch (e) { throw new ProgramError(e.message, exprs[0].line, exprs[0].text, e.pos); }
 
     const isDefined = (n) => userEnv.has(n) || PRELUDE.has(n) || isNumeralName(n);
     const lookup    = (n) => userEnv.get(n) ?? PRELUDE.get(n) ?? churchNumeral(parseInt(n, 10));

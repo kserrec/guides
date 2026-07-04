@@ -106,15 +106,13 @@ valid lab program (schematics/tables fail the parse and are skipped automaticall
 Clicking a chip opens the lab, loads, and runs. Examples dropdown curated per course
 (8 for Foundations, 4 for Under the Hood). Verified headlessly incl. the observer path.
 
-### A7. Verification & polish 🔲
-Audit already run (2026-07-03, all 91 syntax boxes through the engine): Foundations 43/50
-runnable with zero fuel issues; Under the Hood 16/41 (skips are all correct — schematics,
-pseudocode, deliberate non-definitions). Remaining worklist:
-- Identifiers should accept Unicode letters other than λ — the courses use `ω`/`Ω` as names
-  (`ω = λx.x x` currently fails to parse). Add course-faithful `ω`/`Ω` prelude entries.
-- Error-caret display under parse errors (deferred from A5).
-- Mobile pass: slide-over usability, keyboard behavior.
-- After completion: publish via GitHub Pages (user-approved; repo must go public first).
+### A7. Verification & polish ✅
+Full-curriculum audit: all 91 syntax boxes driven through the engine; after fixes,
+Foundations 44/50 runnable and Under the Hood 18/41 (every skip verified as schematic
+notation, pseudocode, or a deliberate non-definition), zero fuel issues at default budget.
+Fixes: identifiers accept Unicode letters except λ (courses use `ω`/`Ω`), course-faithful
+`ω`/`Ω` prelude entries, parse-error caret in the panel (ProgramError carries
+source/offset), iOS focus-zoom prevention + safe-area insets. 140 tests.
 
 ### A8 (future, optional). `write-expression` exercise kind
 Reuse the A1–A3 engine to power free-input exercises checked by alpha/beta equivalence.

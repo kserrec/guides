@@ -139,7 +139,17 @@
       res = L.evalProgram(src, { maxSteps: fuel });
     } catch (err) {
       if (err instanceof L.ParseError || err instanceof L.ProgramError) {
-        outputEl.replaceChildren(h('div', { className: 'lab-error' }, err.message));
+        const errEl = h('div', { className: 'lab-error' }, err.message);
+        if (err.source != null && err.offset != null) {
+          // Caret under the offending spot within the statement's line.
+          const upTo = err.source.slice(0, err.offset);
+          const lineStart = upTo.lastIndexOf('\n') + 1;
+          const line = err.source.slice(lineStart).split('\n', 1)[0];
+          const col = err.offset - lineStart;
+          errEl.append(h('pre', { className: 'lab-caret' },
+            `${line}\n${' '.repeat(col)}^`));
+        }
+        outputEl.replaceChildren(errEl);
         return;
       }
       throw err;
