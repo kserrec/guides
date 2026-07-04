@@ -232,41 +232,76 @@ bolted on. Learners get to *run* the algebra all four courses taught.
   harness. Inference is staged instead: direct relational DON (net-sign distribution) in D2;
   the subtle machinery — passive transformation, proterms, indirect proof — is its own step
   (D3). Runaway derivations are bounded by fuel, not by parse-time arity limits.
+- **No existential import**, faithful to Sommers: `−S+P` alone never yields `+S+P`;
+  subalternation needs an explicit existence premise `+S+S` (the paper's own convention for
+  import-requiring moods). The Aristotelian layer turns the gap into a suggestion: "it would
+  follow if some S exists — add `+S+S`?"
+- **Three-way query semantics:** *yes* (derivation shown) / *provably no* (refutation shown)
+  / *unknown* (neither derivable). Negation-as-failure appears only as an explicitly labeled
+  guess line ("by negation as failure: …"), as in Mozes' own example output — the
+  open-vs-closed-world distinction is itself a lesson.
+- **Propositional terms wear square brackets**: `+[p]+[q]`, `−[p]+[q]` (the paper's footnote
+  13 convention). With multi-character general terms, brackets are what keep "rain the
+  statement" distinct from "Rain the kind of situation."
+- **Correctness oracle:** the rule engine is fuzzed against a tiny finite-model semantic
+  checker (enumerate small models, decide entailment semantically; syntactic verdict must
+  match on thousands of random arguments). An engine that certifies validity must be held to
+  a higher standard than spot tests — Track A's "an incorrect reducer teaches wrong lessons,"
+  squared.
+- **Panel and standalone page from one codebase:** the λ-Lab-style side panel on course pages
+  for lesson chips, plus a full-page lab at `term-functor-logic/lab/` where document-scale
+  fact bases and derivation panes get room.
 
 ### Steps
 
 - **D1** 🔲 Parser + printer core (`tfl.js` + `tfl.test.js`): AST for terms (general,
-  singular*, negative, compound, relational complex) and propositions (signed pairs in ENF);
-  parse the exact notation used across all four TFL curricula plus ASCII aliases;
-  pretty-printer with round-trip property; positioned parse errors. Acceptance harness (built
-  in this step): drive every TFL syntax-box formula through the parser, A7-style.
+  singular*, negative, compound, relational complex, propositional `[p]`) and propositions
+  (signed pairs in ENF); parse the exact notation used across all four TFL curricula plus
+  ASCII aliases; pretty-printer with round-trip property; positioned parse errors. Acceptance
+  harness (built in this step): drive every TFL syntax-box formula through the parser,
+  A7-style.
 - **D2** 🔲 Inference core (direct derivations): the immediate rules (DN, EN, IN, Com, Assoc,
   Contrap, PD, It) and mediate rules (DON, Simp, Add) as rewrites producing **traced
   derivations** (formula + rule + parent lines); net-sign distribution computation so DON
   reaches inside relational complexes; REGAL/P–Z validity check for premise sets; formula
   equality up to Com/Assoc/DN. Tests: Barbara, hypothetical syllogism, the horse's head
   (tautology premise, cancellation in-complex), the paper's nested faster-than derivation,
-  undistributed-middle failures.
+  undistributed-middle failures, identity chains via singular middle terms (Twain/Clemens —
+  should fall out of DON with wild quantity; prove it). Plus the correctness oracle: the
+  finite-model checker and the fuzz harness comparing syntactic vs semantic verdicts.
 - **D3** 🔲 Deep relational layer: the passive transformation with Course 2 L3's symmetry
   guard (equivalent only when both participants share quantity or one is singular); proterms
   with fresh markers, anchors, and wild quantity; the indirect-proof procedure (counterclaim,
   pronominalize, derive a proterm contradiction). Tests: Course 3's 9-line worked proof,
   scope-trap cases where naive commuting is invalid.
 - **D4** 🔲 Programs & queries: program = propositions + `--` comments; queries `? s`
-  ("what is s" — saturate DON+Simp about a term, fuel-budgeted) and `? −s+P` (yes/no:
-  derivable?). Facts and rules share one shape — the language's defining feature. Tests
-  reproduce the paper's Socrates/Fido example program in course notation.
+  ("what is s" — saturate DON+Simp about a term, fuel-budgeted; results DN-normalized,
+  subsumption-filtered, strongest form first) and `? −s+P` with the three-way verdict
+  (yes / provably no / unknown, per design decisions). Facts and rules share one shape — the
+  language's defining feature. Program-level **consistency check** (P/Z over the fact base,
+  returning the contradiction's derivation when found) as an engine API for D6's banner.
+  Plus the database-independent **equivalence query** `?= <statement>`: closure under the
+  bidirectional immediate rules only (DN-normalized so it terminates), each equivalent
+  listed with its rule name and English reading (obverse, contrapositive, …); pairwise form
+  `?= A , B` decides equivalence by canonical form and shows the rewrite path (for
+  propositional statements, the DNF fingerprint as certificate). Tests reproduce the paper's
+  Socrates/Fido example program in course notation.
 - **D5** 🔲 The Aristotelian layer (what makes it a *database*, not a proof checker):
   natural-language explanation per answer ("Because Socrates is a man, and every man is
   mortal…"); volunteer the stronger answer when a weaker one is asked (asked *some*, prove
-  *every*); "possibility" answers from I-forms (Mozes' *perhaps*); missing-premise suggestion
-  via enthymeme recovery under Course 2 L6's three constraints; negation-by-failure decision
-  documented in-code.
-- **D6** 🔲 Panel UI on TFL course pages, mirroring the λ Lab: toggle button, right panel,
-  per-pathname localStorage buffer, editor + query line + derivation pane with rule names,
-  parse-error caret; input palette for − + ± ( ) *. Import/export of fact files: load a
-  plain-text `.tfl` document into the editor via file picker (client-side FileReader — the
-  file never leaves the browser) and download the current program back out.
+  *every*); "possibility" answers from I-forms (Mozes' *perhaps*); labeled
+  negation-as-failure guess lines on *unknown* verdicts; missing-premise suggestion via
+  enthymeme recovery under Course 2 L6's three constraints — including the
+  existential-import case ("would follow if `+S+S`; add it?").
+- **D6** 🔲 Lab UI, two surfaces from one codebase: the λ-Lab-style panel on TFL course
+  pages (toggle button, right panel, per-pathname localStorage buffer) and a standalone
+  full page at `term-functor-logic/lab/` for document-scale work. Editor + query line +
+  derivation pane with rule names, parse-error caret; input palette for − + ± ( ) * [ ];
+  always-on consistency banner wired to D4's check (shows the contradiction's derivation).
+  Import/export of fact files: load a plain-text `.tfl` document into the editor via file
+  picker (client-side FileReader — the file never leaves the browser) and download the
+  current program back out. Optional square-of-opposition view on `?=` results: equivalents
+  + contradictory + contrary + subaltern as the statement's logical neighborhood.
 - **D7** 🔲 Lesson integration: "▸ try" chips on TFL syntax boxes that parse as programs
   (A6's MutationObserver pattern); curated examples per course (Barbara, horse's head, a
   REGAL check, the proterm proof); verified headlessly across all four courses.
