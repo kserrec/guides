@@ -1758,7 +1758,7 @@ const CURRICULUM = {
                 "DDO requires 'every X' — only a universal premise distributes the middle term, licensing substitution into the matrix. A particular premise 'some X is Y' does not license replacing X with Y for any given item.",
                 "A particular donor would create two particular premises, violating P-regularity and automatically making the argument invalid.",
                 "The Matrix Method only applies to first-figure syllogisms, all of which have a universal major premise.",
-                "Both A and B — the donor must be universal for logical reasons and for regularity reasons, and these are independent constraints."
+                "The DDO licensing requirement and the P-regularity constraint are two independent reasons, each separately forcing a universal donor."
               ],
               choicesAreCode: false,
               answer: 0,

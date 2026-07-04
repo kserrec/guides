@@ -19,6 +19,16 @@ function countCorrect(answers, items) {
   return Object.entries(answers).filter(([i, a]) => a === items[+i].answer).length;
 }
 
+// Random permutation of [0, n) — Fisher-Yates.
+function shuffledIndices(n) {
+  const order = Array.from({ length: n }, (_, i) => i);
+  for (let i = n - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  return order;
+}
+
 // Populates a feedback element with the result icon and explanation text.
 function setFeedback(el, correct, explanation) {
   el.className = `feedback feedback-${correct ? 'correct' : 'incorrect'} visible`;
@@ -88,21 +98,26 @@ const ExerciseHandlers = {
         const itemEl     = h('div', { className: 'exercise-item' });
         const useCode    = item.choicesAreCode !== false;
 
-        item.choices.forEach((choice, j) => {
+        // Choices display in shuffled order; answers are stored and scored by
+        // authored index, so item.answer needs no adjustment. Choices must not
+        // reference each other by position ("both of the above").
+        const order = shuffledIndices(item.choices.length);
+
+        order.forEach((orig) => {
           const btn = h('button', { className: 'btn-choice' });
-          btn.append(useCode ? h('code', null, choice) : choice);
+          btn.append(useCode ? h('code', null, item.choices[orig]) : item.choices[orig]);
 
           btn.addEventListener('click', () => {
             if (exState.answers[i] !== undefined) return;
-            exState.answers[i] = j;
+            exState.answers[i] = orig;
 
-            const correct = j === item.answer;
+            const correct = orig === item.answer;
             itemEl.classList.add(correct ? 'correct' : 'incorrect');
 
             choicesEl.querySelectorAll('.btn-choice').forEach((b, k) => {
               b.disabled = true;
-              if (k === item.answer)        b.classList.add('choice-correct');
-              else if (k === j && !correct) b.classList.add('choice-wrong');
+              if (order[k] === item.answer)           b.classList.add('choice-correct');
+              else if (order[k] === orig && !correct) b.classList.add('choice-wrong');
             });
 
             setFeedback(feedbackEl, correct, item.explanation);
