@@ -23,8 +23,8 @@ completion. If a step grows beyond that during execution, split it before starti
 | Lambda Calculus: Under the Hood | ✅ 8 lessons |
 | TFL: Introduction | ✅ 8 lessons |
 | TFL: The Full Language | ✅ 7 lessons |
-| TFL: Relational Syllogisms (Course 3) | 🔲 planned in `term-functor-logic/ROADMAP.md` |
-| TFL: Statement Logic & MPL (Course 4) | 🔲 planned in `term-functor-logic/ROADMAP.md` |
+| TFL: Relational Syllogisms (Course 3) | ✅ 3 lessons |
+| TFL: Statement Logic & MPL (Course 4) | ✅ 6 lessons |
 
 ### Strengths
 
@@ -154,7 +154,10 @@ Englebretsen, *An Invitation to Formal Reasoning*). Steps here are execution-siz
 - **B8** ✅ Lesson 5 (Translating between TFL and MPL — the dictionary with the four-move
   procedure, term operations as connectives on open sentences, quantifier-negation laws vs the
   sign flip, the left-to-right relational rule, singulars→names, validity preserved both ways).
-- **B9** 🔲 Lesson 6 (The Limits and Power of TFL, Ch. 8 §§14–19) — course and Track B finale.
+- **B9** ✅ Lesson 6 (The limits and power of TFL — the indictment audited count by count with
+  the horse's-head replay, honest concessions on numerical quantity and infrastructure, the
+  naturalness/one-engine/architecture case, Sommers' wager; curriculum-spanning final review).
+  **Course 4 complete — Track B complete: full TFL curriculum, 4 courses / 24 lessons.**
 
 Resolve the open questions listed at the bottom of the TFL roadmap (REGAL acronym,
 commutation/association laws placement) as they come up in the relevant lesson's step.

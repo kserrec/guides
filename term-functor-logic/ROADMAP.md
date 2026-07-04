@@ -82,7 +82,7 @@ complexes (net signs, sign multiplication) to L2 — L1 only uses "+ occurrence 
 
 ---
 
-## Course 4: Statement Logic and the MPL Bridge — 6 lessons 🔲
+## Course 4: Statement Logic and the MPL Bridge — 6 lessons ✅
 
 Dir: `guides/term-functor-logic/statement-logic-and-mpl/`
 Book: Ch. 7 + Ch. 8
@@ -94,7 +94,7 @@ Book: Ch. 7 + Ch. 8
 | 3 | DNF and the Subsumption of Statement Logic | Ch. 7 §§8, 16–17 | ✅ |
 | 4 | MPL's Syntax and the Predicate Way | Ch. 8 §§1–6 | ✅ |
 | 5 | Translating Between TFL and MPL | Ch. 8 §§7–10, 12–13 | ✅ |
-| 6 | The Limits and Power of TFL | Ch. 8 §§14–19 | 🔲 |
+| 6 | The Limits and Power of TFL | Ch. 8 §§14–19 | ✅ |
 
 ---
 
@@ -103,10 +103,10 @@ Book: Ch. 7 + Ch. 8
 | Course | Lessons | Status |
 |--------|---------|--------|
 | Introduction | 8 | ✅ complete |
-| The Full Language | 7 | 🔜 building |
-| Relational Syllogisms | 3–4 | 🔲 |
-| Statement Logic and MPL | 6 | 🔲 |
-| **Total** | **24–25** | |
+| The Full Language | 7 | ✅ complete |
+| Relational Syllogisms | 3 | ✅ complete |
+| Statement Logic and MPL | 6 | ✅ complete |
+| **Total** | **24** | ✅ **curriculum complete** |
 
 ---
 

@@ -1822,6 +1822,364 @@ const CURRICULUM = {
         }
 
       ]
+    },
+
+    // ════════════════════════════════════════════════════════════════════════
+    // LESSON 6: The Limits and Power of TFL
+    // ════════════════════════════════════════════════════════════════════════
+    {
+      id: "lesson-06",
+      title: "Lesson 6: The Limits and Power of TFL",
+      navTitle: "Limits & Power",
+      description: "The final reckoning: audit the century-old indictment of term logic against everything this curriculum has built, concede the limits that are real, and weigh Sommers' wager — that the logic of natural language is a logic of terms.",
+      completionText: "Course complete — and with it, the whole Term Functor Logic curriculum: four courses, from the first plus-minus transcription to the MPL bridge and this final reckoning. The audit came out as Sommers wagered: every inference the moderns called impossible for term logic fell to the same sign algebra — relations, singulars, identity, statement logic — while MPL's genuine advantages lie in idioms and infrastructure, not verdicts. You leave with two fluent notations and one logic. If the algebra has won you over, the source is Sommers & Englebretsen's An Invitation to Formal Reasoning; the frontier beyond it is real — numerical functors, metatheory, and the standing wager that natural reasoning is term reasoning.",
+      blocks: [
+
+        // ── Concept: The Case Against Term Logic ──────────────────────────────
+        {
+          type: "concept",
+          id: "case-against",
+          title: "1. The Case Against Term Logic",
+          content: `
+            <p>Kant judged that logic, since Aristotle, "has not had to retrace a single step"
+            — and seemed complete. A century later Frege's <em>Begriffsschrift</em> (1879)
+            rebuilt logic on the predicate way, and the modern verdict inverted: the
+            syllogistic was not finished but <em>finished off</em> — a quaint fragment,
+            incapable of serious work. The indictment has standard counts:</p>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>relations</code><span>term logic cannot reason about loves, heads, betweenness — De Morgan's horse's head as the emblem</span></div>
+              <div class="ex-row"><code>statements</code><span>it has no account of and, or, if — no propositional logic</span></div>
+              <div class="ex-row"><code>singulars</code><span>proper names fit the subject–predicate mold awkwardly, if at all</span></div>
+              <div class="ex-row"><code>pronouns</code><span>no variables, so no way to track an individual through a multi-step inference</span></div>
+              <div class="ex-row"><code>identity</code><span>no theory of "Twain is Clemens" and the substitution it licenses</span></div>
+            </div>
+
+            <p>On this story, MPL was not an alternative notation but a rescue: logic could not
+            do its job until terms were split into names and predicates and quantity was handed
+            to variable-binding operators.</p>
+
+            <p>You are now in a rare position for a modern student of logic: you have worked
+            both systems from the ground up. This last lesson is the audit — which counts of
+            the indictment failed, which have something to them, and what the algebra's own
+            positive case amounts to.</p>
+          `
+        },
+
+        // ── Concept: The Charges, Answered ───────────────────────────────────
+        {
+          type: "concept",
+          id: "charges-answered",
+          title: "2. The Charges, Answered",
+          content: `
+            <p>Take the counts in order, each with the lesson where it fell:</p>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>relations</code><span>English normal form <code>±S±(R±O)</code> — signs inside the complex (The Full Language L2–L3); the dictum reaching into complexes (Course 3)</span></div>
+              <div class="ex-row"><code>statements</code><span>this course: the trichotomy, direct proofs, trees, DNF — and the subsumption: statement logic is a <em>branch</em> of the syllogistic (L3)</span></div>
+              <div class="ex-row"><code>singulars</code><span>wild quantity <code>±s*</code> (Introduction L7) — and at the bridge they are exactly MPL's names (L5)</span></div>
+              <div class="ex-row"><code>pronouns</code><span>proterms with fixed reference and wild quantity (Course 3) — bound variables, on demand instead of mandatory</span></div>
+              <div class="ex-row"><code>identity</code><span>monadic singular predication, with all four laws of identity as theorems (The Full Language L7)</span></div>
+            </div>
+
+            <p>And the emblem deserves its replay. De Morgan's horse's head — "beyond the
+            syllogistic," the argument that supposedly forced modern logic into existence —
+            fell in Course 3 to a one-step cancellation, once a free tautology supplied the
+            host premise:</p>
+
+            <div class="step-trace">
+              <div class="step"><code>−(Head+Horse)+(Head+Horse)</code><span class="step-note">every head of a horse is a head of a horse — costs nothing</span></div>
+              <div class="step"><code>−Horse+Animal</code><span class="step-note">the lone premise, a perfect donor</span></div>
+              <div class="step step-reduce"><code>−(Head+Horse)+(Head+Animal)</code><span class="step-note">Horse cancels inside the complex: every head of a horse is a head of an animal ✓</span></div>
+            </div>
+
+            <div class="grammar-rule">
+              <span class="g-label">The Verdict So Far</span>
+              Every inference the indictment called impossible was performed inside the sign
+              algebra — no variables, no quantifier rules, no new machinery. The prosecution's
+              exhibits became the curriculum's exercises.
+            </div>
+          `
+        },
+
+        // ── Exercise: The Audit ───────────────────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-audit",
+          title: "Quick Check: The Audit",
+          instruction: "Match each charge against term logic to how the algebra answered it.",
+          kind: "multiple-choice",
+          items: [
+            {
+              prompt: "De Morgan's horse's head lacked a host premise. What supplied it?",
+              choices: [
+                "An MPL translation of the conclusion",
+                "A tautology — 'every head of a horse is a head of a horse' — added at no cost, exposing +Horse for the donor to cancel",
+                "The passive transformation",
+                "A second empirical premise about horses"
+              ],
+              choicesAreCode: false,
+              answer: 1,
+              explanation: "Tautologies are true no matter what, so adding one costs nothing (Lesson 1's trichotomy, weaponized). −(Head+Horse)+(Head+Horse) hosts the donor −Horse+Animal, Horse cancels inside the complex, and the 'impossible' argument is a one-step syllogism."
+            },
+            {
+              prompt: "How did TFL answer the charge that it has no propositional logic?",
+              choices: [
+                "By adopting MPL's connectives as new primitives",
+                "By showing propositional logic is unnecessary",
+                "By subsuming it: propositional terms in the singleton universe, with the trichotomy, proofs, trees, and DNF all running on the old rules — a branch of the syllogistic, not a rival",
+                "By restricting itself to categorical statements"
+              ],
+              choicesAreCode: false,
+              answer: 2,
+              explanation: "This course was the answer: transcribe the connectives (−p+q and company), let bare premises enter as +p+p, and every statement-logic method — the P/Z detector, cancellation proofs, trees, normal forms — is the term algebra at work in a one-member universe."
+            },
+            {
+              prompt: "The singular-terms charge said proper names fit the subject–predicate mold awkwardly. TFL's answer:",
+              choices: [
+                "Wild quantity — a term denoting one individual makes all/some collapse, so it takes ± and slots into the ordinary forms; at the bridge these are exactly MPL's names",
+                "Names are banned from subject position",
+                "Names are treated as abbreviated descriptions",
+                "Singular statements are left untranslatable"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "±Socrates*+Wise is an ordinary categorical with a wild subject sign (Introduction L7). Far from awkward, the treatment explains MPL's own design: names are precisely the terms whose quantifier would carry no information — so MPL omits it."
+            },
+            {
+              prompt: "And the pronoun charge — no variables, no way to track an individual through a proof?",
+              choices: [
+                "Conceded — TFL cannot do multi-step relational proofs",
+                "Answered by borrowing MPL's variables wholesale",
+                "Answered by forbidding multiply general premises",
+                "Answered by proterms: pronouns with fixed reference and wild quantity, deployed exactly when an argument needs them — MPL's variables, on demand instead of mandatory"
+              ],
+              choicesAreCode: false,
+              answer: 3,
+              explanation: "Course 3's indirect proofs pronominalized the particular premises and let distributed proterms do the work of instantiation rules. The device is the same as MPL's bound variables; the economy — used only when needed — is TFL's own."
+            }
+          ]
+        },
+
+        // ── Concept: Real Limits ──────────────────────────────────────────────
+        {
+          type: "concept",
+          id: "real-limits",
+          title: "3. Real Limits",
+          content: `
+            <p>An honest audit concedes what is genuinely on the other side. Two things
+            are.</p>
+
+            <p><strong>Numerical quantity.</strong> "At least two students passed." MPL, with
+            its identity predicate and distinguishable variables, says it directly:</p>
+
+            <div class="syntax-box"><code>∃x∃y(x ≠ y ∧ Sx ∧ Px ∧ Sy ∧ Py)</code></div>
+
+            <p>Two pronouns, certified distinct, each a passing student. The core TFL of this
+            curriculum has signs for <em>every</em> and <em>some</em> — but no functor for
+            <em>at least two</em>, <em>exactly three</em>, <em>most</em>. Extensions of term
+            logic add numerical functors, but they lie beyond the core system and beyond this
+            course. On numerical idioms, MPL's variable-and-identity trick is a real,
+            working advantage.</p>
+
+            <p><strong>Infrastructure.</strong> A century of mathematics has been built on
+            MPL's syntax: model theory, Gödel's completeness theorem, computability, proof
+            assistants, database theory. Its regimentation — scope worn openly as quantifier
+            order, one rigid grammar — is exactly what machines and metatheorems want. TFL has
+            soundness and completeness results of its own, but the ecosystem is a village
+            beside a metropolis. If you are formalizing mathematics or writing a theorem
+            prover this year, you will speak MPL.</p>
+
+            <div class="grammar-rule">
+              <span class="g-label">A Fair Scorecard</span>
+              Across everything this curriculum treated — categoricals, relationals, singulars,
+              identity, statement logic — the two systems match verdict for verdict. Beyond it,
+              MPL's numerical idioms and mature infrastructure are real advantages: answerable
+              in principle by extensions, answered in practice only partly.
+            </div>
+
+            <p>Note what the concessions are <em>not</em>. Neither is a class of valid
+            arguments TFL gets wrong; both are matters of vocabulary and tooling. The
+            indictment claimed term logic <em>couldn't reason</em>. The truth is that it
+            reasons perfectly and, at the edges, speaks a smaller language with fewer
+            institutions behind it.</p>
+          `
+        },
+
+        // ── Concept: The Power of TFL ─────────────────────────────────────────
+        {
+          type: "concept",
+          id: "power-of-tfl",
+          title: "4. The Power of TFL — and the Wager",
+          content: `
+            <p>Now the algebra's own case, assembled from four courses of evidence.</p>
+
+            <p><strong>Naturalness.</strong> TFL transcribes English nearly word for word:
+            quantity words become signs in place, and "every man loves some woman" keeps its
+            shape as <code>−Man+(Lov+Woman)</code>. MPL must paraphrase — "take anything
+            whatever: if it is a man, then there is something which is a woman and…" — through
+            the caste system, the mandatory pronouns, and an asymmetry that burns every
+            beginner. One notation follows the language; the other reforms it.</p>
+
+            <p><strong>One engine.</strong> From Barbara in the Introduction to relational
+            enthymemes, modus ponens, and this course's trees, a single principle — cancel
+            the middle, with contraposition and simplification as escorts — powered every
+            proof. Nothing was added for statements, relations, singulars, or identity;
+            vocabulary grew and the engine never changed.</p>
+
+            <p><strong>Architecture.</strong> The subsumption (Lesson 3): statement logic,
+            modern logic's ground floor, is a branch of the syllogistic — the singleton-universe
+            case. The term way does not sit beside the predicate way as an equal dialect; over
+            their shared territory it <em>contains</em> the propositional calculus that MPL
+            builds on.</p>
+
+            <p>And behind the technical case, Sommers' <strong>wager</strong>: people do not
+            reason in quantifier prefixes and bound variables — they reason in terms, the way
+            children learn language and the way arguments actually run at a dinner table. If
+            that is right, TFL is not a nostalgic reconstruction but a description of the
+            logic we natively run, given algebraic teeth.</p>
+
+            <div class="callout-note">
+              <span class="cn-label">The Road Behind</span>
+              Four courses: the sign algebra and the four forms; compound, relational, and
+              identity statements with REGAL; the relational syllogistic with distribution and
+              proterms; and statement logic through the trichotomy, proofs, trees, DNF, the
+              subsumption, and the MPL bridge. Every tool earned inside the algebra, every
+              rival exhibit answered on its own terms.
+            </div>
+          `
+        },
+
+        // ── Exercise: Limits and Power ───────────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-limits-power",
+          title: "Quick Check: Limits and Power",
+          instruction: "The honest concessions — and the algebra's positive case.",
+          kind: "multiple-choice",
+          items: [
+            {
+              promptHtml: mcPrompt("Express in each system:", "at least two students passed"),
+              choices: [
+                "TFL: +S+P said twice; MPL: ∃x(Sx ∧ Px) said twice",
+                "MPL: ∃x∃y(x ≠ y ∧ Sx ∧ Px ∧ Sy ∧ Py); core TFL: no functor for numerical quantity — extensions add one, beyond this course",
+                "Both systems express it as a universal statement",
+                "Neither system can express numerical quantity"
+              ],
+              choicesAreCode: false,
+              answer: 1,
+              explanation: "Repeating 'some student passed' never certifies two students — the same one may witness both. MPL's identity-and-variables idiom certifies distinctness directly; TFL's core signs stop at every/some. A genuine limit, honestly conceded."
+            },
+            {
+              prompt: "What does MPL's rigid regimentation genuinely buy?",
+              choices: [
+                "Machine-friendliness and metatheory: scope worn openly as quantifier order, one grammar for provers and model theory — the infrastructure of modern mathematics",
+                "Shorter formulas than TFL's",
+                "Immunity to the vacuous-truth problem",
+                "A guarantee that A entails I"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "Regimentation is a cost to human readers (Lesson 4) and a gift to machines and metatheorems. Formulas get longer, not shorter; vacuous truth is MPL's own convention; and A-entails-I is exactly what MPL gave up."
+            },
+            {
+              prompt: "TFL's naturalness claim is that:",
+              choices: [
+                "TFL formulas are always shorter",
+                "TFL avoids all symbolic notation",
+                "Transcription is nearly homophonic — quantity words become signs in place, so English keeps its shape — where MPL must paraphrase through castes, mandatory pronouns, and the connective asymmetry",
+                "MPL cannot express what English says"
+              ],
+              choicesAreCode: false,
+              answer: 2,
+              explanation: "'Every man loves some woman' → −Man+(Lov+Woman): subject, relation, object, each with its sign, in English order. The claim is not that MPL lacks the content — Lesson 5's bridge carries it — but that one notation follows the language while the other reforms it."
+            },
+            {
+              prompt: "The 'one engine' argument observes that:",
+              choices: [
+                "TFL needs a different rule set for each course",
+                "A single principle — cancel the middle term, with contraposition and simplification — powered every proof from Barbara through relationals, modus ponens, and trees; new subject matter added vocabulary, never machinery",
+                "Trees replaced cancellation in the final course",
+                "The engine works only in the singleton universe"
+              ],
+              choicesAreCode: false,
+              answer: 1,
+              explanation: "Count the rules across four courses: DDO cancellation, contraposition, simplification — and every 'new' rule (ponens, tollens, disjunctive syllogism, tree closure) unmasked as one of them in different dress. That economy is the algebra's standing argument."
+            }
+          ]
+        },
+
+        // ── Exercise: Final Review ───────────────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-whole-journey-final",
+          isFinal: true,
+          title: "Final Review: The Whole Journey",
+          instruction: "Five questions spanning the full curriculum — the algebra, validity, the bridge, the subsumption, and the verdict.",
+          kind: "multiple-choice",
+          items: [
+            {
+              promptHtml: mcPrompt("The contradictory of", "−S+P"),
+              choices: [
+                "−S−P — no S is P",
+                "−P+S — every P is S",
+                "+S−P — some S isn't P: flip both leading signs",
+                "+(−S)+(−P)"
+              ],
+              answer: 2,
+              explanation: "The rule from the Introduction that never changed: flip both leading signs. A's denial is O — the same computation MPL performs with quantifier-negation laws and a negated-conditional rewrite (Lesson 5)."
+            },
+            {
+              prompt: "An argument is valid if and only if:",
+              choices: [
+                "Its counterclaim — premises plus denied conclusion — is a contradiction: exactly one particular conjunct (P) and an algebraic sum of zero (Z)",
+                "Its premises are all true",
+                "Its conclusion is a tautology",
+                "Its tree has at least one open branch"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "The Principle of Validity, from REGAL through the trichotomy: deduction is contradiction-detection. Open branches certify the opposite — a counterexample world. True premises and tautologous conclusions are neither necessary nor sufficient."
+            },
+            {
+              promptHtml: mcPrompt("Across the bridge:", "−Man+(Lov+Woman)"),
+              choices: [
+                "∃y(Wy ∧ ∀x(Mx → Lxy))",
+                "∀x∀y((Mx ∧ Wy) → Lxy)",
+                "∀x(Mx ∧ ∃y(Wy → Lxy))",
+                "∀x(Mx → ∃y(Wy ∧ Lxy))"
+              ],
+              answer: 3,
+              explanation: "Left-to-right signs become left-to-right quantifiers: − picks ∀ with →, + picks ∃ with ∧, and Lxy records the roles. The first choice reverses scope (some woman loved by all); the others cross connectives or over-quantify."
+            },
+            {
+              prompt: "The subsumption result says:",
+              choices: [
+                "TFL and MPL are incommensurable systems",
+                "Statement logic is a branch of the syllogistic: propositional terms in the singleton universe, expressible via DNF and the transcriptions, provable by the term rules — the inversion of the modern architecture",
+                "The syllogistic is a fragment of statement logic",
+                "Statement logic requires the tree method"
+              ],
+              choicesAreCode: false,
+              answer: 1,
+              explanation: "Lesson 3's twin halves: everything statement logic says (DNF reduces any connective to or/and/not, all categorical) and everything it proves (DDO, contraposition, simplification) lives inside the term algebra. Frege's tower, inverted."
+            },
+            {
+              prompt: "The curriculum's final verdict on term logic versus the century-old indictment:",
+              choices: [
+                "Every charge — relations, statements, singulars, pronouns, identity — was answered inside the sign algebra; the real limits are numerical idioms and infrastructure, not verdicts; over shared territory, one logic in two notations",
+                "The indictment stands — term logic remains a quaint fragment",
+                "TFL wins on all counts, including metatheory and tooling",
+                "The two systems disagree about which relational arguments are valid"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "The audit in full: the prosecution's exhibits became exercises (the horse's head fell to one cancellation), the concessions are matters of vocabulary and ecosystem rather than correctness, and the bridge showed validity surviving translation both ways. What remains open is Sommers' wager — that the logic we natively run is a logic of terms."
+            }
+          ]
+        }
+
+      ]
     }
 
   ]
