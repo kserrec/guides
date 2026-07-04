@@ -140,7 +140,9 @@ Englebretsen, *An Invitation to Formal Reasoning*). Steps here are execution-siz
 - **B3** ✅ Lesson 3 (Indirect proofs and distributed proterms — counterclaim refutation as a
   procedure, pronominalization rule + anchors, distributed proterms as TFL's instantiation,
   full 9-line worked proof). **Course 3 complete.**
-- **B4** 🔲 Scaffold Course 4 (`statement-logic-and-mpl/`) + Lesson 1 (Contradictions, tautologies, contingency).
+- **B4** ✅ Scaffold Course 4 (`statement-logic-and-mpl/`) + Lesson 1 (the trichotomy; contradiction
+  signature +X−X; tautology test via self-destructing contradictories; excluded middle as −X+X with
+  X=(−p); validity restated as counterclaim-is-a-contradiction, P/Z as the detector).
 - **B5–B9** 🔲 Lessons 2–6, one per step (see TFL roadmap for chapter mappings).
 
 Resolve the open questions listed at the bottom of the TFL roadmap (REGAL acronym,
