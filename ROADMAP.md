@@ -145,7 +145,10 @@ Englebretsen, *An Invitation to Formal Reasoning*). Steps here are execution-siz
   X=(−p); validity restated as counterclaim-is-a-contradiction, P/Z as the detector).
 - **B5** ✅ Lesson 2 (Direct proofs and the tree method — bare p = +p+p, statement rules as one
   cancellation, tree decomposition with counterexample-reading open branches).
-- **B6–B9** 🔲 Lessons 3–6, one per step (see TFL roadmap for chapter mappings).
+- **B6** ✅ Lesson 3 (DNF and the subsumption of statement logic — world-descriptions, DNF read
+  off tree branches, expressive completeness via or/and/not, statements as singular terms of the
+  singleton universe with wild quantity; the Frege-inversion framing).
+- **B7–B9** 🔲 Lessons 4–6, one per step (see TFL roadmap for chapter mappings).
 
 Resolve the open questions listed at the bottom of the TFL roadmap (REGAL acronym,
 commutation/association laws placement) as they come up in the relevant lesson's step.

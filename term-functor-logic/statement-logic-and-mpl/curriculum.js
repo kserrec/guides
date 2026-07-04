@@ -662,6 +662,399 @@ const CURRICULUM = {
         }
 
       ]
+    },
+
+    // ════════════════════════════════════════════════════════════════════════
+    // LESSON 3: DNF and the Subsumption of Statement Logic
+    // ════════════════════════════════════════════════════════════════════════
+    {
+      id: "lesson-03",
+      title: "Lesson 3: DNF and the Subsumption of Statement Logic",
+      navTitle: "DNF & Subsumption",
+      description: "Reduce any statement to its list of satisfying worlds — disjunctive normal form — watch the tree method compute it for free, and cash in the course's promise: statement logic is not a rival system beside the syllogistic but a branch of it.",
+      completionText: "The subsumption is complete. DNF supplies the expressive half — every truth-functional compound reduces to or-of-ands of literals, and 'or,' 'and,' 'not' all transcribe categorically — while Lessons 1–2 supplied the inferential half: nothing statement logic proves needs rules beyond DDO, contraposition, and simplification. Statement logic is the syllogistic run in a one-member universe, where propositions are singular terms for the world-state and quantity goes wild. Next lesson the course crosses to the other side of the bridge: modern predicate logic on its own terms — quantifiers, variables, and the predicate way of building statements.",
+      blocks: [
+
+        // ── Concept: World-Descriptions and Normal Form ──────────────────────
+        {
+          type: "concept",
+          id: "world-descriptions",
+          title: "1. World-Descriptions and Normal Form",
+          content: `
+            <p>Lesson 2 ended with trees handing you worlds: an open branch read off as
+            "p false, q true" was the counterexample. This lesson makes that reading the star.
+            Fix a vocabulary of statement terms — say p and q. A <strong>world-description</strong>
+            settles every term, affirming it or denying it, in one conjunction:</p>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>+p+q</code><span>worlds where p and q both hold</span></div>
+              <div class="ex-row"><code>+p+(−q)</code><span>worlds with p but not q</span></div>
+              <div class="ex-row"><code>+(−p)+q</code><span>worlds with q but not p</span></div>
+              <div class="ex-row"><code>+(−p)+(−q)</code><span>worlds with neither</span></div>
+            </div>
+
+            <p>Two terms, two choices each: four kinds of world, and every world is exactly one
+            of the four. Any statement built from p and q is true in some rows and false in the
+            rest — Lesson 1's trichotomy just counts them: all four, none, or in between.</p>
+
+            <div class="grammar-rule">
+              <span class="g-label">Disjunctive Normal Form</span>
+              Every statement is equivalent to the <strong>disjunction of the world-descriptions
+              it is true in</strong> — its DNF. A statement <em>is</em> its list of worlds:
+              tautology = the full list, contradiction = the empty list, contingent = a proper,
+              non-empty selection.
+            </div>
+
+            <p>Take <code>−p+q</code> — "if p then q." It fails in exactly one kind of world:
+            p without q. So its DNF is the other three rows:</p>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>+p+q</code><span>✓ satisfies it</span></div>
+              <div class="ex-row"><code>+p+(−q)</code><span>✗ the one excluded row</span></div>
+              <div class="ex-row"><code>+(−p)+q</code><span>✓ satisfies it</span></div>
+              <div class="ex-row"><code>+(−p)+(−q)</code><span>✓ satisfies it</span></div>
+            </div>
+
+            <p>Look closely at the excluded row: <code>+p+(−q)</code> is the conditional's
+            contradictory <code>+p−q</code> — "p but not q" — in world-description dress
+            (obversion: "isn't q" = "is non-q"). A statement's missing rows are not lost;
+            they are exactly where its contradictory lives.</p>
+
+            <div class="callout-note">
+              <span class="cn-label">Notation</span>
+              In the sign algebra proper, disjunction chains through the four-minus form —
+              the DNF of a conditional is a nested <code>−(−…)−(−…)</code> tower. Nothing new
+              is needed to write it; plenty is gained by not reading it. We display normal
+              forms as row lists and let the algebra keep the receipts.
+            </div>
+          `
+        },
+
+        // ── Concept: Trees Compute Normal Forms ──────────────────────────────
+        {
+          type: "concept",
+          id: "trees-compute-dnf",
+          title: "2. Trees Compute Normal Forms",
+          content: `
+            <p>How do you find a statement's DNF? You already own the machine. Complete a tree
+            of the statement: every open branch is a conjunction of literals — a
+            world-description, possibly partial. The open branches, disjoined,
+            <em>are</em> a normal form.</p>
+
+            <div class="syntax-box"><pre>
+1.  −p+q      (the statement)
+
+     ┌────┴────┐
+   (−p)        q
+   open       open</pre></div>
+
+            <p>Compact DNF: <code>(−p)</code> or <code>q</code>. Each branch is silent about
+            the term it doesn't mention, so it covers both settings of that term. Expand the
+            silences and the full DNF appears:</p>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>(−p)</code><span>covers +(−p)+q and +(−p)+(−q)</span></div>
+              <div class="ex-row"><code>q</code><span>covers +p+q and +(−p)+q</span></div>
+              <div class="ex-row"><code>together</code><span>the three rows of §1 — overlap counted once</span></div>
+            </div>
+
+            <p>And the tree verdicts of Lesson 2 become row counts. All branches close: no
+            disjuncts, empty DNF, contradiction. To certify a tautology, tree the contradictory
+            and watch it close — equivalently, the statement's own full DNF lists every row.</p>
+
+            <p>Normal form also settles <strong>equivalence</strong>, a question trees alone
+            answered awkwardly. The conditional <code>−p+q</code> and its contrapositive
+            <code>−(−q)+(−p)</code> look nothing alike; both exclude exactly the row
+            <code>+p+(−q)</code>, so both have the same three-row DNF. Same rows, same
+            statement:</p>
+
+            <div class="grammar-rule">
+              <span class="g-label">Canonical Form</span>
+              Two statements are logically equivalent if and only if their full DNFs list the
+              same world-descriptions. Syntax varies — dozens of ways to write one claim — but
+              the normal form is a fingerprint.
+            </div>
+          `
+        },
+
+        // ── Exercise: Reading Normal Forms ───────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-normal-forms",
+          title: "Quick Check: Reading Normal Forms",
+          instruction: "World-descriptions, DNF by tree, and equivalence by fingerprint.",
+          kind: "multiple-choice",
+          items: [
+            {
+              promptHtml: mcPrompt("Which world-descriptions over p, q satisfy:", "−p+q"),
+              choices: [
+                "+p+q only",
+                "+p+(−q) only",
+                "+p+q · +(−p)+q · +(−p)+(−q)",
+                "+(−p)+q · +(−p)+(−q)"
+              ],
+              answer: 2,
+              explanation: "'If p then q' fails only where p holds without q — the row +p+(−q), its contradictory +p−q in world-description dress. The other three rows all satisfy it, and they are its full DNF."
+            },
+            {
+              prompt: "How many world-descriptions are there over three statement terms p, q, r?",
+              choices: ["3", "6", "8", "9"],
+              answer: 2,
+              explanation: "Each term is settled independently — affirmed or denied — so the count doubles per term: 2 × 2 × 2 = 8. A full DNF over three terms is a selection from those eight rows; a tautology takes all eight."
+            },
+            {
+              prompt: "A completed tree of S closes every branch. What is S's DNF?",
+              choices: [
+                "The single row +S+S",
+                "All world-descriptions over S's terms",
+                "It cannot be determined from a closed tree",
+                "The empty disjunction — no world-description satisfies S"
+              ],
+              choicesAreCode: false,
+              answer: 3,
+              explanation: "Open branches are the disjuncts of the DNF. No open branches, no disjuncts: S's list of satisfying worlds is empty, which is what being a contradiction means. Tree method and normal form deliver the same verdict from the same evidence."
+            },
+            {
+              promptHtml: mcPrompt("Compare the full DNFs of", "−p+q &nbsp;and&nbsp; −(−q)+(−p)"),
+              choices: [
+                "They differ in one row — the contrapositive drops +(−p)+(−q)",
+                "Identical, three rows each — the statements are equivalent",
+                "They share no rows — the statements are contradictories",
+                "Incomparable: DNF is defined only for positive terms"
+              ],
+              choicesAreCode: false,
+              answer: 1,
+              explanation: "A conditional and its contrapositive exclude exactly the same kind of world: p without q. Same excluded row, same three remaining rows — and identity of full DNFs is what equivalence means. The fingerprint test at work."
+            }
+          ]
+        },
+
+        // ── Concept: Expressive Completeness ─────────────────────────────────
+        {
+          type: "concept",
+          id: "expressive-completeness",
+          title: "3. Nothing Statement Logic Says Escapes the Algebra",
+          content: `
+            <p>Why does normal form matter beyond bookkeeping? Because it answers a challenge.
+            TFL transcribed "and," "or," and "if" in Course 2 — but statement logic can define
+            <em>any</em> truth-functional compound: the biconditional, exclusive-or, some
+            unnamed three-term connective given only by its truth table. Does each new
+            connective need its own transcription?</p>
+
+            <p>DNF says no. Given any truth table whatsoever, collect the rows where the
+            compound is true; each row is a world-description — a conjunction of affirmed and
+            denied terms; disjoin them. Done. For instance:</p>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>p iff q</code><span>true rows: +p+q, +(−p)+(−q) — "both or neither"</span></div>
+              <div class="ex-row"><code>p xor q</code><span>true rows: +p+(−q), +(−p)+q — the complementary pair</span></div>
+            </div>
+
+            <p>So every truth function reduces to three operations — <em>or</em>, <em>and</em>,
+            <em>not</em> — and TFL owns all three:</p>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>+A+B</code><span>conjunction — the I-form</span></div>
+              <div class="ex-row"><code>−(−A)−(−B)</code><span>disjunction — the four-minus form</span></div>
+              <div class="ex-row"><code>(−A)</code><span>negation — the negative term</span></div>
+            </div>
+
+            <div class="grammar-rule">
+              <span class="g-label">The Expressive Half of the Subsumption</span>
+              Every truth-functional compound, however exotic, is equivalent to its DNF — and a
+              DNF is built from conjunction, disjunction, and negative terms, all of which are
+              already categorical. Nothing statement logic can say is missing from TFL.
+            </div>
+
+            <p>Note the division of labor with the earlier lessons. Lessons 1–2 showed that
+            what statement logic <em>proves</em>, TFL proves — with cancellation, trees, and
+            the P/Z detector. This section shows that what statement logic <em>says</em>, TFL
+            says. Expressible and provable: those are the two halves of "subsumed."</p>
+          `
+        },
+
+        // ── Concept: The Singleton Universe ──────────────────────────────────
+        {
+          type: "concept",
+          id: "singleton-subsumption",
+          title: "4. A Branch, Not a Rival",
+          content: `
+            <p>Where does statement logic's perfect obedience come from? From a fact recalled
+            since the Introduction: the propositional universe is a <strong>singleton</strong>.
+            Statement terms name kinds of world-state — "situations where it rains" — and there
+            is exactly one candidate to be in or out of those kinds: the actual world-state.</p>
+
+            <p>That makes statements the <strong>singular terms</strong> of their universe. In
+            a one-member universe, an occupied class is not just nonempty — it is the whole
+            universe. So once p is asserted, "some p-situation is q" and "every p-situation
+            is q" pick out the same fact, and quantity goes <strong>wild</strong> — the same
+            collapse that earned Socrates his ± in Introduction Lesson 7, for the same reason:
+            a term that can denote at most one thing makes all/some a distinction without a
+            difference.</p>
+
+            <p>Wild quantity is why the bare premise <code>+p+p</code> could host the universal
+            <code>−p+q</code> the moment it entered a proof, and why Course 4 added no
+            machinery: modus ponens was Barbara, tollens was ponens on the contrapositive,
+            tree closure was the +X−X signature, the trichotomy was the P/Z detector's
+            three possible verdicts. Rules borrowed, none invented.</p>
+
+            <div class="grammar-rule">
+              <span class="g-label">The Subsumption</span>
+              Statement logic is the syllogistic applied to propositional terms in a one-member
+              universe. Expressible (DNF + the transcriptions) and provable (DDO,
+              contraposition, simplification) — a <strong>branch</strong> of term logic, not a
+              system beside it.
+            </div>
+
+            <p>Measure that against the modern architecture. Since Frege, logic is built the
+            other way up: the propositional calculus is the ground floor, quantifiers and
+            predicates are erected on top of it, and the syllogistic is retired as a quaint
+            fragment of the result. Sommers inverts the building: the term algebra is the
+            trunk, and the propositional calculus grows out of it as the singleton-universe
+            special case.</p>
+
+            <div class="callout-note">
+              <span class="cn-label">What's Next</span>
+              One system remains standing on the other side: modern predicate logic itself —
+              MPL, the logic of quantifiers and bound variables. Before TFL and MPL can be
+              translated into each other, you need to read MPL natively. Next lesson: its
+              syntax, and the predicate way of building statements.
+            </div>
+          `
+        },
+
+        // ── Exercise: The Subsumption ────────────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-subsumption",
+          title: "Quick Check: The Subsumption",
+          instruction: "The singleton universe, wild quantity, and what DNF proves.",
+          kind: "multiple-choice",
+          items: [
+            {
+              prompt: "In the propositional universe, why do 'some p-situation is q' and 'every p-situation is q' collapse once p is asserted?",
+              choices: [
+                "Because q must also be asserted",
+                "Because propositions cannot appear in subject position",
+                "The universe has one member — an occupied class is the whole universe, so 'some' and 'every' pick out the same fact",
+                "They do not collapse; the tree method is needed to distinguish them"
+              ],
+              choicesAreCode: false,
+              answer: 2,
+              explanation: "One candidate world-state: if any p-situation exists, the whole universe is p-situations. All/some becomes a distinction without a difference — wild quantity, exactly as with singular terms."
+            },
+            {
+              prompt: "Which new rules of inference does statement logic add to the term algebra?",
+              choices: [
+                "Modus ponens and modus tollens",
+                "The tree decomposition rules",
+                "Branch closure on +X−X",
+                "None — only new vocabulary: propositional terms, negative terms, and the transcriptions of the connectives"
+              ],
+              choicesAreCode: false,
+              answer: 3,
+              explanation: "Every 'rule' of this course was already licensed: ponens is Barbara, tollens is ponens on the contrapositive, tree closure is the contradiction signature surfacing on a branch. Vocabulary grew; the engine never changed."
+            },
+            {
+              prompt: "What exactly does DNF contribute to the subsumption claim?",
+              choices: [
+                "It shows statement-logic proofs always terminate",
+                "Expressive completeness: any truth-functional compound reduces to or-of-ands of literals — and 'or,' 'and,' 'not' all transcribe categorically",
+                "It shows all tautologies share one normal form",
+                "It replaces the tree method"
+              ],
+              choicesAreCode: false,
+              answer: 1,
+              explanation: "Proofs and trees covered what statement logic proves; DNF covers what it says. Any truth table, however exotic its connective, is a disjunction of its true rows — built from three operations TFL already owns."
+            },
+            {
+              prompt: "How does TFL's architecture differ from modern logic's?",
+              choices: [
+                "Modern logic makes the propositional calculus the ground floor and builds quantification on top; TFL derives statement logic as the singleton-universe branch of the syllogistic",
+                "TFL rejects statement logic as meaningless",
+                "They agree on architecture and differ only in notation",
+                "TFL makes statement logic basic and derives the syllogistic from it"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "Since Frege, the syllogistic has been treated as a small fragment of a logic built on a propositional base. Sommers inverts the building: the term algebra is the trunk, and the whole propositional calculus is one of its branches."
+            }
+          ]
+        },
+
+        // ── Exercise: Final Review ───────────────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-dnf-subsumption-final",
+          isFinal: true,
+          title: "Final Review: DNF and the Subsumption",
+          instruction: "Normal forms, what they classify, and why statement logic is a branch of the syllogistic.",
+          kind: "multiple-choice",
+          items: [
+            {
+              prompt: "The full DNF over p, q of a tautology:",
+              choices: [
+                "Is empty",
+                "Is the single row +p+q",
+                "Lists all four world-descriptions — true in every kind of world",
+                "Cannot be computed by a tree"
+              ],
+              choicesAreCode: false,
+              answer: 2,
+              explanation: "A tautology excludes nothing, so every row is on its list — which is precisely why it carries no information (Lesson 1). Dually, a contradiction's list is empty; contingency is everything in between."
+            },
+            {
+              promptHtml: mcPrompt("Over the vocabulary p, q, a completed open branch holds just", "(−p)"),
+              choices: [
+                "It covers the rows +(−p)+q and +(−p)+(−q)",
+                "It covers the row +(−p)+q only",
+                "It covers the rows +p+q and +p+(−q)",
+                "No rows — a branch must mention every term"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "A branch silent about q constrains only p: any world with p false satisfies it, whichever way q goes. Expanding the silence splits the compact disjunct into its two full rows."
+            },
+            {
+              prompt: "How do the full DNFs of a statement and its contradictory relate?",
+              choices: [
+                "They are identical",
+                "The contradictory's DNF is always empty",
+                "They overlap in exactly one row",
+                "They split the world-descriptions between them — no shared row, and together they exhaust all of them"
+              ],
+              choicesAreCode: false,
+              answer: 3,
+              explanation: "Denial swaps the worlds a statement is true in for the worlds it is false in (Lesson 1). Row-wise: the contradictory's list is the exact complement. At the trichotomy's ends the split is total — all rows against none."
+            },
+            {
+              prompt: "Statements take wild quantity for the same reason singular terms do. What is that reason?",
+              choices: [
+                "Both denote at most one thing — and a class with one possible member makes 'all' and 'some' coincide once it is occupied",
+                "Both are always true",
+                "Both abbreviate conjunctions",
+                "Neither can be negated"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "Socrates earned his ± from unique denotation (Introduction L7); a propositional term describes world-states in a one-world universe. Occupied means exhaustive, so quantity carries no information — choose + to host, − to donate, as the proof requires."
+            },
+            {
+              prompt: "'Statement logic is a branch of the syllogistic.' Which two established facts make that literal?",
+              choices: [
+                "The trichotomy and the tree method",
+                "Every truth-functional compound is expressible by TFL transcriptions (via DNF), and every statement-logic inference is derivable by the term rules (DDO, contraposition, simplification)",
+                "Statement logic and the syllogistic share the forms A, E, I, O",
+                "Trees terminate and proofs are finite"
+              ],
+              choicesAreCode: false,
+              answer: 1,
+              explanation: "Subsumption has two halves. Expressive: DNF reduces any connective to or/and/not, all categorical. Inferential: every proof in this course ran on rules you had before the course began. Said and proved — nothing left over."
+            }
+          ]
+        }
+
+      ]
     }
 
   ]
