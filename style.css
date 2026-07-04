@@ -1045,16 +1045,6 @@ header p {
   line-height: 1.1;
 }
 
-.ham-art {
-  margin: 2rem 0 1.5rem;
-  animation: hamBob 3.6s ease-in-out infinite;
-}
-
-@keyframes hamBob {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-5px); }
-}
-
 .home-tagline {
   font-size: 0.95rem;
   color: var(--muted);

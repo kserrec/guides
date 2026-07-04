@@ -238,20 +238,24 @@ class CourseApp {
     throw new Error(`Unknown block type: ${block.type}`);
   }
 
-  buildConceptBlock(block, index) {
+  // "Continue →" button that hides itself and reveals the next block.
+  continueButton(fromIndex) {
     const btn = h('button', { className: 'btn-continue' }, 'Continue →');
     btn.addEventListener('click', () => {
       btn.style.display = 'none';
-      this.advance(index);
+      this.advance(fromIndex);
     });
+    return btn;
+  }
 
+  buildConceptBlock(block, index) {
     const contentEl = h('div', { className: 'block-content' });
     contentEl.innerHTML = block.content; // authored HTML — trusted
 
     return h('div', { className: 'block concept-block' },
       h('h3', { className: 'block-title' }, block.title),
       contentEl,
-      h('div', { className: 'block-footer' }, btn)
+      h('div', { className: 'block-footer' }, this.continueButton(index))
     );
   }
 
@@ -319,13 +323,7 @@ class CourseApp {
     );
     footerEl.insertBefore(msg, footerEl.firstChild);
     footerEl.querySelector('.btn-skip')?.remove();
-
-    const btn = h('button', { className: 'btn-continue' }, 'Continue →');
-    btn.addEventListener('click', () => {
-      btn.style.display = 'none';
-      this.advance(index);
-    });
-    footerEl.append(btn);
+    footerEl.append(this.continueButton(index));
   }
 
   showBlock(index) {
