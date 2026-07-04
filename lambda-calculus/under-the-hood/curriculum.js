@@ -392,14 +392,17 @@ const CURRICULUM = {
           id: "l02-whnf-def",
           title: "Weak Head Normal Form",
           content: `
-            <p>An expression is in <strong>Weak Head Normal Form</strong> (WHNF) if the
-            outermost position is not a redex.</p>
-            <p>Two things can occupy the outermost position of a WHNF expression:</p>
+            <p>An expression is in <strong>Weak Head Normal Form</strong> (WHNF) if it has
+            one of two shapes:</p>
             <ul class="parts-list">
               <li>A <strong>lambda abstraction</strong>: <code>λx.M</code> — whatever M looks like inside, this is a function</li>
               <li>A <strong>variable applied to arguments</strong>: <code>x</code>, <code>x M</code>, <code>x M N</code> — a neutral term</li>
             </ul>
-            <p>If the outermost position is <code>(λx.M) N</code> — a lambda applied to an argument — that's a redex, and the expression is <em>not</em> in WHNF.</p>
+            <p>Everything else is an application whose <strong>head</strong> — the expression
+            you reach by walking down the function side of each application — is a lambda.
+            That means a redex is waiting at the front: <code>(λx.M) N</code> is one directly,
+            and in <code>(λx.M) N P</code> the head redex <code>(λx.M) N</code> must fire before
+            anything else can happen. Such an expression is <em>not</em> in WHNF.</p>
             <div class="ex-table">
               <div class="ex-row"><code>λx.x</code><span>WHNF — it's a lambda</span></div>
               <div class="ex-row"><code>λx.(λy.y) x</code><span>WHNF — it's a lambda; the inner redex doesn't matter</span></div>
@@ -409,8 +412,8 @@ const CURRICULUM = {
               <div class="ex-row"><code>(λx.x x)(λy.y)</code><span>not WHNF — top-level redex</span></div>
             </div>
             <div class="callout-note">
-              WHNF only cares about the outermost position.
-              Inner redexes are irrelevant.
+              WHNF only cares about the head — the function position at the front.
+              Redexes inside a body or inside an argument are irrelevant.
             </div>
           `
         },
@@ -446,7 +449,7 @@ const CURRICULUM = {
             {
               expr: "(λx.λy.x) a b",
               answer: "invalid",
-              explanation: "Not WHNF. The outermost position is (λx.λy.x) applied to a — a redex. Left-associativity makes this ((λx.λy.x) a) b, and (λx.λy.x) a is the top-level redex."
+              explanation: "Not WHNF. Left-associativity makes this ((λx.λy.x) a) b — the head is the lambda (λx.λy.x), so the head redex (λx.λy.x) a must fire before anything else can happen."
             },
           ]
         },
@@ -528,8 +531,12 @@ const CURRICULUM = {
             <p>WHNF is what makes infinite data structures work in lazy languages.</p>
             <p>In Haskell, you can define the infinite list of all ones:</p>
             <div class="syntax-box"><code>ones = 1 : ones</code></div>
-            <p>In lambda calculus, using the CONS encoding from <em>Foundations</em>:</p>
-            <div class="syntax-box"><code>ONES = λf. f 1 (λ_. ONES)</code></div>
+            <p>In lambda calculus, we can build a <em>stream</em> — a Scott-style cell that
+            hands its head and its tail to a consumer. (This is a different shape from the
+            fold-based CONS of <em>Foundations</em>.) The tail is wrapped in a dummy lambda —
+            <code>λ_.</code> binds an argument it ignores — so it stays frozen until called:</p>
+            <div class="syntax-box"><code>-- schematic (self-reference via Y, as in Foundations)
+ONES = λf. f 1 (λ_. ONES)</code></div>
             <p>This expression is already in WHNF — it's a lambda. The tail
             <code>λ_. ONES</code> is a thunk. Nothing forces it until something
             asks for the next element.</p>
@@ -730,7 +737,7 @@ const CURRICULUM = {
             <p>The Scott version reads as a direct case analysis: "if zero, TRUE; if successor, FALSE (ignoring the predecessor p)."</p>
             <p><strong>PRED</strong></p>
             <div class="ex-table">
-              <div class="ex-row"><code>Church:  λn. FST (n SHIFT (PAIR 0 0))</code><span>sliding-window accumulator across all n steps</span></div>
+              <div class="ex-row"><code>Church:  λn. SND (n SHIFT (PAIR 0 0))</code><span>sliding-window accumulator across all n steps</span></div>
               <div class="ex-row"><code>Scott:   λn. n ZERO (λp.p)</code><span>zero case → ZERO; successor case → return the predecessor directly</span></div>
             </div>
             <p>Church PRED must <em>reconstruct</em> the predecessor by iterating from zero,
@@ -1770,6 +1777,11 @@ WALK = λn. ISZERO n ZERO (WALK (PRED n))</code></div>
             <p>Notice that a lambda with <em>n</em> parameters in direct style
             gains <em>n</em> extra continuation parameters in CPS — one for the
             result of each body.</p>
+            <p>This is stricter than the hand-written CPS of the last lesson, where
+            <code>CONST_K = λx.λy.λk.k x</code> had a single <code>k</code> after all the
+            parameters. Both are valid CPS styles: writing by hand, you add continuations
+            only where you need them; the mechanical transform, knowing nothing about how
+            a function will be used, threads one through every layer.</p>
           `
         },
 
@@ -2314,7 +2326,7 @@ T(z)    = λk'''. k''' z</code></div>
               prompt: "[x](f x) by Rule 3 gives S([x]f)([x]x). Since [x]f = Kf and [x]x = I, the result is:",
               choices: ["S (K f) I", "S f I", "K (S f I)", "S I (K f)"],
               answer: 0,
-              explanation: "[x](f x) = S([x]f)([x]x) = S(Kf)(I). Verify: S(Kf)I x = (Kf)x (Ix) = f x. This equals λx.f x — the identity of application, which eta-reduces to f."
+              explanation: "[x](f x) = S([x]f)([x]x) = S(Kf)(I). Verify: S(Kf)I x = (Kf)x (Ix) = f x. This equals λx.f x — a function that just applies f to its argument, which behaves exactly like f itself."
             },
             {
               prompt: "λx.x x in combinator form is S I I. What does S I I a reduce to?",
@@ -2537,9 +2549,13 @@ T(z)    = λk'''. k''' z</code></div>
             then stop — leave the interior for later. That is exactly what makes infinite
             structures like <code>ones = 1 : ones</code> productive: the outer cons cell is
             exposed (WHNF reached), the tail stays as an unevaluated thunk.</p>
-            <p>Applicative order with full normal form is the eager combination: evaluate the
-            argument fully before calling the function. Strict languages (ML, Scheme) use this.
-            It's simpler to implement but can't handle infinite structures.</p>
+            <p>Applicative order is the eager combination: evaluate the argument before calling
+            the function. Strict languages (ML, Scheme) work this way — but note that they, too,
+            stop at WHNF. Arguments are reduced to <em>values</em>, and no language reduces inside
+            a lambda body before the function is called. Full normal form is the stopping condition
+            for a <em>normalizer</em> — a tool like this course's reducer, or a proof assistant —
+            not for a programming language. Eager evaluation is simpler to implement but can't
+            handle infinite structures.</p>
           `
         },
 
@@ -2619,8 +2635,8 @@ T(z)    = λk'''. k''' z</code></div>
             </div>
             <p>Three recognizable evaluator models arise from specific combinations:</p>
             <div class="ex-table">
-              <div class="ex-row"><strong>Haskell (GHC)</strong><span>Scott + Normal order + WHNF + graph reduction (CPS variant) + Substitution via the STG machine</span></div>
-              <div class="ex-row"><strong>Strict functional (ML, Scheme)</strong><span>Scott + Applicative order + Full NF + CPS + Substitution</span></div>
+              <div class="ex-row"><strong>Haskell (GHC)</strong><span>Scott + Normal order + WHNF + graph reduction (shares thunks) + Substitution via the STG machine</span></div>
+              <div class="ex-row"><strong>Strict functional (ML, Scheme)</strong><span>Scott + Applicative order + WHNF (arguments become values; never reduce under a lambda) + CPS + Substitution</span></div>
               <div class="ex-row"><strong>Early Haskell / Miranda</strong><span>SKI machine — bracket abstraction eliminates variables; three rewriting rules evaluate with no substitution</span></div>
             </div>
             <div class="callout-note">
@@ -2779,7 +2795,7 @@ T(z)    = λk'''. k''' z</code></div>
               ],
               choicesAreCode: false,
               answer: 0,
-              explanation: "Haskell (GHC) uses Scott-style case dispatch, normal order (call-by-need), WHNF as the stopping condition, graph reduction (a CPS variant that shares thunks), and substitution-based beta reduction via the STG machine — not an SKI machine."
+              explanation: "Haskell (GHC) uses Scott-style case dispatch, normal order (call-by-need), WHNF as the stopping condition, graph reduction (which shares thunks so each is evaluated at most once), and substitution-based beta reduction via the STG machine — not an SKI machine."
             },
           ]
         },

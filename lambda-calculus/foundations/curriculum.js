@@ -263,7 +263,7 @@ const CURRICULUM = {
             {
               expr: "λx y. x",
               answer: "invalid",
-              explanation: "You can't list multiple parameters in one abstraction. Write λx.λy.x instead — one λ per parameter."
+              explanation: "In this course's grammar you can't list multiple parameters in one abstraction — write λx.λy.x instead, one λ per parameter. (Some tools, including the Lab on this site, accept λx y.x as shorthand for exactly that.)"
             },
             {
               expr: "λf.f (f x)",
@@ -520,7 +520,7 @@ const CURRICULUM = {
             {
               prompt: "Reduce one step:",
               expr: "(λx.λy.y) a",
-              choices: ["λy.y", "λy.a", "a", "λy.y"],
+              choices: ["λy.y", "λy.a", "a", "λx.λy.y"],
               answer: 0,
               explanation: "Substitute a for x in the body λy.y — but x doesn't appear in the body! Result: λy.y unchanged."
             },
@@ -580,7 +580,9 @@ const CURRICULUM = {
             <div class="grammar-rule">
               <span class="g-label">Good news</span>
               If an expression has a normal form, every reduction sequence that
-              terminates reaches the <em>same</em> normal form. The order you pick doesn't change the answer — only whether you find it.
+              terminates reaches the <em>same</em> normal form — a consequence of the
+              <strong>Church-Rosser theorem</strong>. The order you pick doesn't change
+              the answer — only whether you find it.
             </div>
           `
         },
@@ -828,6 +830,15 @@ const CURRICULUM = {
               <span class="g-label">Key idea</span>
               A variable is bound <em>within</em> the abstraction that introduces it.
               Outside that scope, the same letter can mean something else entirely.
+            </div>
+            <div class="callout-note">
+              <span class="cn-label">Heads up</span>
+              <span>The same letter can even be re-bound <em>inside</em> its own scope:
+              in <code>λx.λx.x</code>, the body's <code>x</code> belongs to the <em>inner</em>
+              λx — the inner binding <strong>shadows</strong> the outer one. This sharpens
+              Lesson 2's substitution rule: <code>M[x := N]</code> replaces only the
+              <em>free</em> occurrences of x in M. So <code>(λx.λx.x) y → λx.x</code> —
+              the body has no free x, so there is nothing to replace.</span>
             </div>
           `
         },
@@ -1510,6 +1521,42 @@ const CURRICULUM = {
           `
         },
 
+        // ── Exercise: Write It Yourself ─────────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-write-numerals",
+          title: "Write It Yourself",
+          instruction: "Now write the expressions — type \\ to get λ. Answers are checked by reducing them, so any equivalent expression counts.",
+          kind: "write-expression",
+          items: [
+            {
+              prompt: "Write the numeral 3 as a raw lambda expression — no digits, no names.",
+              answer: "λf.λx.f (f (f x))",
+              check: "alpha",
+              explanation: "3 = λf.λx.f (f (f x)) — apply f three times, innermost first. Any variable names work: λg.λy.g (g (g y)) is the same expression."
+            },
+            {
+              prompt: "Write a function that adds 2 to a number. It's checked by applying it to test inputs.",
+              answer: "λn.SUCC (SUCC n)",
+              tests: [
+                { args: ["0"], expect: "2" },
+                { args: ["3"], expect: "5" },
+              ],
+              explanation: "One way: λn.SUCC (SUCC n) — wrap two more applications of f around n. ADD 2 works too; anything that passes the tests counts."
+            },
+            {
+              prompt: "Write DOUBLE — a function that doubles a number.",
+              answer: "λn.ADD n n",
+              tests: [
+                { args: ["0"], expect: "0" },
+                { args: ["2"], expect: "4" },
+                { args: ["3"], expect: "6" },
+              ],
+              explanation: "One way: λn.ADD n n — run n's applications twice, end to end. MULT 2 is another route to the same function."
+            },
+          ]
+        },
+
         // ── Final Review ────────────────────────────────────────────────────
         {
           type: "exercise",
@@ -1973,6 +2020,41 @@ const CURRICULUM = {
               return 0 for 0 — there are no negative Church numerals.</span>
             </div>
           `
+        },
+
+        // ── Exercise: Write It Yourself ─────────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-write-pairs",
+          title: "Write It Yourself",
+          instruction: "Now write the expressions — type \\ to get λ. Answers are checked by reducing them, so any equivalent expression counts.",
+          kind: "write-expression",
+          items: [
+            {
+              prompt: "Write PAIR as a raw lambda expression — no names, just λ, variables, and parentheses.",
+              answer: "λx.λy.λf.f x y",
+              check: "alpha",
+              explanation: "PAIR = λx.λy.λf.f x y — hold x and y in waiting, then hand both to whatever selector f arrives. Any variable names work."
+            },
+            {
+              prompt: "Write SWAP — a function that takes a pair and returns the pair with its components swapped.",
+              answer: "λp.PAIR (SND p) (FST p)",
+              tests: [
+                { args: ["(PAIR 1 2)"], expect: "PAIR 2 1" },
+                { args: ["(PAIR TRUE FALSE)"], expect: "PAIR FALSE TRUE" },
+              ],
+              explanation: "One way: λp.PAIR (SND p) (FST p) — read both components out, build a new pair in the other order."
+            },
+            {
+              prompt: "Write a function that returns the sum of a pair's two components.",
+              answer: "λp.ADD (FST p) (SND p)",
+              tests: [
+                { args: ["(PAIR 1 2)"], expect: "3" },
+                { args: ["(PAIR 0 3)"], expect: "3" },
+              ],
+              explanation: "One way: λp.ADD (FST p) (SND p) — extract each component with its selector, then add."
+            },
+          ]
         },
 
         // ── Final Review ────────────────────────────────────────────────────
@@ -2444,6 +2526,14 @@ const CURRICULUM = {
             <p>The inner <code>λx.f (x x)</code> is the self-application trick —
             when applied to itself, it regenerates the whole structure.
             Y simply automates what FACT_HELP did manually with <code>self self</code>.</p>
+            <div class="callout-note">
+              <span class="cn-label">Fine print</span>
+              <span>Strictly speaking, Y F doesn't reduce to the literal expression
+              <code>F (Y F)</code> — it reduces to F applied to the term that Y F itself
+              reduces to. Both sides reduce to a common form, and that equality is all
+              the recursion trick needs. Traces in this course write
+              <code>Y F = F (Y F)</code> as readable shorthand for it.</span>
+            </div>
             <div class="grammar-rule">
               <span class="g-label">Key idea</span>
               Y does not compute a value — it creates a self-reproducing chain.
@@ -2730,6 +2820,14 @@ const CURRICULUM = {
               <span class="g-label">Key idea</span>
               SUCC accumulates in the call stack — one layer per subtraction.
               The base case unwinds them all, counting the total number of steps.
+            </div>
+            <div class="callout-note">
+              <span class="cn-label">Heads up</span>
+              <span>What about dividing <em>by</em> zero? <code>LEQ 0 m</code> is always
+              TRUE — you can always subtract zero one more time — so <code>DIV m 0</code>
+              never reaches its base case. Division by zero isn't an error value in
+              lambda calculus; it's an infinite loop, the arithmetic cousin of Ω
+              from Lesson 3.</span>
             </div>
           `
         },
@@ -3163,7 +3261,7 @@ const CURRICULUM = {
             <p>A list applied to a step function <code>c</code> and a base value <code>n</code>
             folds <code>c</code> over its elements starting from <code>n</code>.
             You already saw this — it's the core of the encoding:</p>
-            <div class="syntax-box"><code>CONS a (CONS b (CONS c NIL))  c  n  =  c a (c b (c c_val n))</code></div>
+            <div class="syntax-box"><code>CONS a (CONS b (CONS d NIL))  c  n  =  c a (c b (c d n))</code></div>
             <p>Every list operation is just a different choice of <code>c</code> and <code>n</code>:</p>
             <div class="ex-table">
               <div class="ex-row"><code>c = λh.λr.SUCC r &nbsp;&nbsp; n = 0</code><span>count elements &rarr; LENGTH</span></div>
@@ -3377,6 +3475,44 @@ const CURRICULUM = {
           `
         },
 
+        // ── Exercise: Write It Yourself ─────────────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-write-list-ops",
+          title: "Write It Yourself",
+          instruction: "Now write the expressions — type \\ to get λ. Answers are checked by reducing them, so any equivalent expression counts.",
+          kind: "write-expression",
+          items: [
+            {
+              prompt: "Write a function that doubles every number in a list.",
+              answer: "MAP (λn.ADD n n)",
+              tests: [
+                { args: ["(CONS 1 (CONS 2 NIL))"], expect: "CONS 2 (CONS 4 NIL)" },
+                { args: ["NIL"], expect: "NIL" },
+              ],
+              explanation: "One way: MAP (λn.ADD n n) — MAP supplies the traversal; you supply the per-element function. Writing the fold by hand, λl.l (λh.λr.CONS (ADD h h) r) NIL, gives the same function."
+            },
+            {
+              prompt: "Write a function that removes all zeros from a list.",
+              answer: "FILTER (λn.NOT (ISZERO n))",
+              tests: [
+                { args: ["(CONS 0 (CONS 1 (CONS 0 NIL)))"], expect: "CONS 1 NIL" },
+                { args: ["(CONS 2 NIL)"], expect: "CONS 2 NIL" },
+              ],
+              explanation: "Keep an element exactly when it is NOT zero: FILTER (λn.NOT (ISZERO n))."
+            },
+            {
+              prompt: "Write a function that counts how many zeros a list contains.",
+              answer: "λl.LENGTH (FILTER ISZERO l)",
+              tests: [
+                { args: ["(CONS 0 (CONS 1 (CONS 0 NIL)))"], expect: "2" },
+                { args: ["NIL"], expect: "0" },
+              ],
+              explanation: "One way: compose two folds — FILTER ISZERO keeps the zeros, LENGTH counts them. A single fold also works: λl.l (λh.λr.ISZERO h (SUCC r) r) 0."
+            },
+          ]
+        },
+
         // ── Final Review ──────────────────────────────────────────────────────────
         {
           type: "exercise",
@@ -3548,13 +3684,15 @@ const CURRICULUM = {
           id: "reverse-intro",
           title: "REVERSE",
           content: `
-            <p>To reverse a list, walk through it left-to-right and each time, append the
-            current element to the <em>end</em> of an accumulator. The first element
-            visited ends up at the end — exactly the reverse order.</p>
+            <p>The reverse of a list that starts with <code>h</code> is: the reverse of the
+            <em>rest</em>, with <code>h</code> appended at the end. The first element ends up
+            last, the second ends up second-to-last, and so on. As a fold, the step receives
+            the head <code>h</code> and the already-reversed rest of the list, and appends
+            <code>h</code> to its end:</p>
             <div class="syntax-box"><code>REVERSE  =  λl. l (λh.λacc. APPEND acc (CONS h NIL)) NIL</code></div>
             <ul class="parts-list">
-              <li><code>λh.λacc. APPEND acc (CONS h NIL)</code> &mdash; step: append h to the <em>end</em> of the accumulator</li>
-              <li><code>NIL</code> &mdash; base: start with an empty accumulator</li>
+              <li><code>λh.λacc. APPEND acc (CONS h NIL)</code> &mdash; step: <code>acc</code> is the already-reversed rest; append h to its <em>end</em></li>
+              <li><code>NIL</code> &mdash; base: the reverse of the empty list is empty</li>
             </ul>
             <div class="step-trace">
               <div class="step"><code>REVERSE [a, b]</code></div>
@@ -3567,9 +3705,9 @@ const CURRICULUM = {
             </div>
             <div class="grammar-rule">
               <span class="g-label">Key idea</span>
-              The fold visits a first, b second. By appending each to the <em>end</em> of the
-              accumulator rather than the front, the visit order becomes the reverse of
-              the output order.
+              Because a list is a right fold, the innermost step runs on the <em>last</em>
+              element first, and each element further left is appended behind everything
+              after it. First in, last out — the list comes out reversed.
             </div>
           `
         },
@@ -3681,7 +3819,7 @@ const CURRICULUM = {
               ],
               choicesAreCode: false,
               answer: 0,
-              explanation: "The fold step receives two arguments: the current element h and accumulator acc. APPEND h acc is exactly what we want. Since APPEND is already a two-argument function that does this, writing λh.λacc.APPEND h acc would just be eta-expanding it unnecessarily."
+              explanation: "The fold step receives two arguments: the current element h and accumulator acc. APPEND h acc is exactly what we want. Since APPEND is already a two-argument function that does this, wrapping it as λh.λacc.APPEND h acc adds a layer that changes nothing."
             }
           ]
         },
