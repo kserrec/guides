@@ -1,7 +1,7 @@
 # Ham Calculus — Project Roadmap
 
 Live site: **https://kserrec.github.io/guides/** (GitHub Pages from `main`; pushes deploy in ~1 min)
-Last updated: 2026-07-03
+Last updated: 2026-07-04
 
 ## Step-sizing rule
 
@@ -11,36 +11,38 @@ completion. If a step grows beyond that during execution, split it before starti
 
 ---
 
-## Current state (evaluated 2026-07-03)
+## Current state (evaluated 2026-07-04)
 
 ### What exists
 
 | Area | Status |
 |---|---|
-| Shared engine (`engine.js`, 381 lines) | ✅ Data-driven renderer; 2 exercise kinds (`valid-or-invalid`, `multiple-choice`); localStorage progress |
-| Shared styles (`style.css`, 1062 lines) | ✅ Single-column, max-width 720px, light theme, per-subject accent overrides |
+| Shared engine (`engine.js`) | ✅ Data-driven renderer; 3 exercise kinds (`valid-or-invalid`, `multiple-choice` with shuffled display order, `write-expression`); localStorage progress |
+| Shared styles (`style.css`) | ✅ Single-column, max-width 720px, light theme, per-subject accent overrides |
+| Lambda Lab (Track A, A1–A8) | ✅ Parser/evaluator/prelude with 140+ node tests, right-panel UI, lesson chips, lab-graded exercises |
 | Lambda Calculus: Foundations | ✅ 15 lessons |
 | Lambda Calculus: Under the Hood | ✅ 8 lessons |
 | TFL: Introduction | ✅ 8 lessons |
 | TFL: The Full Language | ✅ 7 lessons |
 | TFL: Relational Syllogisms (Course 3) | ✅ 3 lessons |
-| TFL: Statement Logic & MPL (Course 4) | ✅ 6 lessons |
+| TFL: Statement Logic & MPL (Course 4) | ✅ 6 lessons — **TFL curriculum complete (24 lessons)** |
+
+Tracks A, B, and C are fully executed. Track D below is the next body of work.
 
 ### Strengths
 
 - Clean separation of engine vs. curriculum data; adding lessons/courses requires no engine changes.
 - No build step, no dependencies — trivially deployable anywhere.
 - Curriculum quality is high: concept → quick-check → review cadence, explanations on every item.
+- Proven lab pattern (Track A): pure logic module with node tests → panel UI → lesson chips →
+  lab-graded exercise kind. Track D reuses it wholesale.
 
 ### Gaps / debt
 
-1. **No version control.** Not a git repo. Highest-priority fix — everything else builds on it.
-2. **No interactive evaluation.** All exercises are choose-an-answer; learners can't *write*
-   lambda terms and see them reduce. (Addressed by Track A below.)
-3. **No tests** for `engine.js`. Tolerable now; the Lambda Lab engine (Track A) must have them,
-   since an incorrect reducer teaches wrong lessons.
-4. Minor inconsistencies: hub back-links differ ("← Ham Calculus" vs "← All Subjects");
-   lesson-count tags on hub cards are hardcoded; home page is a bare hero; stray `.DS_Store` files.
+1. **No unit tests for `engine.js`** (the λ-lab logic has them; engine behavior is exercised via
+   ad-hoc headless-Chrome runs per change). Tolerable; revisit if the engine grows.
+2. **TFL has no interactive tool** — learners can check answers but can't *run* the algebra
+   they've learned. Addressed by Track D below.
 
 ---
 
@@ -172,11 +174,94 @@ commutation/association laws placement) as they come up in the relevant lesson's
 
 ---
 
+## Track D — TFL^PL: a term-logic programming language (the "TFL Lab")
+
+Goal: a Lambda-Lab-style panel alongside the TFL courses hosting a small **logic programming
+language in TFL notation** — a program is a list of propositions, queries are answered by
+cancellation, and every answer explains itself in natural language. The key insight from the
+literature: because TFL's ternary syntax erases the fact/rule distinction (a singular and a
+universal proposition have the same shape), such a language "organically induces a database
+à la Mozes" — the Aristotelian-database behaviors fall out of the logic instead of being
+bolted on. Learners get to *run* the algebra all four courses taught.
+
+### Sources
+
+- J. M. Castro-Manzano, L. I. Lozano-Cobos, P. O. Reyes-Cárdenas, **"Programming with Term
+  Logic,"** *BRAIN* 9(3), 2018 — defines TFL^PL over TFL⁺: BNF
+  (`<proposition> ::= <termⁿ>±<term⁰>`), quantity levels 0–3 (some/every, many, most,
+  few/predominant), the three-condition decision method (premise sum = conclusion; particular
+  count matches; conclusion level ≤ max premise level), a C prototype limited to two-term
+  propositions + DON, and — as named future work — exactly our D-steps: a relational module
+  and a numerical module.
+- E. Mozes, **"A Deductive Database Based on Aristotelian Logic,"** *J. Symbolic Computation*
+  7(5):487–507, 1989 — the five Aristotelian-database features: natural-language explanations
+  of deductions; volunteering stronger/weaker answers; "possibility" answers; suggesting
+  missing rules; flagging where analogy/induction would help.
+- Rule inventory (the paper's Appendix B, after Englebretsen 1996): immediate rules —
+  DN, EN, IN, Com, Assoc, Contrap, PD, Iteration; mediate rules — DON, Simp, Add.
+- W. Murphree, **"Numerical Term Logic,"** *Notre Dame J. Formal Logic* 39(3), 1998 — the
+  wider frontier past most/many/few (exact and comparative counts); D9's context.
+
+### Design decisions (made now so steps stay single-prompt)
+
+- **Course notation in, course notation out.** The lab parses what the lessons print —
+  `−S+P`, `±s*`, negative terms `(−T)`, compound terms, relational complexes `−B+(Lov+G)`,
+  statement terms — plus plain-ASCII aliases (`-S+P`, `*s`). We build on the full course
+  fragment, relationals included: Course 3's rules exist precisely for this, and it is the
+  paper's own named future work.
+- **Architecture mirrors Track A:** pure logic module `term-functor-logic/lab/tfl.js`
+  (no DOM, node-tested), UI module `lab.js`, styles appended to `style.css`, plain-node tests.
+- **Scope guard:** the engine's power stays at the courses' until D8 — DON, Simp, Add, and the
+  immediate rules; no most/many/few before the numerical steps.
+
+### Steps
+
+- **D1** 🔲 Parser + printer core (`tfl.js` + `tfl.test.js`): AST for terms (general,
+  singular*, negative, compound, relational complex) and propositions (signed pairs in ENF);
+  parse the exact notation used across all four TFL curricula plus ASCII aliases;
+  pretty-printer with round-trip property; positioned parse errors. Acceptance harness (built
+  in this step): drive every TFL syntax-box formula through the parser, A7-style.
+- **D2** 🔲 Inference core: the immediate rules (DN, EN, IN, Com, Assoc, Contrap, PD, It) and
+  mediate rules (DON, Simp, Add) as rewrites producing **traced derivations** (formula + rule
+  + parent lines); REGAL/P–Z validity check for premise sets; formula equality up to
+  Com/Assoc/DN. Tests: Barbara, hypothetical syllogism, the horse's head (tautology premise),
+  Course 3's 9-line indirect proof, undistributed-middle failures.
+- **D3** 🔲 Programs & queries: program = propositions + `--` comments; queries `? s`
+  ("what is s" — saturate DON+Simp about a term, fuel-budgeted) and `? −s+P` (yes/no:
+  derivable?). Facts and rules share one shape — the language's defining feature. Tests
+  reproduce the paper's Socrates/Fido example program in course notation.
+- **D4** 🔲 The Aristotelian layer (what makes it a *database*, not a proof checker):
+  natural-language explanation per answer ("Because Socrates is a man, and every man is
+  mortal…"); volunteer the stronger answer when a weaker one is asked (asked *some*, prove
+  *every*); "possibility" answers from I-forms (Mozes' *perhaps*); missing-premise suggestion
+  via enthymeme recovery under Course 2 L6's three constraints; negation-by-failure decision
+  documented in-code.
+- **D5** 🔲 Panel UI on TFL course pages, mirroring the λ Lab: toggle button, right panel,
+  per-pathname localStorage buffer, editor + query line + derivation pane with rule names,
+  parse-error caret; input palette for − + ± ( ) *.
+- **D6** 🔲 Lesson integration: "▸ try" chips on TFL syntax boxes that parse as programs
+  (A6's MutationObserver pattern); curated examples per course (Barbara, horse's head, a
+  REGAL check, the proterm proof); verified headlessly across all four courses.
+- **D7** 🔲 `tfl-expression` exercise kind graded by the D2 engine (modes: transcribe-English
+  — equal up to immediate rules; derive-the-conclusion; find-the-missing-premise); first real
+  usage in one existing lesson, wiring pattern documented like A8.
+- **D8** 🔲 Numerical quantifiers, engine half (TFL⁺): quantity levels 0–3 on subject terms
+  (`+V²+C⁰` — "most voters are citizens"), ASCII `+V2+C0`; the three-condition decision
+  method; parser/printer/derivation support. Tests straight from the paper's Tables 10–13:
+  kaa-1 ⊬, akt-4 ⊬, bao-3 ⊢, ekg-2 ⊢.
+- **D9** 🔲 Numerical quantifiers, lesson half: an advanced lesson teaching most/many/few as
+  quantity levels (Peterson/Thompson SYLL⁺ → TFL⁺'s algebraic method), lab-integrated
+  examples, Murphree's numerical term logic framed as the frontier beyond. Soften Course 4
+  L6's "Real Limits" concession accordingly (most/many/few now taught; exact counts remain
+  beyond) and resolve the TFL roadmap's Murphree open question.
+
+---
+
 ## Suggested order
 
-1. **C1** (version control before anything else)
-2. **A1 → A2 → A3** (lab engine, testable without UI)
-3. **A4 → A5** (lab usable end-to-end)
-4. **A6 → A7** (integration + polish)
-5. **B1–B9** interleaved as desired — Track B is independent of Track A
-6. **C2** anytime
+1. ~~C1~~ · ~~A1–A8~~ · ~~B1–B9~~ · ~~C2~~ — all complete.
+2. **D1 → D2 → D3** (language core, node-testable without UI)
+3. **D4** (the Aristotelian layer — the differentiator)
+4. **D5 → D6** (lab usable end-to-end, integrated into lessons)
+5. **D7** anytime after D2
+6. **D8 → D9** last, in that order (numerical quantifiers: engine, then lesson)
