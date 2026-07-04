@@ -355,6 +355,288 @@ const CURRICULUM = {
         }
 
       ]
+    },
+
+    // ════════════════════════════════════════════════════════════════════════
+    // LESSON 2: Distributed Terms and DDO
+    // ════════════════════════════════════════════════════════════════════════
+    {
+      id: "lesson-02",
+      title: "Lesson 2: Distributed Terms and DDO",
+      navTitle: "Distribution",
+      description: "Make 'distributed' computable: multiply the signs that govern a term occurrence — even one buried inside nested relational complexes — and state the dictum de omni in its final, precise form.",
+      completionText: "Distribution is now arithmetic: the net sign of an occurrence is the product of its own sign and every sign governing its enclosing complexes. The dictum reads exactly as the algebra does — cancel a distributed occurrence against an undistributed one — and whole relational complexes can be donated, not just simple terms. In the final lesson of this course you'll meet arguments where no direct cancellation works at all, and prove them valid indirectly: by refuting their counterclaims, with proterms carrying distribution across statements.",
+      blocks: [
+
+        // ── Concept: Why Distribution Needs Computing ────────────────────────
+        {
+          type: "concept",
+          id: "why-compute",
+          title: "1. Why Distribution Needs Computing",
+          content: `
+            <p>Last lesson ended on a promissory note. In the horse's-head argument, the
+            tautology <code>−(Head+Horse)+(Head+Horse)</code> contains <em>two</em> occurrences
+            of Horse — yet the donor <code>−Horse+Animal</code> cancelled only the predicate-side
+            one. Why that one?</p>
+
+            <p>Recall what distribution means. A statement <strong>distributes</strong> a term
+            when it commits itself about the term's <em>whole</em> extension — "every horse,"
+            "no horse." It leaves the term <strong>undistributed</strong> when it commits itself
+            only to <em>part</em> — "some horse." In simple monadic statements one sign settles
+            it: the subject of <code>−S+P</code> is distributed, the subject of <code>+S+P</code>
+            is not.</p>
+
+            <p>But a term buried inside a relational complex is governed by more than its own
+            sign. In <code>+Man−(Lov+Woman)</code> — "some man does not love any woman" — the
+            sign written on Woman is +, yet the statement plainly speaks of <em>all</em> women:
+            not loving <em>any</em> of them. The denial sign outside the parenthesis reaches
+            inside and flips Woman's force.</p>
+
+            <p>So distribution inside complexes must be <em>computed</em>, not read off a single
+            sign. The computation is one multiplication.</p>
+          `
+        },
+
+        // ── Concept: The Net Sign Rule ───────────────────────────────────────
+        {
+          type: "concept",
+          id: "net-sign-rule",
+          title: "2. The Net Sign Rule",
+          content: `
+            <div class="grammar-rule">
+              <span class="g-label">Net Sign Rule</span>
+              The <strong>net sign</strong> of a term occurrence is the product of its own
+              quantity sign and every sign governing an enclosing complex. Net − means
+              <strong>distributed</strong>; net + means <strong>undistributed</strong>.
+            </div>
+
+            <p>Sign multiplication works as in ordinary algebra: like signs give +, unlike
+            signs give −. Each minus a term sits under flips its force once; two minuses
+            cancel.</p>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>−Man+(Lov+Woman)</code><span>Woman: (+)(+) = <strong>+</strong> undistributed — "loves <em>some</em> woman"</span></div>
+              <div class="ex-row"><code>−Man+(Lov−Woman)</code><span>Woman: (+)(−) = <strong>−</strong> distributed — "loves <em>every</em> woman"</span></div>
+              <div class="ex-row"><code>+Man−(Lov+Woman)</code><span>Woman: (−)(+) = <strong>−</strong> distributed — "doesn't love <em>any</em> woman"</span></div>
+              <div class="ex-row"><code>+Man−(Lov−Woman)</code><span>Woman: (−)(−) = <strong>+</strong> undistributed — "doesn't love every woman" leaves <em>some</em> woman unloved</span></div>
+              <div class="ex-row"><code>−(Head+Horse)</code><span>Horse: (−)(+) = <strong>−</strong> distributed — the subject complex's − governs it</span></div>
+            </div>
+
+            <p>The last two rows are the payoff cases. "Some man does not love every woman"
+            <em>sounds</em> like it is about all women, but the two minuses cancel: it only
+            commits to some woman who goes unloved. And the horse's head mystery dissolves:
+            in <code>−(Head+Horse)+(Head+Horse)</code>, the subject-side Horse computes to
+            (−)(+) = − distributed, while the predicate-side Horse computes to (+)(+) = +
+            undistributed. The donor — needing an undistributed occurrence to feed — could
+            only take the predicate side.</p>
+
+            <p>The rule extends to any nesting depth: multiply <em>all</em> the signs on the
+            way in. In <code>−Boy+(Lov+(Adm−Teacher))</code> — "every boy loves some admirer
+            of every teacher" — Teacher's net sign is (+)(+)(−) = <strong>−</strong>:
+            distributed.</p>
+
+            <div class="callout-note">
+              <span class="cn-label">Wild Quantity</span>
+              A UDT occurrence <code>±Socrates*</code> computes with whichever value the
+              inference needs — its ± multiplies out as + or − at your convenience, exactly
+              as in Lesson 1 and Introduction Lesson 7.
+            </div>
+          `
+        },
+
+        // ── Exercise: Compute the Net Sign ───────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-net-sign",
+          title: "Quick Check: Distributed or Undistributed?",
+          instruction: "Compute the net sign of the named term: multiply its own sign by every sign governing its enclosing complexes.",
+          kind: "multiple-choice",
+          items: [
+            {
+              promptHtml: mcPrompt("Woman, in:", "−Man−(Lov+Woman)"),
+              choices: ["Distributed — net (−)(+) = −", "Undistributed — net +", "Distributed — net (−)(−) = +", "Cannot be computed"],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "The functor sign − governs the complex; Woman's own sign is +. Net: (−)(+) = − distributed. 'No man loves any woman' commits about every woman."
+            },
+            {
+              promptHtml: mcPrompt("Book, in:", "+Student−(Reads−Book)"),
+              choices: ["Undistributed — net (−)(−) = +", "Distributed — net −", "Undistributed — the subject is particular", "Distributed — Book carries −"],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "Two minuses govern Book: the denial functor − and its own −. Net: (−)(−) = + undistributed. 'Some student doesn't read every book' only commits to some unread book."
+            },
+            {
+              promptHtml: mcPrompt("Senator, in:", "−(Friend+Senator)+(Friend+Politician)"),
+              choices: ["Distributed — net (−)(+) = −", "Undistributed — net (+)(+) = +", "Distributed — net (+)(−) = −", "Undistributed — Senator is inside parentheses"],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "Senator sits in the subject-side complex, governed by the subject's − quantity sign; its own sign is +. Net: (−)(+) = − distributed. (Compare the predicate-side Politician: (+)(+) = + undistributed.)"
+            },
+            {
+              promptHtml: mcPrompt("Teacher, in:", "+Boy−(Lov+(Adm−Teacher))"),
+              choices: ["Undistributed — net (−)(+)(−) = +", "Distributed — net (+)(+)(−) = −", "Distributed — Teacher carries −", "Undistributed — nesting blocks distribution"],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "Three signs govern Teacher: the denial functor (−), the inner complex's quantity (+), and its own (−). Net: (−)(+)(−) = + undistributed. Every minus on the way in flips the force once; two flips cancel."
+            }
+          ]
+        },
+
+        // ── Concept: DDO, Stated Precisely ───────────────────────────────────
+        {
+          type: "concept",
+          id: "ddo-precise",
+          title: "3. The Dictum, Stated Precisely",
+          content: `
+            <p>With net signs in hand, the dictum de omni takes its final form — and it is
+            nothing but the algebra read aloud:</p>
+
+            <div class="grammar-rule">
+              <span class="g-label">DDO (Final Form)</span>
+              A donor premise containing a <strong>distributed</strong> (net −) occurrence of M
+              licenses substituting what it donates for an <strong>undistributed</strong>
+              (net +) occurrence of M in the host — whatever position that occurrence holds.
+              Algebraically: net-opposite occurrences cancel in the sum.
+            </div>
+
+            <p>Two consequences follow immediately — the classical "distribution rules" of the
+            syllogism, now theorems of the sign algebra rather than memorized regulations:</p>
+
+            <ul>
+              <li><strong>The middle term must be distributed exactly once.</strong> Cancellation
+              needs one net − occurrence against one net + occurrence. Two undistributed
+              occurrences (the classic <em>undistributed middle</em>) or two distributed ones
+              leave residue in the sum.</li>
+              <li><strong>No term may be distributed in the conclusion that was undistributed in
+              its premise.</strong> Summation preserves the net signs of the surviving terms —
+              a conclusion demanding net − where the premises supplied net + (the classic
+              <em>illicit process</em>) cannot be the premises' sum.</li>
+            </ul>
+
+            <p>And one genuinely new power: <strong>what a donor donates need not be a simple
+            term.</strong> A relational complex can be donated whole. If every boy loves some
+            girl, and every girl admires every teacher:</p>
+
+            ${syl([["−Boy+(Lov+Girl)", "host: Girl occurs net (+)(+) = +"],
+                   ["−Girl+(Adm−Teacher)", "donor: Girl net −; donates the complex (Adm−Teacher)"]],
+                  ["−Boy+(Lov+(Adm−Teacher))", "every boy loves some admirer of every teacher"])}
+
+            <div class="step-trace">
+              <div class="step"><code>−Boy+(Lov+Girl) &nbsp;+&nbsp; (−Girl+(Adm−Teacher))</code></div>
+              <div class="step step-reduce"><span>Girl: net + in the host, net − in the donor — cancel.</span></div>
+              <div class="step step-reduce"><code>−Boy+(Lov+(Adm−Teacher))</code><span class="step-note">the whole complex (Adm−Teacher) lands in Girl's position ✓</span></div>
+            </div>
+
+            <p>The conclusion nests one complex inside another — and the net sign rule from
+            this lesson is exactly what lets you keep reading it: Teacher's net sign in the
+            conclusion is (+)(+)(−) = −, just as it was in the donor. Nothing was smuggled.</p>
+          `
+        },
+
+        // ── Exercise: Valid or Invalid ───────────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-distribution-validity",
+          title: "Quick Check: Valid or Invalid?",
+          instruction: "Compute net signs before you judge. The middle term needs one net − and one net + occurrence; conclusion terms must keep their premise net signs.",
+          kind: "valid-or-invalid",
+          items: [
+            {
+              exprHtml: syl([["−Boy+(Lov+Girl)", ""], ["−Girl+(Adm−Teacher)", ""]], ["−Boy+(Lov+(Adm−Teacher))", ""]),
+              answer: "valid",
+              explanation: "Girl: net + in the host, net − in the donor — cancels, and the donated complex (Adm−Teacher) takes its position. U-regular (all universal). Valid."
+            },
+            {
+              exprHtml: syl([["+Critic+(Praises+Film)", ""], ["+Film+Masterpiece", ""]], ["+Critic+(Praises+Masterpiece)", ""]),
+              answer: "invalid",
+              explanation: "Film computes net + in both premises — undistributed middle, no cancellation. (Also irregular: two particular premises.) The praised film and the masterpiece film may differ. Invalid."
+            },
+            {
+              exprHtml: syl([["+Editor−(Rejects+Manuscript)", ""], ["−Manuscript+Submission", ""]], ["+Editor−(Rejects+Submission)", ""]),
+              answer: "invalid",
+              explanation: "Careful: in the host, Manuscript's net sign is (−)(+) = − distributed; the donor's Manuscript is also − distributed. Two net-minus occurrences never cancel. ('Rejects no manuscript' plus 'every manuscript is a submission' cannot reach 'rejects no submission' — there may be submissions that aren't manuscripts.) Invalid."
+            },
+            {
+              exprHtml: syl([["±Ada*+(Reads+Manuscript)", ""], ["−Manuscript+Document", ""]], ["±Ada*+(Reads+Document)", ""]),
+              answer: "valid",
+              explanation: "Manuscript: net (+)(+) = + in the host, net − in the donor — cancels; Document substitutes in place. P-regular with the wild ± counting as +. Valid."
+            },
+            {
+              exprHtml: syl([["+Donor+(Funds+Charity)", ""], ["−Charity+Nonprofit", ""]], ["+Donor+(Funds−Nonprofit)", ""]),
+              answer: "invalid",
+              explanation: "The cancellation itself is fine — Charity net + in the host, net − in the donor — but the conclusion writes Nonprofit with net (+)(−) = − distributed, while the donor supplied it undistributed (net + in −Charity+Nonprofit). Illicit process: a conclusion may not distribute what its premise did not. The valid conclusion is +Donor+(Funds+Nonprofit)."
+            }
+          ]
+        },
+
+        // ── Exercise: Final Review ───────────────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-distribution-final",
+          isFinal: true,
+          title: "Final Review: Distribution",
+          instruction: "Net signs, the precise dictum, and complex donation.",
+          kind: "multiple-choice",
+          items: [
+            {
+              promptHtml: mcPrompt("Horse, in the subject complex of:", "−(Head+Horse)+(Head+Animal)"),
+              choices: ["Distributed — net (−)(+) = −", "Undistributed — net (+)(+) = +", "Distributed — net (−)(−) = +", "Undistributed — only predicates distribute"],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "The subject complex is governed by −; Horse's own sign is +. Net (−)(+) = − distributed. This is why Lesson 1's donor could not feed the subject-side occurrence."
+            },
+            {
+              prompt: "Why must the middle term be distributed exactly once in a valid syllogism?",
+              choices: [
+                "Cancellation requires one net − occurrence against one net + occurrence",
+                "Tradition: the rule was fixed by medieval logicians",
+                "Because the donor premise must be particular",
+                "Because relational complexes can only hold undistributed terms"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "Equality demands the middle vanish from the sum, and signed terms vanish only as net-opposite pairs. Two net + occurrences (undistributed middle) or two net − occurrences leave residue. The classical rule is an algebraic theorem."
+            },
+            {
+              promptHtml: mcPrompt("Premises:", "−Voter+(Trusts+Auditor) &nbsp;·&nbsp; −Auditor+(Reviews−Budget)"),
+              choices: [
+                "−Voter+(Trusts+(Reviews−Budget))",
+                "−Voter+(Trusts+Auditor+Reviews)",
+                "−Voter+(Reviews−Budget)",
+                "−Auditor+(Trusts+(Reviews−Budget))"
+              ],
+              answer: 0,
+              explanation: "Auditor: net + in the host, net − in the donor — cancel, and the donor donates its whole complex (Reviews−Budget) into Auditor's position: every voter trusts some reviewer of every budget."
+            },
+            {
+              promptHtml: mcPrompt("What blocks:", "+Chef−(Uses+Additive) · −Additive+Chemical ∴ +Chef−(Uses+Chemical)"),
+              choices: [
+                "The host's Additive computes net (−)(+) = − — two distributed occurrences, no cancellation",
+                "Nothing — the argument is valid",
+                "The conclusion is irregular",
+                "UDTs cannot appear under a denial functor"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "The denial functor reaches inside: Additive's net sign in the host is (−)(+) = −, and the donor's is − too. No net + occurrence exists for the donor to feed. 'Uses no additive' plus 'every additive is a chemical' says nothing about all chemicals."
+            },
+            {
+              prompt: "A conclusion writes term T with net sign −, but T's occurrence in its premise had net sign +. The argument is:",
+              choices: [
+                "Invalid — illicit process: summation preserves net signs",
+                "Valid if the middle term cancels",
+                "Valid if T is a UDT",
+                "Invalid only when T is the middle term"
+              ],
+              choicesAreCode: false,
+              answer: 0,
+              explanation: "The conclusion must be the algebraic sum of the premises, and surviving terms keep their net signs through the sum. A net − demand where the premises supplied net + cannot balance — regardless of what the middle term does."
+            }
+          ]
+        }
+
+      ]
     }
 
   ]
