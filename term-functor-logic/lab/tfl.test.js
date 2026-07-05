@@ -7,6 +7,7 @@ const {
   termEq, propEq, ParseError,
   parseProposition, parseTerm, parseSignedTerm,
   printTerm, printProposition, isBareName,
+  printHtmlTerm, printHtmlProposition,
 } = require('./tfl.js');
 
 let passed = 0, failed = 0;
@@ -328,6 +329,19 @@ test('printer quotes non-bare names only', () => {
   assert.ok(!isBareName('non-smoker') && !isBareName('head of a horse'));
   assert.strictEqual(printTerm(Atom('non-smoker')), '"non-smoker"');
   assert.strictEqual(printTerm(Atom('Wise')), 'Wise');
+});
+
+test('HTML printer escapes name metacharacters and preserves structure', () => {
+  // structure and glyphs match the plain printer exactly for safe input
+  assert.strictEqual(printHtmlTerm(Atom('Wise')), 'Wise');
+  assert.strictEqual(printHtmlProposition(parseProposition('-S+P')), '−S+P');
+  // the atom name is the only place user text reaches the output; <, >, & escape
+  assert.strictEqual(printHtmlTerm(Atom('a<b>&c')), '"a&lt;b&gt;&amp;c"');
+  // a quoted term carrying markup cannot break out of the DOM text it renders into
+  const evil = parseProposition('+"<img src=x onerror=alert(1)>"+P');
+  const html = printHtmlProposition(evil);
+  assert.ok(!html.includes('<img'), `unescaped markup leaked: ${html}`);
+  assert.ok(printProposition(evil).includes('<img'), 'plain printer should still be raw');
 });
 
 // ══════════════════════════════════════════════════════════════════════════

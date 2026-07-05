@@ -19,9 +19,9 @@
 
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
 const { parseProposition, parseTerm, parseSignedTerm } = require('./tfl.js');
 
 const VERBOSE = process.argv.includes('-v');

@@ -336,6 +336,33 @@
 
   const printProposition = (p) => printST(p.subject) + printST(p.predicate);
 
+  // ── HTML printer ──────────────────────────────────────────────────────
+  // printTerm / printProposition with the atom name HTML-escaped, for
+  // rendering user-entered notation into the DOM. Names are the only place
+  // user text reaches the output — quoted terms accept <, >, & — so they are
+  // all that needs escaping; every other glyph the printer emits is a fixed
+  // structural symbol. Output matches the plain printers exactly, escaped.
+
+  const escHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  function printHtmlTerm(t) {
+    switch (t.type) {
+      case 'atom': {
+        const name = isBareName(t.name) ? escHtml(t.name) : `"${escHtml(t.name)}"`;
+        return name + (t.singular ? '*' : '');
+      }
+      case 'neg':      return `(−${printHtmlTerm(t.term)})`;
+      case 'compound': return `(${t.elements.map(printHtmlST).join('')})`;
+      case 'rel':      return `(${printHtmlTerm(t.head)}${t.objects.map(printHtmlST).join('')})`;
+      case 'propterm':
+        return `[${t.inner.type === 'prop' ? printHtmlProposition(t.inner) : printHtmlTerm(t.inner)}]`;
+    }
+  }
+
+  const printHtmlST = (st) => printSign(st.sign) + printHtmlTerm(st.term) + printLevel(st.level);
+
+  const printHtmlProposition = (p) => printHtmlST(p.subject) + printHtmlST(p.predicate);
+
   // ════════════════════════════════════════════════════════════════════════
   // D2 — Inference core.
   //
@@ -663,7 +690,7 @@
       if (termKey(x.subject.term) !== termKey(y.subject.term)) continue;
       if (x.predicate.sign !== '+' || y.predicate.sign !== '+') continue;
       if (y.subject.sign !== '-' && y.subject.sign !== '±') continue;
-      const subjSign = x.subject.sign === '±' ? x.subject.sign : x.subject.sign;
+      const subjSign = x.subject.sign;
       results.push(canonProp(Prop(
         ST(subjSign, x.subject.term),
         ST('+', Compound([ST('+', x.predicate.term), ST('+', y.predicate.term)])))));
@@ -1523,12 +1550,7 @@
   // unambiguously. Singulars and proterms are the individuals the algebra
   // fixes ("Socrates", "that boy").
 
-  const looksLikeName = (name) => /^\p{Lu}/u.test(name); // capitalised → a name/kind
-
-  function baseName(name) {
-    const bare = name.replace(/'+$/, ''); // strip proterm primes
-    return bare;
-  }
+  const baseName = (name) => name.replace(/'+$/, ''); // strip proterm primes
 
   function readTerm(t) {
     switch (t.type) {
@@ -1788,6 +1810,7 @@
     termEq, propEq, stEq, ParseError, tokenize,
     parseProposition, parseTerm, parseSignedTerm,
     printTerm, printProposition, printSignedTerm: printST, isBareName,
+    printHtmlTerm, printHtmlProposition,
     // D2 — inference core
     EngineError, validateProp, canonTerm, canonProp, propKey, termKey, propEqUpTo,
     contradictory, obverse, contrapositive, tautology,

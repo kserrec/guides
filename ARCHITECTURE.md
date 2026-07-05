@@ -316,7 +316,9 @@ split exactly — a pure-logic UMD module plus node-only dev harnesses.
     propositional `[p]`) and ENF propositions (signed pairs, quantity levels parsed but
     engine-rejected until D9). Parses exactly what the four courses print plus ASCII
     aliases (`-`, `+-` for ±, `A"` for `A″`); positioned `ParseError`s; the printer emits
-    typographic notation and round-trips at the AST level.
+    typographic notation and round-trips at the AST level. A parallel
+    `printHtmlTerm`/`printHtmlProposition` pair emits the same output with atom names
+    HTML-escaped, for rendering user-entered notation into the DOM (see §8).
   - *D2, inference core*: canonical equality up to Com/Assoc/DN (singular quantity is
     wild — ± — by normalization); rules IN/Contrap/It/DON/Simp/Add with `contradictory`
     (EN) as an operation; DON is monotone net-sign substitution reaching inside
@@ -347,7 +349,7 @@ split exactly — a pure-logic UMD module plus node-only dev harnesses.
     `suggestMissingPremise` (enthymeme recovery: existential import `+S+S`, plus a
     consistency-guarded search for the tacit rule). Every suggestion is checkArgument-
     verified before it is offered, so nothing here can be unsound.
-- **`tfl.test.js`** — plain-assert suite (173 tests): notation round-trips, rule
+- **`tfl.test.js`** — plain-assert suite (174 tests): notation round-trips, rule
   behavior, the named derivations (horse's head, Twain/Clemens, the boys-girls-cowards
   indirect proof, scope traps…), the paper's Socrates/Fido program and its queries, and
   oracle spot checks.
@@ -395,6 +397,12 @@ each site). The one place *user* input meets `innerHTML` is the lab trace, where
 input through `innerHTML` unescaped, and never point the trusted sinks at anything that
 isn't checked-in curriculum content.
 
+The forthcoming TFL Lab UI (D6) will face the same rule with a sharper edge: TFL quoted
+terms (`"non-smoker"`) can contain `<`, `>`, and `&`, which the plain `printTerm`/
+`printProposition` emit raw. Render user-entered TFL through the escaping
+`printHtmlTerm`/`printHtmlProposition` exports instead — the term-logic analog of the
+lambda trace's `printHtml`.
+
 ## 9. Dev tooling, tests, verification
 
 There is no package.json; all scripts run on bare node:
@@ -409,7 +417,7 @@ There is no package.json; all scripts run on bare node:
   card tags ("15 lessons", "6 lessons", "4 courses · 24 lessons"; in-progress courses use
   "N of M lessons"). Exits nonzero on drift. **Run after adding a lesson or course**, and
   update the HTML tags it flags.
-- **`node term-functor-logic/lab/tfl.test.js`** — 115 plain-assert tests for the TFL
+- **`node term-functor-logic/lab/tfl.test.js`** — 174 plain-assert tests for the TFL
   engine (notation, rules, named derivations). **Run after any change to tfl.js**, and
   for inference-layer changes also run the fuzz oracle:
 - **`node term-functor-logic/lab/oracle.js -n 20000`** — the semantic fuzz gate (§6);
