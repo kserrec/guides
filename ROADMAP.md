@@ -1,7 +1,7 @@
 # Ham Calculus — Project Roadmap
 
 Live site: **https://kserrec.github.io/guides/** (GitHub Pages from `main`; pushes deploy in ~1 min)
-Last updated: 2026-07-04
+Last updated: 2026-07-05
 
 ## Step-sizing rule
 
@@ -26,10 +26,11 @@ completion. If a step grows beyond that during execution, split it before starti
 | TFL: The Full Language | ✅ 7 lessons |
 | TFL: Relational Syllogisms (Course 3) | ✅ 3 lessons |
 | TFL: Statement Logic & MPL (Course 4) | ✅ 6 lessons — **TFL curriculum complete (24 lessons)** |
-| TFL Lab engine (Track D) | 🔶 D1–D5 done: parser/printer, inference core (DON, immediate rules, two-tier validity, traced derivations), the deep relational layer (guarded passive, proterms, indirect proof), the program/query layer (`parseProgram`, `? term`/`? prop`/`?=`, consistency check), and the Aristotelian layer (NL explanations, stronger-answer, possibility, negation-as-failure, enthymeme recovery). 173 tests, six fuzz suites. No UI yet (D6). |
+| TFL Lab engine (Track D) | 🔶 D1–D5 done: parser/printer, inference core (DON, immediate rules, two-tier validity, traced derivations), the deep relational layer (guarded passive, proterms, indirect proof), the program/query layer (`parseProgram`, `? term`/`? prop`/`?=`, consistency check), and the Aristotelian layer (NL explanations, stronger-answer, possibility, negation-as-failure, enthymeme recovery). 174 tests, six fuzz suites. |
+| TFL Lab UI (Track D) | 🔶 D6 done: `lab.js` drives both the course-page panel and the standalone page at `term-functor-logic/lab/` (fact-base editor, palette, query line, consistency banner, derivation pane, `?=` square of opposition, `.tfl` import/export). Next: D7 lesson chips. |
 
 Tracks A, B, and C are fully executed. Track D is in progress — language core first
-(D1–D5 ✅, next D6), UI and lesson integration after.
+(D1–D5 ✅), lab UI live (D6 ✅, next D7 lesson chips), then the numerical extension.
 
 ### Strengths
 
@@ -43,9 +44,9 @@ Tracks A, B, and C are fully executed. Track D is in progress — language core 
 
 1. **No unit tests for `engine.js`** (the λ-lab logic has them; engine behavior is exercised via
    ad-hoc headless-Chrome runs per change). Tolerable; revisit if the engine grows.
-2. **TFL has no interactive tool yet** — the engine that will power one now exists
-   (`term-functor-logic/lab/tfl.js`, D1–D2), but learners can't touch it until the
-   lab UI lands (D6) and lesson chips follow (D7).
+2. **TFL lab UI is live but not yet wired into lessons** — the panel and standalone page
+   ship (D6), so learners can run the engine directly, but the in-lesson "▸ try" chips that
+   make it discoverable from the curriculum are still to come (D7).
 
 ---
 
@@ -463,15 +464,43 @@ bolted on. Learners get to *run* the algebra all four courses taught.
     stays consistent with the base is offered as possible-but-unproven — a faithful reading
     of "perhaps" that stays honest about the open-world gap the NAF guess also flags.
   - No engine changes; 173 unit tests (17 new). Six oracle suites unchanged and still green.
-- **D6** 🔲 Lab UI, two surfaces from one codebase: the λ-Lab-style panel on TFL course
-  pages (toggle button, right panel, per-pathname localStorage buffer) and a standalone
-  full page at `term-functor-logic/lab/` for document-scale work. Editor + query line +
-  derivation pane with rule names, parse-error caret; input palette for − + ± ( ) * [ ];
-  always-on consistency banner wired to D4's check (shows the contradiction's derivation).
-  Import/export of fact files: load a plain-text `.tfl` document into the editor via file
-  picker (client-side FileReader — the file never leaves the browser) and download the
-  current program back out. Optional square-of-opposition view on `?=` results: equivalents
-  + contradictory + contrary + subaltern as the statement's logical neighborhood.
+- **D6** ✅ Lab UI, two surfaces from one codebase (`term-functor-logic/lab/lab.js` +
+  `lab/index.html`, styles appended to `style.css`): the ∴-Lab-style slide-over panel on all
+  four TFL course pages (toggle button, right panel, per-pathname localStorage buffer for
+  both program and query) and the standalone full page at `term-functor-logic/lab/` (linked
+  as an "interactive" card on the TFL hub). Editor + query line + derivation pane with rule
+  names and parent citations, parse-error caret; input palette (− + ± ( ) * [ ] ′ ″);
+  always-on consistency banner wired to D4's check (green ✓ / amber parse errors / red
+  ⚠ with a "Why?" toggle showing the refutation derivation). `.tfl` import (client-side
+  FileReader) / export (Blob download). Square-of-opposition view on `?=` neighbourhood
+  results (given / contradictory / contrary / subaltern, flipping to sub-contrary /
+  super-altern for particulars).
+  Implementation notes (decisions made during execution):
+  - **One `lab.js`, surface-detected.** It builds a single `.tfl-lab-core` (toolbar,
+    editor, palette, banner, query row, output) and either drops it into `#tfl-lab-page`
+    (full page, given room by CSS) or wraps it in the panel chrome under `#tfl-lab` with a
+    `#tfl-lab-toggle` and `body.lab-open` (reusing the λ-Lab `.lab*` classes wholesale, so
+    only the TFL-specific controls are new CSS). Distinct ids (`tfl-lab*`) keep it clear of
+    the λ-lab's `#lambda-lab` on their respective pages.
+  - **Query dispatch is parse-driven, no mode switch.** `?=` routes to the equivalence
+    layer (a quote/paren-aware top-comma split picks `decideEquivalence` vs `equivalents`);
+    otherwise the body is tried as a proposition first (`answer` — the full Aristotelian
+    bundle) and falls back to a bare term (`queryTerm` — "what is …?"). A proposition always
+    leads with a sign, so `? Socrates*` and `? +Man+Socrates*` disambiguate for free.
+  - **Answers surface the whole D5 bundle**: verdict pill (yes/no/unknown), the English
+    question from `readProp`, the explanation, a lazy "Show derivation" pane (from
+    `support.proof` or a fresh `derive`, incl. the refutation of the contradictory on a
+    *no*), and the extras — stronger (↑), possibility (~), NAF guess (⊘), and enthymeme
+    suggestions each with a one-click **+ add** that appends the premise to the fact base and
+    re-runs. Derivation lines render via the XSS-safe `printHtmlProposition`; all English
+    text goes in through `textContent`.
+  - **Banner debounced 250 ms** on editor input; parse errors short-circuit the consistency
+    call and list line numbers. Verified headlessly (Chrome `--dump-dom`) end-to-end: the
+    flagship yes + derivation (`+Mortal+Socrates* — DON 2,1`), the refuted no, the
+    open-world unknown with perhaps/NAF/suggestions, the term query's three strongest
+    answers, the `?=` neighbourhood + square, `decideEquivalence` ✓, the parse-error caret,
+    the inconsistent-base red banner, and the palette insert — plus a clean course-page load
+    (panel populated, no console errors). No engine changes; 174 engine tests still green.
 - **D7** 🔲 Lesson integration: "▸ try" chips on TFL syntax boxes that parse as programs
   (A6's MutationObserver pattern); curated examples per course (Barbara, horse's head, a
   REGAL check, the proterm proof); verified headlessly across all four courses.
@@ -492,7 +521,7 @@ bolted on. Learners get to *run* the algebra all four courses taught.
 
 ## Suggested order
 
-1. ~~C1~~ · ~~A1–A8~~ · ~~B1–B9~~ · ~~C2~~ · ~~D1~~ · ~~D2~~ · ~~D3~~ · ~~D4~~ · ~~D5~~ — complete.
-2. **D6 → D7** (lab usable end-to-end, integrated into lessons) ← next: D6
+1. ~~C1~~ · ~~A1–A8~~ · ~~B1–B9~~ · ~~C2~~ · ~~D1~~ · ~~D2~~ · ~~D3~~ · ~~D4~~ · ~~D5~~ · ~~D6~~ — complete.
+2. **D7** (lab chips integrated into lessons) ← next: D7
 3. **D8** anytime from here on
 4. **D9 → D10** last, in that order (numerical quantifiers: engine, then lesson)

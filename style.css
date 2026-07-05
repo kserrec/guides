@@ -1327,3 +1327,251 @@ mark.lab-mark { background: #fde68a; border-radius: 3px; padding: 0 1px; }
   font-size: 0.92rem;
   margin-bottom: 0.7rem;
 }
+
+/* ── TFL Lab (D6) ───────────────────────────────────────────────────────── */
+/* Reuses the .lab / .lab-* panel chrome above; these are the TFL-specific   */
+/* controls (palette, banner, derivation pane, verdicts, square) shared by   */
+/* the course-page panel and the standalone full page.                       */
+
+.tfl-lab-core { display: flex; flex-direction: column; gap: 0.7rem; }
+
+.tfl-toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.tfl-io {
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 0.3rem 0.7rem;
+  background: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.tfl-io:hover { border-color: var(--accent-border); color: var(--accent); }
+
+.tfl-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: -0.35rem;
+}
+
+.tfl-editor { min-height: 130px; }
+
+.tfl-palette { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.tfl-key {
+  min-width: 2rem;
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  padding: 0.28rem 0.5rem;
+  background: #fff;
+  font-family: 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+  font-size: 1rem;
+  color: var(--dark);
+  cursor: pointer;
+}
+.tfl-key:hover { border-color: var(--accent-border); background: var(--accent-bg); color: var(--accent-text); }
+
+.tfl-banner {
+  font-size: 0.82rem;
+  border-radius: 8px;
+  min-height: 0;
+}
+.tfl-banner:empty { display: none; }
+.tfl-banner-ok {
+  padding: 0.45rem 0.7rem;
+  color: #166534;
+  background: #f0fdf4;
+  border: 1.5px solid #bbf7d0;
+}
+.tfl-banner-bad {
+  padding: 0.45rem 0.7rem;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1.5px solid #fecaca;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.tfl-banner-error {
+  padding: 0.45rem 0.7rem;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1.5px solid #fde68a;
+}
+.tfl-banner-line { font-family: 'SF Mono', ui-monospace, Menlo, Consolas, monospace; font-size: 0.78rem; }
+.tfl-banner-bad .tfl-steps { margin: 0; }
+
+.tfl-query-row { display: flex; gap: 0.5rem; align-items: stretch; }
+.tfl-query {
+  flex: 1;
+  min-width: 0;
+  font-family: 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.7rem;
+  border: 1.5px solid var(--border);
+  border-radius: 9px;
+  color: var(--dark);
+}
+.tfl-query:focus { outline: none; border-color: var(--accent-border); }
+.tfl-ask { white-space: nowrap; }
+.tfl-hint { margin-top: -0.2rem; }
+
+.tfl-output { gap: 0.55rem; }
+.tfl-note { color: var(--text-secondary); }
+
+.tfl-verdict {
+  align-self: flex-start;
+  font-weight: 800;
+  font-size: 0.95rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+}
+.tfl-verdict-yes     { color: #166534; background: #dcfce7; }
+.tfl-verdict-no      { color: #b91c1c; background: #fee2e2; }
+.tfl-verdict-unknown { color: #6b7280; background: #f1f5f9; }
+
+.tfl-question {
+  font-weight: 700;
+  color: var(--dark);
+  font-size: 0.95rem;
+}
+.tfl-explain {
+  color: var(--text-body);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.tfl-prop {
+  font-family: 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--accent-code);
+}
+
+.tfl-answer {
+  display: flex;
+  gap: 0.6rem;
+  align-items: baseline;
+  flex-wrap: wrap;
+  padding: 0.3rem 0.55rem;
+  border-left: 3px solid var(--accent-border);
+  background: var(--accent-bg);
+  border-radius: 0 7px 7px 0;
+}
+.tfl-reading { color: var(--text-secondary); font-size: 0.85rem; }
+.tfl-eq-rule {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.tfl-extra {
+  font-size: 0.85rem;
+  line-height: 1.45;
+  padding: 0.4rem 0.6rem;
+  border-radius: 7px;
+  color: var(--text-body);
+}
+.tfl-stronger { background: #eff6ff; border: 1.5px solid #bfdbfe; color: #1e40af; }
+.tfl-perhaps  { background: #fefce8; border: 1.5px solid #fde68a; color: #854d0e; }
+.tfl-naf      { background: #f8fafc; border: 1.5px solid var(--border); color: var(--text-secondary); }
+
+.tfl-suggest {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+}
+.tfl-suggest-note { color: var(--text-secondary); }
+.tfl-add {
+  border: 1.5px solid var(--accent-border);
+  border-radius: 6px;
+  padding: 0.12rem 0.5rem;
+  background: #fff;
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tfl-add:hover { background: var(--accent); color: #fff; }
+
+/* Derivation pane */
+.tfl-deriv {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  border-top: 1.5px solid var(--border);
+  padding-top: 0.5rem;
+  margin-top: 0.1rem;
+}
+.tfl-deriv-line { display: flex; gap: 0.55rem; align-items: baseline; font-size: 0.85rem; }
+.tfl-deriv-n {
+  flex-shrink: 0;
+  width: 1.6rem;
+  text-align: right;
+  font-family: 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.tfl-deriv-rule {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent-text);
+  font-family: 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+  white-space: nowrap;
+}
+
+/* Square of opposition */
+.tfl-square {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  padding-top: 0.6rem;
+  border-top: 1.5px solid var(--border);
+}
+.tfl-sq-title {
+  grid-column: 1 / -1;
+  font-weight: 800;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.tfl-sq-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.5rem 0.6rem;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+}
+.tfl-sq-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* Standalone full page: give the fact base and derivations room */
+.tfl-lab-page { display: block; }
+.tfl-lab-page .tfl-lab-core {
+  max-width: 780px;
+  margin: 0 auto;
+}
+.tfl-lab-page .tfl-editor { min-height: 260px; }
+.tfl-lab-page .tfl-query { font-size: 0.95rem; }
+
+@media (max-width: 520px) {
+  .tfl-editor, .tfl-query { font-size: 16px; } /* prevents iOS focus auto-zoom */
+  .tfl-square { grid-template-columns: 1fr; }
+}

@@ -30,8 +30,10 @@ currently two **subjects**, each containing **courses**, each containing **lesso
   Bridge* (6). A TFL analog of the Lambda Lab — a term-logic programming language and
   Aristotelian database — is Track D in `ROADMAP.md` and is **in progress**: the engine
   core (parser, printer, inference, validity, the program/query layer, and the natural-
-  language Aristotelian layer) exists and is node-tested (see §6), but no page loads it
-  yet — the UI arrives in step D6.
+  language Aristotelian layer) exists and is node-tested (see §6), and as of D6 the lab UI
+  is live — a slide-over panel on the course pages plus a standalone page at
+  `term-functor-logic/lab/`. Still ahead: the in-lesson "▸ try" chips (D7) and the
+  numerical extension (D8–D10).
 
 A lesson is a linear sequence of **blocks** that reveal one at a time: a *concept* block
 teaches (prose + examples), then an *exercise* block checks it, repeating in a
@@ -71,8 +73,10 @@ guides/
     ├── language-extended/         (course dir names are URL slugs, not display names)
     ├── relational-syllogisms/
     ├── statement-logic-and-mpl/
-    └── lab/                       TFL Lab engine (Track D; no page loads these yet)
+    └── lab/                       TFL Lab (Track D; live as of D6)
         ├── tfl.js                 Parser/printer + inference core — pure, no DOM
+        ├── lab.js                 Panel + full-page UI (loads on course pages and lab/)
+        ├── index.html             Standalone full-page lab
         ├── tfl.test.js            Plain-assert tests: `node tfl.test.js`
         ├── oracle.js              Finite-model semantics + fuzz harness (node-only)
         └── audit.js               Drives every curriculum formula through the parser
@@ -303,11 +307,12 @@ their own submission. First real usage: Foundations Lesson 5 ("Write It Yourself
 
 ## 6. The TFL Lab engine (Track D, in progress)
 
-`term-functor-logic/lab/` holds the engine for the coming TFL Lab — a term-logic
-programming language and Aristotelian database (see Track D in `ROADMAP.md` for the full
-design record, including the source papers). As of D5 it is **engine only**: no course
-page loads these files, so nothing here is user-visible yet. It follows the Lambda Lab
-split exactly — a pure-logic UMD module plus node-only dev harnesses.
+`term-functor-logic/lab/` holds the TFL Lab — a term-logic programming language and
+Aristotelian database (see Track D in `ROADMAP.md` for the full design record, including
+the source papers). As of D6 it is **user-visible**: `tfl.js` (the pure-logic UMD engine)
+plus `lab.js` (the DOM UI) load in a slide-over panel on all four course pages and on the
+standalone page `lab/index.html`; `oracle.js`/`audit.js` remain node-only dev harnesses.
+It follows the Lambda Lab split exactly — pure-logic module, UI module, node dev tools.
 
 - **`tfl.js`** (`window.TFL` / `module.exports`) — five layers in one file:
   - *D1, parser + printer*: AST for terms (atoms with proterm primes and subscripts,
@@ -365,8 +370,14 @@ split exactly — a pure-logic UMD module plus node-only dev harnesses.
   exiting nonzero on anything unexplained. It doubles as a regression gate when curricula
   are edited: new lesson content that prints notation the lab can't read will fail it.
 
-Remaining Track D steps (D6–D10, see the roadmap): the panel + full-page UI, lesson
-chips, a `tfl-expression` exercise kind, and numerical quantifiers.
+- **`lab.js`** — the D6 UI (DOM only), driving both surfaces from one codebase: the
+  course-page slide-over panel (`#tfl-lab` + `#tfl-lab-toggle`) and the standalone page
+  (`#tfl-lab-page`). Fact-base editor, glyph palette, query line dispatching `? term` /
+  `? prop` / `?=`, always-on consistency banner, lazy derivation panes, the `?=` square of
+  opposition, and `.tfl` import/export. Exposes `window.TFLLab.load(src, qry)` for D7's chips.
+
+Remaining Track D steps (D7–D10, see the roadmap): lesson chips, a `tfl-expression`
+exercise kind, and numerical quantifiers.
 
 ## 7. Styling and theming
 
@@ -397,11 +408,12 @@ each site). The one place *user* input meets `innerHTML` is the lab trace, where
 input through `innerHTML` unescaped, and never point the trusted sinks at anything that
 isn't checked-in curriculum content.
 
-The forthcoming TFL Lab UI (D6) will face the same rule with a sharper edge: TFL quoted
-terms (`"non-smoker"`) can contain `<`, `>`, and `&`, which the plain `printTerm`/
-`printProposition` emit raw. Render user-entered TFL through the escaping
-`printHtmlTerm`/`printHtmlProposition` exports instead — the term-logic analog of the
-lambda trace's `printHtml`.
+The TFL Lab UI (D6) faces the same rule with a sharper edge: TFL quoted terms
+(`"non-smoker"`) can contain `<`, `>`, and `&`, which the plain `printTerm`/
+`printProposition` emit raw. `lab.js` therefore routes every proposition it puts through
+`innerHTML` (derivation lines, answers, the square) through the escaping
+`printHtmlProposition` export, and every English gloss (`readProp`) through `textContent` —
+so no user-entered name ever reaches the DOM unescaped.
 
 ## 9. Dev tooling, tests, verification
 
@@ -497,7 +509,8 @@ DOM-free; anything visual goes in lab.js.
 - `ROADMAP.md` (root) is both plan and log: Track A (Lambda Lab, A1–A8, complete),
   Track B (TFL Courses 3–4, B1–B9, complete), Track C (housekeeping, complete), and
   Track D (TFL^PL — a term-logic programming language / Aristotelian database lab):
-  D1–D2 complete (parser/printer + inference core, §6), D3–D10 ahead, with the full
+  D1–D6 complete (parser/printer, inference core, deep relational layer, program/query
+  layer, Aristotelian layer, and the lab UI — §6), D7–D10 ahead, with the full
   design-decision record in the track's preamble. Completed steps carry implementation
   notes recording decisions made along the way — it's the closest thing to an ADR log;
   read it before re-deciding anything.
