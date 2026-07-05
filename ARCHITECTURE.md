@@ -8,8 +8,8 @@ the system to someone else and work on it as if you wrote it.
 
 Live site: **https://kserrec.github.io/guides/** — GitHub Pages, served straight from
 `main`. A push deploys in about a minute. There is no build step, no bundler, no
-`package.json`, and no runtime dependency beyond a browser. Node is used only for the two
-dev-time scripts (tests and a count checker).
+`package.json`, and no runtime dependency beyond a browser. Node is used only for
+dev-time scripts (test suites, acceptance/fuzz harnesses, and a count checker — see §9).
 
 ---
 
@@ -28,7 +28,9 @@ currently two **subjects**, each containing **courses**, each containing **lesso
   Reasoning* (2000). Four courses, all complete (24 lessons total): *Introduction* (8),
   *The Full Language* (7), *Relational Syllogisms* (3), *Statement Logic and the MPL
   Bridge* (6). A TFL analog of the Lambda Lab — a term-logic programming language and
-  Aristotelian database — is planned as Track D in `ROADMAP.md`.
+  Aristotelian database — is Track D in `ROADMAP.md` and is **in progress**: the engine
+  core (parser, printer, inference, validity) exists and is node-tested (see §6), but no
+  page loads it yet — the UI arrives in step D6.
 
 A lesson is a linear sequence of **blocks** that reveal one at a time: a *concept* block
 teaches (prose + examples), then an *exercise* block checks it, repeating in a
@@ -67,7 +69,12 @@ guides/
     ├── introduction/              index.html + curriculum.js
     ├── language-extended/         (course dir names are URL slugs, not display names)
     ├── relational-syllogisms/
-    └── statement-logic-and-mpl/
+    ├── statement-logic-and-mpl/
+    └── lab/                       TFL Lab engine (Track D; no page loads these yet)
+        ├── tfl.js                 Parser/printer + inference core — pure, no DOM
+        ├── tfl.test.js            Plain-assert tests: `node tfl.test.js`
+        ├── oracle.js              Finite-model semantics + fuzz harness (node-only)
+        └── audit.js               Drives every curriculum formula through the parser
 ```
 
 Three tiers of page, all plain HTML files linked by relative paths:
@@ -81,12 +88,12 @@ Three tiers of page, all plain HTML files linked by relative paths:
    JavaScript at load.
 
 The hardcoded counts on tiers 1–2 are the one piece of intentional duplication; see
-§8 (`check-counts.js`) for how drift is caught.
+§9 (`check-counts.js`) for how drift is caught.
 
 ## 3. The course runtime (`engine.js`)
 
 The whole interactive experience is one file, ~380 lines, no framework. A course page
-loads scripts in this order (order matters — see §9):
+loads scripts in this order (order matters — see §10):
 
 ```html
 <script src="curriculum.js"></script>      <!-- defines global CURRICULUM -->
@@ -112,7 +119,7 @@ state within a lesson is deliberately not persisted; only lesson *completion* is
 
 **DOM construction** uses a tiny hyperscript helper `h(tag, attrs, ...children)`
 (`document.createElement` + `Object.assign`). Authored curriculum content is injected with
-`innerHTML` — curriculum files are trusted, first-party code (see §9 on trust and CSP).
+`innerHTML` — curriculum files are trusted, first-party code (see §8 on trust and CSP).
 
 **Progress persistence.** Completed lesson ids are stored as a JSON array under the key
 `progress-${curriculum.title}`. Consequence: the curriculum `title` string is effectively
@@ -293,7 +300,49 @@ as incorrect (stored answer `'__revealed__'`, which fails the engine's `countCor
 comparison by construction). On completion, an "open in λ Lab" chip lets the user explore
 their own submission. First real usage: Foundations Lesson 5 ("Write It Yourself").
 
-## 6. Styling and theming
+## 6. The TFL Lab engine (Track D, in progress)
+
+`term-functor-logic/lab/` holds the engine for the coming TFL Lab — a term-logic
+programming language and Aristotelian database (see Track D in `ROADMAP.md` for the full
+design record, including the source papers). As of D2 it is **engine only**: no course
+page loads these files, so nothing here is user-visible yet. It follows the Lambda Lab
+split exactly — a pure-logic UMD module plus node-only dev harnesses.
+
+- **`tfl.js`** (`window.TFL` / `module.exports`) — two layers in one file:
+  - *D1, parser + printer*: AST for terms (atoms with proterm primes and subscripts,
+    singulars `Socrates*`, quoted multi-word terms, negatives `(−T)`, compounds
+    `(+White+Horse)`, n-ary/nested relational complexes `(Lov+(Adm−Teacher))`,
+    propositional `[p]`) and ENF propositions (signed pairs, quantity levels parsed but
+    engine-rejected until D9). Parses exactly what the four courses print plus ASCII
+    aliases (`-`, `+-` for ±, `A"` for `A″`); positioned `ParseError`s; the printer emits
+    typographic notation and round-trips at the AST level.
+  - *D2, inference core*: canonical equality up to Com/Assoc/DN (singular quantity is
+    wild — ± — by normalization); rules IN/Contrap/It/DON/Simp/Add with `contradictory`
+    (EN) as an operation; DON is monotone net-sign substitution reaching inside
+    complexes; `derive()` returns traced, fuel-bounded derivations; `checkArgument()`
+    gives atomic-categorical arguments a complete valid/invalid decision (counterclaim
+    closure; the classic P/Z cancellation attached as a display certificate) and
+    relational/compound arguments valid/contradicted/unknown. No existential import
+    anywhere; wild ± only on singulars.
+- **`tfl.test.js`** — plain-assert suite (115 tests): notation round-trips, rule
+  behavior, the named derivations (horse's head, Twain/Clemens, nested faster-than…),
+  and oracle spot checks.
+- **`oracle.js`** — the correctness oracle: finite-model semantics for the whole
+  fragment and three fuzz suites (categorical exactness, rule-step soundness, relational
+  derivation soundness). `node oracle.js -n 20000` is the long-haul gate; it has caught
+  real bugs (a DON wild-resolution unsoundness, flat P/Z incompleteness) and is the
+  reason to trust the engine. **Run it after any change to the inference layer.**
+- **`audit.js`** — the D1 acceptance harness: extracts every formula snippet from all
+  four TFL curricula (631 of them) and classifies each (parsed / foreign / whitelisted),
+  exiting nonzero on anything unexplained. It doubles as a regression gate when curricula
+  are edited: new lesson content that prints notation the lab can't read will fail it.
+
+Remaining Track D steps (D3–D10, see the roadmap): deep relational layer (passive
+transformation, proterms, indirect proof), programs & queries, the Aristotelian
+explanation layer, the panel + full-page UI, lesson chips, a `tfl-expression` exercise
+kind, and numerical quantifiers.
+
+## 7. Styling and theming
 
 One stylesheet, `style.css`, organized with `/* ── section ── */` banner comments. Layout
 is a single centered column, max-width 720px, light theme only.
@@ -309,7 +358,7 @@ can't take a page-wide override.)
 Lab styles live at the bottom of style.css scoped under `.lab*` class names, so they're
 inert on TFL pages.
 
-## 7. Security posture
+## 8. Security posture
 
 Every page ships a strict Content-Security-Policy meta tag:
 `default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'`.
@@ -322,9 +371,9 @@ each site). The one place *user* input meets `innerHTML` is the lab trace, where
 input through `innerHTML` unescaped, and never point the trusted sinks at anything that
 isn't checked-in curriculum content.
 
-## 8. Dev tooling, tests, verification
+## 9. Dev tooling, tests, verification
 
-There is no package.json; both scripts run on bare node:
+There is no package.json; all scripts run on bare node:
 
 - **`node lambda-calculus/lab/lambda.test.js`** — 153 plain-assert tests for the lab
   core: parser round-trips, capture-avoidance cases, Church arithmetic, Ω fuel
@@ -336,6 +385,14 @@ There is no package.json; both scripts run on bare node:
   card tags ("15 lessons", "6 lessons", "4 courses · 24 lessons"; in-progress courses use
   "N of M lessons"). Exits nonzero on drift. **Run after adding a lesson or course**, and
   update the HTML tags it flags.
+- **`node term-functor-logic/lab/tfl.test.js`** — 115 plain-assert tests for the TFL
+  engine (notation, rules, named derivations). **Run after any change to tfl.js**, and
+  for inference-layer changes also run the fuzz oracle:
+- **`node term-functor-logic/lab/oracle.js -n 20000`** — the semantic fuzz gate (§6);
+  the same bar as the lambda reducer applies, squared: this engine *certifies validity*.
+- **`node term-functor-logic/lab/audit.js`** — checks that every formula the TFL
+  curricula print still parses as lab notation. **Run after editing TFL curricula or the
+  tfl.js parser.**
 
 engine.js and lab.js have no automated tests; changes there are verified in a browser —
 headless-Chrome screenshots at desktop/mobile widths (1440/420px) for visual work, and
@@ -347,7 +404,7 @@ validation pass (answers in range, explanations present, balanced HTML tags in `
 `python3 -m http.server` from the repo root, then browse `localhost:8000`.
 (Opening files via `file://` mostly works too, but a server matches production behavior.)
 
-## 9. Invariants and gotchas
+## 10. Invariants and gotchas
 
 Things that will bite you if you don't know them:
 
@@ -377,7 +434,7 @@ Things that will bite you if you don't know them:
 9. Redex `path`s in `reduce()` steps refer to the term *before* that step — off-by-one
    here breaks trace highlighting.
 
-## 10. How to do the common jobs
+## 11. How to do the common jobs
 
 **Add a lesson to an existing course.** Append a lesson object to `CURRICULUM.lessons` in
 that course's `curriculum.js` (copy an existing lesson's shape; follow the
@@ -403,14 +460,15 @@ call `onItemAnswered()`, and make correct answers satisfy `answers[i] === item.a
 lambda.test.js, and run `node lambda-calculus/lab/lambda.test.js`. Keep the module
 DOM-free; anything visual goes in lab.js.
 
-## 11. Planning docs and history
+## 12. Planning docs and history
 
 - `ROADMAP.md` (root) is both plan and log: Track A (Lambda Lab, A1–A8, complete),
   Track B (TFL Courses 3–4, B1–B9, complete), Track C (housekeeping, complete), and
-  Track D (TFL^PL — a term-logic programming language / Aristotelian database lab,
-  D1–D10, planned with full design decisions recorded). Completed steps carry
-  implementation notes recording decisions made along the way — it's the closest thing
-  to an ADR log; read it before re-deciding anything.
+  Track D (TFL^PL — a term-logic programming language / Aristotelian database lab):
+  D1–D2 complete (parser/printer + inference core, §6), D3–D10 ahead, with the full
+  design-decision record in the track's preamble. Completed steps carry implementation
+  notes recording decisions made along the way — it's the closest thing to an ADR log;
+  read it before re-deciding anything.
 - `term-functor-logic/ROADMAP.md` maps book chapters to courses/lessons, records firm
   scope decisions (Ch. 1 skipped; the book has no figure organization), lists
   lesson-by-lesson status, and keeps open content questions.
@@ -419,7 +477,7 @@ DOM-free; anything visual goes in lab.js.
 - Git history is legible by design — one roadmap step per commit, prefixed with the step
   id (`B5: …`, `A8: …`). Keep doing that.
 
-## 12. Deployment
+## 13. Deployment
 
 GitHub Pages serves the `main` branch of `kserrec/guides` as-is at
 `https://kserrec.github.io/guides/`. Deployment *is* `git push` — there is no pipeline,

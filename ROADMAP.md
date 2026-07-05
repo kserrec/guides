@@ -26,8 +26,10 @@ completion. If a step grows beyond that during execution, split it before starti
 | TFL: The Full Language | ✅ 7 lessons |
 | TFL: Relational Syllogisms (Course 3) | ✅ 3 lessons |
 | TFL: Statement Logic & MPL (Course 4) | ✅ 6 lessons — **TFL curriculum complete (24 lessons)** |
+| TFL Lab engine (Track D) | 🔶 D1–D2 done: parser/printer (63+ tests, all-curricula acceptance harness) + inference core (DON, immediate rules, two-tier validity, traced derivations, finite-model fuzz oracle). No UI yet (D6). |
 
-Tracks A, B, and C are fully executed. Track D below is the next body of work.
+Tracks A, B, and C are fully executed. Track D is in progress — language core first
+(D1 ✅, D2 ✅, next D3), UI and lesson integration after.
 
 ### Strengths
 
@@ -41,8 +43,9 @@ Tracks A, B, and C are fully executed. Track D below is the next body of work.
 
 1. **No unit tests for `engine.js`** (the λ-lab logic has them; engine behavior is exercised via
    ad-hoc headless-Chrome runs per change). Tolerable; revisit if the engine grows.
-2. **TFL has no interactive tool** — learners can check answers but can't *run* the algebra
-   they've learned. Addressed by Track D below.
+2. **TFL has no interactive tool yet** — the engine that will power one now exists
+   (`term-functor-logic/lab/tfl.js`, D1–D2), but learners can't touch it until the
+   lab UI lands (D6) and lesson chips follow (D7).
 
 ---
 
@@ -368,9 +371,9 @@ bolted on. Learners get to *run* the algebra all four courses taught.
 
 ## Suggested order
 
-1. ~~C1~~ · ~~A1–A8~~ · ~~B1–B9~~ · ~~C2~~ — all complete.
-2. **D1 → D2 → D3 → D4** (language core, node-testable without UI)
+1. ~~C1~~ · ~~A1–A8~~ · ~~B1–B9~~ · ~~C2~~ · ~~D1~~ · ~~D2~~ — complete.
+2. **D3 → D4** (rest of the language core, node-testable without UI) ← next: D3
 3. **D5** (the Aristotelian layer — the differentiator)
 4. **D6 → D7** (lab usable end-to-end, integrated into lessons)
-5. **D8** anytime after D2
+5. **D8** anytime from here on
 6. **D9 → D10** last, in that order (numerical quantifiers: engine, then lesson)
