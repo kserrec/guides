@@ -4,7 +4,7 @@ Source: Sommers & Englebretsen, *An Invitation to Formal Reasoning: The Logic of
 
 **Scope decision (firm):** Chapter 1 (metaphysical argument for term logic over Frege) is skipped. Formal logic only.
 
-**Key finding:** The book has **no figure organization**. "First figure," "second figure," etc. do not appear as organizing chapters. The book teaches one algebraic validity test (REGAL) that handles all argument configurations uniformly.
+**Key finding:** The book has **no figure organization**. "First figure," "second figure," etc. do not appear as organizing chapters. The book teaches one algebraic validity test — two conditions, regularity and equality — that handles all argument configurations uniformly. (This curriculum names the two-condition test **REGAL**; see the Open questions note.)
 
 ---
 
@@ -112,8 +112,20 @@ Book: Ch. 7 + Ch. 8
 
 ## Open questions
 
-- **Laws of Commutation / Association** (Ch. 3 §§13, 19): used implicitly throughout Introduction but never explicitly taught. Could be a short addition to Introduction L2, or the opening of Course 2 L1.
-- **REGAL acronym:** Not expanded in accessible excerpts — check the book directly when building Course 2 L5. Until confirmed, refer to it as "Sommers' algebraic validity test."
+- **Laws of Commutation / Association** (Ch. 3 §§13, 19): ✅ Resolved. Commutation was
+  already taught in Introduction L4 (the Conversion block: `+X + Y = +Y + X`, with the
+  no-swap-across-the-copula caution). Association was the real gap; it is now stated
+  alongside Commutation in Introduction L2's "Sign Arithmetic" block — the two laws that make
+  middle-term cancellation position- and grouping-blind, which is the property the validity
+  test leans on.
+- **REGAL acronym:** ✅ Resolved. The two validity conditions are authentic Sommers/
+  Englebretsen — *regularity* (the mood/particular-count condition) and *equality* (the
+  premises sum to the conclusion), corresponding to the Introduction's Condition 2 and
+  Condition 1. The **word "REGAL"** (a portmanteau of *regular* + *equal*, not an acronym)
+  could not be confirmed as their own coinage in any accessible source, so Course 2 L5 now
+  presents REGAL as *this curriculum's* memorable label for the pair rather than attributing
+  the word to Sommers. The conditions — and the theorem that they exactly characterize the
+  P/Z-consistent syllogisms — stand as taught.
 - **Course 2 lesson 1 note:** Compound statements builds on Introduction L8 (propositions as terms, if-then = A-form). Assume that lesson as prerequisite — don't re-teach, just recall.
 - **Penguins item (L6, ex-mixed-final item 6):** Explanation revised in L6 rewrite — cleaner now but keep an eye on it.
 - **Numerical quantifiers (Murphree):** ✅ Resolved. TFL⁺'s intermediate quantifiers

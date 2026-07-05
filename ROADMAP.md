@@ -44,8 +44,13 @@ is fully executed. The only work left in the roadmap is optional polish (see Gap
 
 ### Gaps / debt
 
-1. **No unit tests for `engine.js`** (the λ-lab logic has them; engine behavior is exercised via
-   ad-hoc headless-Chrome runs per change). Tolerable; revisit if the engine grows.
+1. ~~No unit tests for `engine.js`~~ ✅ Addressed. `engine.test.js` (15 tests, `node
+   engine.test.js`) loads the runtime in a `vm` context with a minimal DOM stub and covers
+   `countCorrect`, `shuffledIndices` (permutation invariant), `h`/`setFeedback`, the
+   valid-or-invalid and multiple-choice handlers (including the shuffle-remap: clicking the
+   visually-correct choice scores by the *authored* index under 50 random shuffles), and the
+   graceful per-block failure hardening (a bad block kind/type renders a skippable placeholder
+   instead of blanking the lesson).
 2. **Everything in the roadmap is now built.** Optional future work, none blocking: exact and
    comparative counting (Murphree's numerical term logic — the frontier Course 4 Lesson 6 now
    names), and a finite-model oracle for the intermediate-quantifier semantics (the numerical

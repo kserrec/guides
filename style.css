@@ -1589,3 +1589,18 @@ mark.lab-mark { background: #fde68a; border-radius: 3px; padding: 0 1px; }
   white-space: pre-line;
   line-height: 1.75;
 }
+
+/* Fallback shown when a lesson block fails to render (engine.js hardening) —
+   keeps the rest of the lesson usable instead of blanking the page. */
+.block-error {
+  border-left: 4px solid #f59e0b;
+  background: #fffbeb;
+}
+.block-error-detail {
+  font-family: 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  color: #92400e;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  margin-top: 0.5rem;
+}

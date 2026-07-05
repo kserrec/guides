@@ -47,8 +47,9 @@ of any kind.
 ```
 guides/
 ├── index.html                     Home page: hero + one card per subject (static HTML)
-├── style.css                      All shared styles (~1340 lines, section-commented)
+├── style.css                      All shared styles (~1606 lines, section-commented)
 ├── engine.js                      The course runtime: renders CURRICULUM, manages state
+├── engine.test.js                 Unit tests for the runtime (node + a tiny DOM stub)
 ├── check-counts.js                Dev script: verifies hardcoded lesson counts (node)
 ├── ROADMAP.md                     Project-level roadmap and step log (tracks A–D)
 ├── ARCHITECTURE.md                This document
@@ -123,6 +124,13 @@ and smooth-scrolls to it. Past the last block, `appendLessonComplete()` renders 
 completion card, records the lesson id in localStorage, and offers a "Start <next
 lesson> →" button. Switching lessons via the nav just re-runs `renderLesson()` — exercise
 state within a lesson is deliberately not persisted; only lesson *completion* is.
+
+**Resilience.** Each block is built inside a `try/catch`: if one block throws (an unknown
+`kind`, a missing handler, a malformed item), `buildErrorBlock` substitutes a skippable
+placeholder with a Continue button, so a single authoring slip degrades one block instead
+of blanking the whole lesson. localStorage reads and writes are wrapped (private-mode /
+quota safe), `init()` tolerates missing header elements, and the boot is wrapped so a
+missing/broken `CURRICULUM` shows a "failed to load" message rather than a blank page.
 
 **DOM construction** uses a tiny hyperscript helper `h(tag, attrs, ...children)`
 (`document.createElement` + `Object.assign`). Authored curriculum content is injected with
@@ -372,7 +380,7 @@ It follows the Lambda Lab split exactly — pure-logic module, UI module, node d
     `checkArgument` routes any level-carrying argument here; the level-0-only queries
     (`queryTerm`, `equivalents`, …) refuse levels rather than compute nonsense. Sound and
     complete for the SYLL⁺ moods; the fragment is categorical only.
-- **`tfl.test.js`** — plain-assert suite (200 tests): notation round-trips, rule
+- **`tfl.test.js`** — plain-assert suite (201 tests): notation round-trips, rule
   behavior, the named derivations (horse's head, Twain/Clemens, the boys-girls-cowards
   indirect proof, scope traps…), the paper's Socrates/Fido program and its queries, and
   oracle spot checks.
@@ -452,6 +460,13 @@ There is no package.json; all scripts run on bare node:
   exhaustion, alpha-equivalence, program/prelude semantics, readback, printHtml,
   checkExpression. **Run this after any change to lambda.js.** The bar is absolute: an
   incorrect reducer teaches students wrong lessons.
+- **`node engine.test.js`** — 15 plain-assert tests for the course runtime, loaded in a
+  `vm` context with a minimal hand-rolled DOM stub. Covers `countCorrect`,
+  `shuffledIndices` (permutation invariant), `h`/`setFeedback`, and both built-in exercise
+  handlers — including the multiple-choice shuffle-remap (clicking the visually-correct
+  choice scores by the authored index under many random shuffles) and the graceful
+  per-block failure (a bad block kind/type yields a skippable placeholder, not a blank
+  lesson). **Run after any change to engine.js.**
 - **`node check-counts.js`** — loads every curriculum in a `vm` sandbox (prepending
   tfl-helpers for TFL), counts lessons, and greps the hub/home HTML for the hardcoded
   card tags ("15 lessons", "7 lessons", "4 courses · 25 lessons"; in-progress courses use
@@ -527,6 +542,11 @@ link on the home page, and an entry in `check-counts.js`.
 subject-agnostic, or in a separate page-scoped script (the write-exercise.js pattern) if
 it depends on subject machinery. Honor the contract in §3: set `exState.answers[i]` once,
 call `onItemAnswered()`, and make correct answers satisfy `answers[i] === item.answer`.
+
+**Change the runtime.** Edit engine.js and run `node engine.test.js` — the built-in
+handlers and the scoring/shuffle/hardening logic are covered there (via a DOM stub), so a
+regression shows up without a browser. Keep the per-block `try/catch` intact: block builders
+may throw, but the loop must keep the rest of the lesson alive.
 
 **Change the lab engine.** Edit lambda.js, add tests for the new behavior in
 lambda.test.js, and run `node lambda-calculus/lab/lambda.test.js`. Keep the module

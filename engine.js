@@ -171,8 +171,10 @@ class CourseApp {
   }
 
   init() {
-    document.getElementById('site-title').textContent    = this.curriculum.title;
-    document.getElementById('site-subtitle').textContent = this.curriculum.subtitle;
+    const titleEl = document.getElementById('site-title');
+    const subEl   = document.getElementById('site-subtitle');
+    if (titleEl) titleEl.textContent = this.curriculum.title;
+    if (subEl)   subEl.textContent   = this.curriculum.subtitle;
     this.goToLesson(0);
   }
 
@@ -206,6 +208,7 @@ class CourseApp {
   }
 
   renderLesson() {
+    if (!this.stage) { console.error('No #stage element — cannot render the lesson.'); return; }
     this.stage.innerHTML = '';
     this.blockEls = [];
     this.exerciseState = {};
@@ -220,7 +223,16 @@ class CourseApp {
       if (block.type === 'exercise') {
         this.exerciseState[block.id] = { answers: {}, completed: false };
       }
-      const el = this.buildBlock(block, i);
+      let el;
+      try {
+        el = this.buildBlock(block, i);
+      } catch (err) {
+        // One malformed block (unknown kind, missing handler, bad item) must
+        // not blank the whole lesson — render an inline, skippable placeholder
+        // and keep going.
+        console.error(`Block ${i} of "${this.lesson.title}" failed to render:`, err);
+        el = this.buildErrorBlock(i, err && err.message ? err.message : String(err));
+      }
       el.id = `block-${i}`;
       el.classList.add('block--hidden');
       this.stage.append(el);
@@ -236,6 +248,17 @@ class CourseApp {
     if (block.type === 'concept')  return this.buildConceptBlock(block, index);
     if (block.type === 'exercise') return this.buildExerciseBlock(block, index);
     throw new Error(`Unknown block type: ${block.type}`);
+  }
+
+  // Fallback for a block that threw during construction: keep the lesson usable
+  // by showing a plain notice with a Continue button rather than a blank page.
+  buildErrorBlock(index, message) {
+    return h('div', { className: 'block block-error' },
+      h('h3', { className: 'block-title' }, 'This section couldn’t be shown'),
+      h('p', null, 'Something in the lesson content stopped this block from rendering. The rest of the lesson still works — continue below.'),
+      h('pre', { className: 'block-error-detail' }, message),
+      h('div', { className: 'block-footer' }, this.continueButton(index))
+    );
   }
 
   // "Continue →" button that hides itself and reveals the next block.
@@ -389,5 +412,14 @@ class CourseApp {
 // ── Boot ──────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
-  new CourseApp(CURRICULUM);
+  try {
+    if (typeof CURRICULUM === 'undefined' || !CURRICULUM) {
+      throw new Error('CURRICULUM is not defined — check the script load order.');
+    }
+    new CourseApp(CURRICULUM);
+  } catch (err) {
+    console.error('The course failed to start:', err);
+    const stage = document.getElementById('stage');
+    if (stage) stage.textContent = 'Sorry — this course failed to load. Please try refreshing the page.';
+  }
 });

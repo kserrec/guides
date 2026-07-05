@@ -448,6 +448,22 @@ const CURRICULUM = {
             in the two premises (+M in one, −M in the other), they cancel out. What remains
             is the conclusion.</p>
 
+            <p>Two laws govern that sum, both echoing ordinary arithmetic:</p>
+
+            <div class="grammar-rule">
+              <span class="g-label">Commutation and Association</span>
+              <strong>Commutation</strong> — order doesn't matter within a sum:
+              <code>+A + B = +B + A</code>.<br>
+              <strong>Association</strong> — grouping doesn't matter:
+              <code>(+A + B) + C = +A + (+B + C)</code>.
+            </div>
+
+            <p>Together they are why a middle term cancels <em>wherever</em> it sits and
+            <em>however</em> the premises are grouped — the "position-blindness" the validity test
+            relies on. One caution, revisited in Lesson 4: commutation holds within a sum, but the
+            subject and predicate do not swap across the copula — <code>−S+P</code> ("all S are P")
+            is not <code>−P+S</code>.</p>
+
             <div class="callout-note">
               <span class="cn-label">Everyday Analogy</span>
               You already know sign arithmetic from language: "not unhappy" = happy. "It's not the case that no one came" = someone came. TFL just makes this pattern explicit and rigorous.

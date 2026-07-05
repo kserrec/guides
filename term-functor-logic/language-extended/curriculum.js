@@ -1108,9 +1108,10 @@ const CURRICULUM = {
             conditions — called "Condition 1" and "Condition 2." Those labels describe the tests
             without explaining where they come from. This lesson repairs that.</p>
 
-            <p>The two conditions have proper names. Sommers encodes both in a single word:
-            <strong>REGAL</strong>. It is a portmanteau — not an acronym — formed from two terms
-            that name the two conditions.</p>
+            <p>The two conditions have proper names — <em>regularity</em> and <em>equality</em> —
+            and this course bundles them under one memorable label: <strong>REGAL</strong>, a
+            portmanteau (not an acronym) of those two words. The conditions themselves are
+            Sommers and Englebretsen's; REGAL is our name for the pair.</p>
 
             <div class="grammar-rule">
               <span class="g-label">REGAL = REG(ular) + egAL</span>
