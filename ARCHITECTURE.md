@@ -30,10 +30,11 @@ currently two **subjects**, each containing **courses**, each containing **lesso
   Bridge* (6). A TFL analog of the Lambda Lab — a term-logic programming language and
   Aristotelian database — is Track D in `ROADMAP.md` and is **in progress**: the engine
   core (parser, printer, inference, validity, the program/query layer, and the natural-
-  language Aristotelian layer) exists and is node-tested (see §6), and as of D6–D7 the lab
-  UI is live and lesson-integrated — a slide-over panel on the course pages plus a
-  standalone page at `term-functor-logic/lab/`, with "▸ try" chips on lesson syntax boxes.
-  Still ahead: the `tfl-expression` exercise kind (D8) and the numerical extension (D9–D10).
+  language Aristotelian layer) exists and is node-tested (see §6), and as of D6–D8 the lab
+  UI is live, lesson-integrated, and exercise-graded — a slide-over panel on the course
+  pages plus a standalone page at `term-functor-logic/lab/`, "▸ try" chips on lesson syntax
+  boxes, and an engine-graded free-input `tfl-expression` exercise kind. Still ahead: the
+  numerical extension (D9–D10).
 
 A lesson is a linear sequence of **blocks** that reveal one at a time: a *concept* block
 teaches (prose + examples), then an *exercise* block checks it, repeating in a
@@ -74,8 +75,9 @@ guides/
     ├── relational-syllogisms/
     ├── statement-logic-and-mpl/
     └── lab/                       TFL Lab (Track D; live as of D6)
-        ├── tfl.js                 Parser/printer + inference core — pure, no DOM
+        ├── tfl.js                 Parser/printer + inference core + grading — pure, no DOM
         ├── lab.js                 Panel + full-page UI (loads on course pages and lab/)
+        ├── tfl-exercise.js        Registers the 'tfl-expression' exercise kind (TFL pages)
         ├── index.html             Standalone full-page lab
         ├── tfl.test.js            Plain-assert tests: `node tfl.test.js`
         ├── oracle.js              Finite-model semantics + fuzz harness (node-only)
@@ -163,9 +165,15 @@ Built-in kinds (in engine.js):
   `answer` needs no adjustment and authoring the correct choice first is fine. Corollary:
   a choice must never reference other choices by position ("both of the above").
 
-The third kind, **`write-expression`**, is registered from
-`lambda-calculus/lab/write-exercise.js` and only exists on lambda pages — this is the
-mechanism that keeps engine.js subject-agnostic (see §5.3).
+Two more kinds are registered by side modules, never by engine.js — the mechanism that
+keeps it subject-agnostic (see §5.3): **`write-expression`** from
+`lambda-calculus/lab/write-exercise.js` (lambda pages only), and **`tfl-expression`** from
+`term-functor-logic/lab/tfl-exercise.js` (TFL pages only). Both are thin DOM shells over a
+pure grader in their engine module (`Lambda.checkExpression` / `TFL.checkExpression`); the
+TFL one has three modes — `transcribe` (equal up to the immediate rules),
+`derive` (the conclusion from given premises), `premise` (any consistent premise that
+completes the argument). Neither leaks the answer on a wrong attempt; both offer an
+"open in the lab" button on finished items.
 
 Every item of every kind carries an `explanation`, shown as feedback whether the user was
 right or wrong. This is a content-quality invariant, not an engine requirement.
@@ -354,7 +362,11 @@ It follows the Lambda Lab split exactly — pure-logic module, UI module, node d
     `suggestMissingPremise` (enthymeme recovery: existential import `+S+S`, plus a
     consistency-guarded search for the tacit rule). Every suggestion is checkArgument-
     verified before it is offered, so nothing here can be unsound.
-- **`tfl.test.js`** — plain-assert suite (174 tests): notation round-trips, rule
+  - *D8, exercise grading*: `checkExpression(src, item)` — the pure grader behind the
+    `tfl-expression` exercise kind, with the three modes (`transcribe` / `derive` /
+    `premise`); parse/validation errors become messages, never throws, and no failure
+    message leaks the expected answer.
+- **`tfl.test.js`** — plain-assert suite (186 tests): notation round-trips, rule
   behavior, the named derivations (horse's head, Twain/Clemens, the boys-girls-cowards
   indirect proof, scope traps…), the paper's Socrates/Fido program and its queries, and
   oracle spot checks.
@@ -380,8 +392,13 @@ It follows the Lambda Lab split exactly — pure-logic module, UI module, node d
   whose text *validates* as a program, plus per-course example dropdowns. Exposes
   `window.TFLLab.load(src, qry)`.
 
-Remaining Track D steps (D8–D10, see the roadmap): a `tfl-expression` exercise kind and
-numerical quantifiers.
+- **`tfl-exercise.js`** — the D8 DOM handler that registers the `tfl-expression` exercise
+  kind (TFL course pages only; §3's exercise-kind registry), a thin shell over the engine's
+  `checkExpression` grader. Finished items offer an "open in the TFL Lab" button via
+  `window.TFLLab.load`.
+
+Remaining Track D steps (D9–D10, see the roadmap): numerical quantifiers — the engine half
+then the lesson.
 
 ## 7. Styling and theming
 
@@ -513,9 +530,9 @@ DOM-free; anything visual goes in lab.js.
 - `ROADMAP.md` (root) is both plan and log: Track A (Lambda Lab, A1–A8, complete),
   Track B (TFL Courses 3–4, B1–B9, complete), Track C (housekeeping, complete), and
   Track D (TFL^PL — a term-logic programming language / Aristotelian database lab):
-  D1–D7 complete (parser/printer, inference core, deep relational layer, program/query
-  layer, Aristotelian layer, the lab UI, and lesson chips — §6), D8–D10 ahead, with the
-  full design-decision record in the track's preamble. Completed steps carry implementation
+  D1–D8 complete (parser/printer, inference core, deep relational layer, program/query
+  layer, Aristotelian layer, the lab UI, lesson chips, and the exercise kind — §6), D9–D10
+  ahead, with the full design-decision record in the track's preamble. Completed steps carry implementation
   notes recording decisions made along the way — it's the closest thing to an ADR log;
   read it before re-deciding anything.
 - `term-functor-logic/ROADMAP.md` maps book chapters to courses/lessons, records firm

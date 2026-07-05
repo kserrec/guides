@@ -1805,6 +1805,65 @@
     return found;
   }
 
+  // ── D8 — exercise grading (the tfl-expression exercise kind) ──────────
+  //
+  // Grades a user-written proposition against an item in one of three modes.
+  // Pure and node-testable; the DOM handler (tfl-exercise.js) is a thin shell
+  // over this, exactly as A8's write-exercise.js is over lambda's
+  // checkExpression. Never leaks the expected answer in a failure message.
+  //
+  //   transcribe — translate English to TFL: accept any form equal to
+  //                `answer` up to the immediate rules (decideEquivalence).
+  //   derive     — given `premises`, write the conclusion: accept any form
+  //                equal to `answer` up to the immediate rules; if it merely
+  //                follows without being the target, say so.
+  //   premise    — given `premises` and a `conclusion`, write the missing
+  //                premise: accept ANY premise that makes the argument valid
+  //                while keeping the base consistent (no ex-falso), and that
+  //                isn't the conclusion restated. `answer` is only the
+  //                reveal/one-example, not the sole accepted response.
+  function checkExpression(src, item = {}) {
+    const opts = item.opts || {};
+    const parse1 = (s) => { const p = parseProposition(s); validateProp(p); return p; };
+    let user;
+    try { user = parse1(src); }
+    catch (e) {
+      if (e instanceof ParseError || e instanceof EngineError) return { ok: false, message: e.message };
+      throw e;
+    }
+    const mode = item.mode || 'transcribe';
+
+    if (mode === 'transcribe') {
+      const answer = parse1(item.answer);
+      return decideEquivalence(user, answer, opts).equivalent
+        ? { ok: true }
+        : { ok: false, message: 'That is not equivalent to the target statement.' };
+    }
+    if (mode === 'derive') {
+      const premises = (item.premises || []).map(parse1);
+      const answer = parse1(item.answer);
+      if (decideEquivalence(user, answer, opts).equivalent) return { ok: true };
+      const follows = checkArgument(premises, user, opts).verdict === 'valid';
+      return { ok: false, message: follows
+        ? 'That follows from the premises, but it is not the conclusion asked for.'
+        : 'That does not follow from the premises.' };
+    }
+    if (mode === 'premise') {
+      const premises = (item.premises || []).map(parse1);
+      const conclusion = parse1(item.conclusion);
+      if (decideEquivalence(user, conclusion, opts).equivalent) {
+        return { ok: false, message: 'That just restates the conclusion — find the premise the argument was missing.' };
+      }
+      if (!checkProgramConsistency([...premises, user], opts).consistent) {
+        return { ok: false, message: 'That premise makes the fact base contradictory.' };
+      }
+      return checkArgument([...premises, user], conclusion, opts).verdict === 'valid'
+        ? { ok: true }
+        : { ok: false, message: 'With that premise the conclusion still does not follow.' };
+    }
+    return { ok: false, message: `Unknown exercise mode: ${mode}` };
+  }
+
   return {
     Atom, Neg, Compound, Rel, PropTerm, ST, Prop,
     termEq, propEq, stEq, ParseError, tokenize,
@@ -1825,5 +1884,7 @@
     // D5 — the Aristotelian layer
     readTerm, readProp, explainProof, answer,
     strongerAnswer, possibility, suggestMissingPremise,
+    // D8 — exercise grading
+    checkExpression,
   };
 });

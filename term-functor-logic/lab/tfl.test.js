@@ -722,6 +722,7 @@ test('oracle agrees: proterms denote — the co-denotation pair', () => {
 const {
   parseProgram, queryTerm, queryProp, checkProgramConsistency,
   equivalents, decideEquivalence, statementModel, parseTerm: PT,
+  checkExpression,
 } = require('./tfl.js');
 
 // The paper's Socrates/Fido program (Castro-Manzano et al. 2018 §6), in
@@ -987,6 +988,82 @@ test('existential-import suggestion when the universal holds but some was asked'
 
 test('no suggestions for an already-proven query', () =>
   assert.strictEqual(suggestMissingPremise(FIDO5, P('±Socrates*+Mortal')).length, 0));
+
+// ── D8: checkExpression (the tfl-expression exercise kind) ──────────────────
+
+test('transcribe: exact match grades correct', () =>
+  assert.ok(checkExpression('−S+P', { mode: 'transcribe', answer: '−S+P' }).ok));
+
+test('transcribe: an immediate-rule equivalent is accepted', () => {
+  // the obverse of −S+P is −(−P)... its contrapositive −(−P)+(−S); accept it
+  assert.ok(checkExpression('−(−P)+(−S)', { mode: 'transcribe', answer: '−S+P' }).ok);
+  assert.ok(checkExpression('−Man−(−Mortal)', { mode: 'transcribe', answer: '−Man+Mortal' }).ok);
+});
+
+test('transcribe: a non-equivalent is rejected without leaking the answer', () => {
+  const r = checkExpression('−P+S', { mode: 'transcribe', answer: '−S+P' }); // illicit conversion
+  assert.strictEqual(r.ok, false);
+  assert.ok(!/−S\+P/.test(r.message), r.message);
+});
+
+test('transcribe: a parse error is reported, not thrown', () => {
+  const r = checkExpression('+oops(', { mode: 'transcribe', answer: '−S+P' });
+  assert.strictEqual(r.ok, false);
+  assert.ok(typeof r.message === 'string' && r.message.length > 0);
+});
+
+test('transcribe: an invalid proposition is reported, not thrown', () => {
+  const r = checkExpression('±S+P', { mode: 'transcribe', answer: '−S+P' }); // wild on a general term
+  assert.strictEqual(r.ok, false);
+});
+
+test('derive: the target conclusion grades correct', () =>
+  assert.ok(checkExpression('−S+P',
+    { mode: 'derive', premises: ['−M+P', '−S+M'], answer: '−S+P' }).ok));
+
+test('derive: a conclusion that follows but is not the target is flagged as such', () => {
+  // +S+P follows from {−M+P, +S+M} but the asked conclusion is −S+P-shaped;
+  // use a case where a weaker consequence follows but is not the target.
+  const r = checkExpression('+S+P',
+    { mode: 'derive', premises: ['−M+P', '+S+M'], answer: '+M+P' });
+  assert.strictEqual(r.ok, false);
+  assert.ok(/follows/.test(r.message), r.message);
+});
+
+test('derive: a non-consequence is rejected as not following', () => {
+  const r = checkExpression('−P+S',
+    { mode: 'derive', premises: ['−M+P', '−S+M'], answer: '−S+P' });
+  assert.strictEqual(r.ok, false);
+  assert.ok(/does not follow/.test(r.message), r.message);
+});
+
+test('premise: any consistent premise that completes the argument is accepted', () => {
+  // Barbara missing its major: −M+P bridges −S+M ⊢ −S+P
+  assert.ok(checkExpression('−M+P',
+    { mode: 'premise', premises: ['−S+M'], conclusion: '−S+P', answer: '−M+P' }).ok);
+});
+
+test('premise: restating the conclusion is rejected', () => {
+  const r = checkExpression('−S+P',
+    { mode: 'premise', premises: ['−S+M'], conclusion: '−S+P', answer: '−M+P' });
+  assert.strictEqual(r.ok, false);
+  assert.ok(/restates/.test(r.message), r.message);
+});
+
+test('premise: a premise that only works ex falso is rejected', () => {
+  // {−S+M, +S+M} with a premise making the base inconsistent would prove
+  // anything; −M−M contradicts +S+M's witness — reject the ex-falso route.
+  const r = checkExpression('−M−M',
+    { mode: 'premise', premises: ['+S+M'], conclusion: '−S+P', answer: '−M+P' });
+  assert.strictEqual(r.ok, false);
+});
+
+test('premise: a premise that does not complete the argument is rejected', () => {
+  const r = checkExpression('−M+Q',
+    { mode: 'premise', premises: ['−S+M'], conclusion: '−S+P', answer: '−M+P' });
+  assert.strictEqual(r.ok, false);
+  assert.ok(/still does not follow/.test(r.message), r.message);
+});
 
 // ── Summary ───────────────────────────────────────────────────────────────
 

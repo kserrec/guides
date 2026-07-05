@@ -27,11 +27,11 @@ completion. If a step grows beyond that during execution, split it before starti
 | TFL: Relational Syllogisms (Course 3) | ✅ 3 lessons |
 | TFL: Statement Logic & MPL (Course 4) | ✅ 6 lessons — **TFL curriculum complete (24 lessons)** |
 | TFL Lab engine (Track D) | 🔶 D1–D5 done: parser/printer, inference core (DON, immediate rules, two-tier validity, traced derivations), the deep relational layer (guarded passive, proterms, indirect proof), the program/query layer (`parseProgram`, `? term`/`? prop`/`?=`, consistency check), and the Aristotelian layer (NL explanations, stronger-answer, possibility, negation-as-failure, enthymeme recovery). 174 tests, six fuzz suites. |
-| TFL Lab UI (Track D) | 🔶 D6–D7 done: `lab.js` drives both the course-page panel and the standalone page at `term-functor-logic/lab/` (fact-base editor, palette, query line, consistency banner, derivation pane, `?=` square of opposition, `.tfl` import/export), plus "▸ try" chips on lesson syntax boxes and curated per-course examples. Next: D8 `tfl-expression` exercise kind. |
+| TFL Lab UI (Track D) | 🔶 D6–D8 done: `lab.js` drives both the course-page panel and the standalone page at `term-functor-logic/lab/` (fact-base editor, palette, query line, consistency banner, derivation pane, `?=` square of opposition, `.tfl` import/export), "▸ try" chips + curated examples, and the engine-graded `tfl-expression` exercise kind (transcribe / derive / find-the-premise). Next: D9 numerical quantifiers. |
 
 Tracks A, B, and C are fully executed. Track D is in progress — language core first
-(D1–D5 ✅), lab UI live and lesson-integrated (D6–D7 ✅), then the exercise kind (D8) and
-the numerical extension (D9–D10).
+(D1–D5 ✅), lab UI live, lesson-integrated, and exercise-graded (D6–D8 ✅), then the
+numerical extension (D9–D10).
 
 ### Strengths
 
@@ -45,9 +45,11 @@ the numerical extension (D9–D10).
 
 1. **No unit tests for `engine.js`** (the λ-lab logic has them; engine behavior is exercised via
    ad-hoc headless-Chrome runs per change). Tolerable; revisit if the engine grows.
-2. **No `tfl-expression` exercise kind yet** — the lab is live (D6) and lesson-integrated
-   via "▸ try" chips (D7), but the curriculum can't yet *grade* free-input TFL answers
-   through the engine the way λ-lessons do (A8). That's D8.
+2. **Numerical quantifiers not yet supported** — the lab is live (D6), lesson-integrated
+   (D7), and grades free-input TFL answers (D8), but the engine still works at quantity
+   level 0 only (classical some/every). Most/many/few (TFL⁺) is the D9–D10 frontier; the AST
+   has carried the level field since D1, so D9 touches only parser, printer, and one
+   validity condition.
 
 ---
 
@@ -533,9 +535,34 @@ bolted on. Learners get to *run* the algebra all four courses taught.
     the panel with the query prefilled and the square rendered, an invalid query renders an
     error instead of throwing, and an invalid fact-base line shows in the banner.
     174 engine tests still green.
-- **D8** 🔲 `tfl-expression` exercise kind graded by the D2 engine (modes: transcribe-English
-  — equal up to immediate rules; derive-the-conclusion; find-the-missing-premise); first real
-  usage in one existing lesson, wiring pattern documented like A8.
+- **D8** ✅ `tfl-expression` exercise kind graded by the engine. Grading is the pure,
+  node-tested `checkExpression(src, item)` in `tfl.js` (A8's split: logic in the engine
+  module, DOM in a thin handler); the handler `tfl-exercise.js` registers the kind into
+  `ExerciseHandlers` and loads only on the four TFL course pages (after `lab.js`, so its
+  finished items can offer an "▸ open in the TFL Lab" button). First real usage: a free-input
+  "Write It Yourself: Transcribe to TFL" quick-check in Introduction Lesson 3's transcribing
+  lesson (three items), sitting before the existing multiple-choice final.
+  Implementation notes (decisions made during execution):
+  - **Three modes, each with the right flexibility.** `transcribe` accepts any form equal to
+    `answer` up to the immediate rules — `decideEquivalence`, so an obverse or contrapositive
+    grades correct but an illicit conversion (`−S+P` vs `−P+S`) or a wrong quantity does not.
+    `derive` (given `premises`) accepts any immediate-rule equivalent of the target
+    conclusion, and distinguishes "follows, but isn't the one asked for" from "doesn't
+    follow." `premise` (given `premises` + `conclusion`) accepts *any* premise that makes the
+    argument valid while keeping the base consistent — an ex-falso premise (one that only
+    "works" by making the base contradictory) and a bare restatement of the conclusion are
+    both rejected; `answer` is only the reveal example, not the sole accepted response.
+  - **Robust and non-leaking.** `checkExpression` catches `ParseError`/`EngineError` and
+    returns them as messages (never throws), and no failure message ever contains the
+    expected answer — the reveal (after three misses) does, and scores the item incorrect,
+    matching A8. Grading reuses the engine's `countCorrect` convention (store `item.answer`
+    on success, a sentinel otherwise).
+  - **Authoring pattern (documented like A8).** Add a block `{ type:'exercise',
+    kind:'tfl-expression', id, items:[{ mode, prompt|promptHtml, answer, explanation,
+    premises?, conclusion? }] }` — no new wiring. 12 new engine tests cover all three modes
+    (pass + fail paths); live-verified headlessly that the DOM handler grades all three,
+    shows the non-leaking message, reveals→incorrect (score reflects it), and offers the lab
+    button. 186 engine tests green.
 - **D9** 🔲 Numerical quantifiers, engine half (TFL⁺): quantity levels 0–3 on subject terms
   (`+V²+C⁰` — "most voters are citizens"), ASCII `+V^2+C^0` (explicit `^` marker; see design
   decisions); the three-condition decision method; parser/printer/derivation support. Tests
@@ -550,6 +577,5 @@ bolted on. Learners get to *run* the algebra all four courses taught.
 
 ## Suggested order
 
-1. ~~C1~~ · ~~A1–A8~~ · ~~B1–B9~~ · ~~C2~~ · ~~D1~~ · ~~D2~~ · ~~D3~~ · ~~D4~~ · ~~D5~~ · ~~D6~~ · ~~D7~~ — complete.
-2. **D8** (`tfl-expression` exercise kind) ← next: D8
-3. **D9 → D10** last, in that order (numerical quantifiers: engine, then lesson)
+1. ~~C1~~ · ~~A1–A8~~ · ~~B1–B9~~ · ~~C2~~ · ~~D1~~ · ~~D2~~ · ~~D3~~ · ~~D4~~ · ~~D5~~ · ~~D6~~ · ~~D7~~ · ~~D8~~ — complete.
+2. **D9 → D10** last, in that order (numerical quantifiers: engine, then lesson) ← next: D9

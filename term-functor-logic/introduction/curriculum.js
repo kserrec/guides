@@ -709,6 +709,35 @@ const CURRICULUM = {
           `
         },
 
+        // ── Exercise: Write It Yourself (free input, engine-graded) ──────────
+        {
+          type: "exercise",
+          id: "ex-transcribe-write",
+          title: "Write It Yourself: Transcribe to TFL",
+          instruction: "Type the TFL transcription. Any correct form is accepted — even an equivalent one (an obverse or contrapositive), since the engine grades up to the immediate rules. Use − for minus (a plain hyphen - works too).",
+          kind: "tfl-expression",
+          items: [
+            {
+              mode: "transcribe",
+              prompt: "Transcribe: “Every dog is loyal.”",
+              answer: "−Dog+Loyal",
+              explanation: "Universal (every) → −Dog. Affirmed (is) → +Loyal. So −Dog+Loyal (A-form)."
+            },
+            {
+              mode: "transcribe",
+              prompt: "Transcribe: “Some metals are not magnetic.”",
+              answer: "+Metal−Magnetic",
+              explanation: "Particular (some) → +Metal. Denied (not) → −Magnetic. So +Metal−Magnetic (O-form)."
+            },
+            {
+              mode: "transcribe",
+              prompt: "Transcribe: “No ghost is real.”",
+              answer: "−Ghost−Real",
+              explanation: "Universal-negative (no) → −Ghost. Denied → −Real. So −Ghost−Real (E-form)."
+            }
+          ]
+        },
+
         // ── Exercise: Transcribe It! (Final) ─────────────────────────────────
         {
           type: "exercise",
