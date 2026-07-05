@@ -849,9 +849,12 @@
   // returns the line's index, existing lines deduplicating); `onNewLine`
   // inspects each genuinely new line and returns a non-null hit to stop.
   // Rules applied: IN, Contrap, Simp, guarded Pass (unary); DON, Add
-  // (binary). Everything pushed must already be canonical.
+  // (binary). Everything pushed must already be canonical. `opts.rules`,
+  // when given, restricts to that Set of rule names (D4's `?` term query
+  // saturates on DON+Simp alone, so Add's compounds don't drown the answer).
   function saturate(opts, setup, onNewLine) {
     const maxLines = opts.maxLines || 400;
+    const allow = (r) => !opts.rules || opts.rules.has(r);
     const lines = [];
     const seen = new Map(); // key → line index
     let hit = null;
@@ -869,23 +872,23 @@
     for (let i = 0; !hit && i < lines.length && lines.length < maxLines; i++) {
       const li = lines[i];
       const unary = [
-        [obverse(li.prop), 'IN'],
-        [contrapositive(li.prop), 'Contrap'],
-        ...applySimp(li.prop).map((p) => [p, 'Simp']),
-        ...passives(li.prop).filter((r) => r.equivalent)
-                            .map((r) => [canonProp(r.prop), 'Pass']),
+        allow('IN') && [obverse(li.prop), 'IN'],
+        allow('Contrap') && [contrapositive(li.prop), 'Contrap'],
+        ...(allow('Simp') ? applySimp(li.prop).map((p) => [p, 'Simp']) : []),
+        ...(allow('Pass') ? passives(li.prop).filter((r) => r.equivalent)
+                            .map((r) => [canonProp(r.prop), 'Pass']) : []),
       ];
-      for (const [p, rule] of unary) {
-        if (!p) continue;
-        push(p, rule, [i]);
+      for (const entry of unary) {
+        if (!entry || !entry[0]) continue;
+        push(entry[0], entry[1], [i]);
         if (hit) break;
       }
       for (let j = 0; !hit && j < i && lines.length < maxLines; j++) {
         const lj = lines[j];
         const binary = [
-          ...applyDON(li.prop, lj.prop).map((p) => [p, 'DON', [i, j]]),
-          ...applyDON(lj.prop, li.prop).map((p) => [p, 'DON', [j, i]]),
-          ...applyAdd(li.prop, lj.prop).map((p) => [p, 'Add', [i, j]]),
+          ...(allow('DON') ? applyDON(li.prop, lj.prop).map((p) => [p, 'DON', [i, j]]) : []),
+          ...(allow('DON') ? applyDON(lj.prop, li.prop).map((p) => [p, 'DON', [j, i]]) : []),
+          ...(allow('Add') ? applyAdd(li.prop, lj.prop).map((p) => [p, 'Add', [i, j]]) : []),
         ];
         for (const [p, rule, parents] of binary) {
           push(p, rule, parents);
@@ -924,33 +927,29 @@
 
   // ── Indirect proof (Course 3 L3) ──────────────────────────────────────
   //
-  // Assume the counterclaim — the premises plus the contradictory of the
-  // conclusion — pronominalize its particular statements (fresh proterms +
-  // anchors), and saturate until some line's contradictory is already on
-  // the board: a fixed witness asserted and denied the same thing.
-  // Success refutes the counterclaim, so by PV the argument is valid.
-  // Sound by Skolemization (pronominalization preserves satisfiability;
-  // every other rule is truth-preserving), which is why pronominalization
-  // happens only here, at setup — it is not an entailment step.
-  function indirectProof(premises, conclusion, opts = {}) {
-    premises.forEach(validateProp);
-    validateProp(conclusion);
-    const cc = [...premises, contradictory(conclusion)];
-    const sizeCap = Math.max(...cc.map(propNodes)) + (opts.slack || 8);
+  // Refute a set outright: pronominalize its particular statements (fresh
+  // proterms + anchors) and saturate until some line's contradictory is
+  // already on the board — a fixed witness asserted and denied the same
+  // thing. Sound by Skolemization (pronominalization preserves
+  // satisfiability; every other rule is truth-preserving), which is why
+  // pronominalization happens only here, at setup — it is not an
+  // entailment step. Also the engine for D4's program consistency check.
+  function refuteSet(entries, opts = {}) {
+    entries.forEach((e) => validateProp(e.prop));
+    const sizeCap = Math.max(...entries.map((e) => propNodes(e.prop))) + (opts.slack || 8);
     const used = new Set();
-    cc.forEach((p) => collectNames(p, used));
+    entries.forEach((e) => collectNames(e.prop, used));
     const { lines, hit } = saturate(
       { maxLines: opts.maxLines, sizeCap },
       (push) => {
-        const idxs = cc.map((p, i) =>
-          push(canonProp(p), i < premises.length ? 'premise' : 'counterclaim', []));
-        cc.forEach((p, i) => {
-          const pron = pronominalize(p, used);
+        const idxs = entries.map((e) => push(canonProp(e.prop), e.rule, []));
+        entries.forEach((e, i) => {
+          const pron = pronominalize(e.prop, used);
           if (!pron) return;
           push(canonProp(pron.prop), 'Pron', [idxs[i]]);
           for (const a of pron.anchors) push(canonProp(a), 'Anchor', [idxs[i]]);
         });
-        for (const t of mentionedTerms(cc)) push(tautology(t), 'It', []);
+        for (const t of mentionedTerms(entries.map((e) => e.prop))) push(tautology(t), 'It', []);
       },
       (idx, line, seen) => {
         const ck = printProposition(contradictory(line.prop));
@@ -960,6 +959,17 @@
     if (!hit) return { found: false, lines: [] };
     return extract(lines, hit.roots,
       { text: '⊥', rule: 'contradiction', parents: hit.roots });
+  }
+
+  // Assume the counterclaim — the premises plus the contradictory of the
+  // conclusion — and refute it; by PV the argument is then valid.
+  function indirectProof(premises, conclusion, opts = {}) {
+    premises.forEach(validateProp);
+    validateProp(conclusion);
+    return refuteSet([
+      ...premises.map((prop) => ({ prop, rule: 'premise' })),
+      { prop: contradictory(conclusion), rule: 'counterclaim' },
+    ], opts);
   }
 
   // Prune to the given roots' ancestry and renumber; `closing` appends a
@@ -1229,6 +1239,273 @@
     return { verdict: 'unknown', method: 'derivation' };
   }
 
+  // ════════════════════════════════════════════════════════════════════════
+  // D4 — Programs and queries.
+  //
+  // A TFLᴾᴸ program is a sequence of propositions (Castro-Manzano et al.
+  // 2018 §6); facts and rules share the one ENF shape — the language's
+  // defining feature. Comments run from `--` to end of line (the paper's
+  // own `//`, respelled to a marker two adjacent minuses can never form in
+  // valid notation — negative terms are always parenthesized, so `--`
+  // never lexes as double negation). Queries are answered by the D2/D3
+  // engine: `?` runs the inference core against the program, `?=` closes a
+  // statement under the immediate equivalence rules.
+
+  // ── parseProgram ──────────────────────────────────────────────────────
+  // Returns { propositions: [{prop, text, line}], errors: [{line, message,
+  // pos}] } — one entry per non-blank, non-comment line, so a single bad
+  // line does not sink the rest (D6's editor reports them in the margin).
+  function stripComment(line) {
+    for (let i = 0; i + 1 < line.length; i++) {
+      const a = line[i], b = line[i + 1];
+      if ((a === '-' || a === '−') && (b === '-' || b === '−')) return line.slice(0, i);
+    }
+    return line;
+  }
+
+  function parseProgram(src) {
+    const propositions = [];
+    const errors = [];
+    src.split('\n').forEach((raw, i) => {
+      const line = i + 1;
+      const code = stripComment(raw).trim();
+      if (code === '') return;
+      try {
+        propositions.push({ prop: parseProposition(code), text: code, line });
+      } catch (e) {
+        if (e instanceof ParseError) errors.push({ line, message: e.message, pos: e.pos });
+        else throw e;
+      }
+    });
+    return { propositions, errors };
+  }
+
+  // ── ?  term query: "what is <term>?" ──────────────────────────────────
+  //
+  // Saturate the program on DON + Simp about the term (plus the immediate
+  // equivalences for canonical bookkeeping — never Add, whose compounds
+  // would bury the answer), collect every derived proposition whose
+  // subject is the queried term, then keep only the strongest: drop any
+  // answer another retained answer entails by the unary rules alone,
+  // collapsing equivalents to their simplest form. Strongest first.
+  function queryTerm(program, term, opts = {}) {
+    program.forEach(validateProp);
+    validateTerm(term, 'top');
+    const key = termKey(term);
+    const sizeCap = Math.max(...program.map(propNodes), nodeCount(term)) + (opts.slack || 6);
+    const { lines } = saturate(
+      { maxLines: opts.maxLines || 300, sizeCap, rules: new Set(['IN', 'Contrap', 'Simp', 'DON']) },
+      (push) => {
+        for (const p of program) push(canonProp(p), 'fact', []);
+        for (const t of mentionedTerms(program)) push(tautology(t), 'It', []);
+      },
+      () => null);
+
+    // Collect props "about" the term: those with the term as subject, plus
+    // convertible I/E forms where it sits in the predicate (canonical form
+    // converts `±Socrates*+Man` to `+Man+Socrates*`, so orient it back).
+    const cands = [];
+    const seen = new Set();
+    for (const l of lines) {
+      if (l.rule === 'It') continue; // the trivial −term+term is not an answer
+      let display = null;
+      for (const o of orientations(l.prop)) {
+        if (termKey(o.subject.term) === key) { display = o; break; }
+      }
+      if (!display) continue;
+      // Drop tautologies (every T is T and its obverse) — the It line and
+      // its immediate-rule descendants are not answers about the term.
+      const ts = display.subject.term;
+      if (propKey(display) === propKey(tautology(ts)) ||
+          propKey(display) === propKey(obverse(tautology(ts)))) continue;
+      const dk = propKey(display);
+      if (seen.has(dk)) continue;
+      seen.add(dk);
+      cands.push(display);
+    }
+    // Unary entailment a ⊢ b (equivalences + Simp weakening), small-fuel.
+    const implies = (a, b) => {
+      const bKey = printProposition(canonProp(b));
+      if (printProposition(canonProp(a)) === bKey) return true;
+      const cap = Math.max(propNodes(a), propNodes(b)) + 2;
+      const { hit } = saturate(
+        { maxLines: 60, sizeCap: cap, rules: new Set(['IN', 'Contrap', 'Simp']) },
+        (push) => push(canonProp(a), 'a', []),
+        (idx, line) => (line.key === bKey ? {} : null));
+      return !!hit;
+    };
+    const kept = [];
+    for (const c of cands) {
+      // strictly-stronger existing answer → drop c; equivalent existing → drop c
+      if (kept.some((k) => implies(k, c))) continue;
+      // remove kept answers now subsumed by c
+      for (let i = kept.length - 1; i >= 0; i--) if (implies(c, kept[i])) kept.splice(i, 1);
+      kept.push(c);
+    }
+    kept.sort((a, b) => propNodes(b) - propNodes(a) ||
+      (printProposition(a) < printProposition(b) ? -1 : 1));
+    return kept.map((prop) => ({ prop, text: printProposition(prop) }));
+  }
+
+  // ── ?  proposition query: the three-way verdict ───────────────────────
+  //
+  // yes  — the program entails the query (derivation/certificate attached);
+  // no   — the program entails its contradictory (a refutation);
+  // unknown — neither (open-world; D5 adds the negation-as-failure guess).
+  function queryProp(program, query, opts = {}) {
+    program.forEach(validateProp);
+    validateProp(query);
+    const yes = checkArgument(program, query, opts);
+    if (yes.verdict === 'valid') return { verdict: 'yes', support: yes };
+    if (yes.verdict === 'contradicted') return { verdict: 'no', support: yes };
+    // Categorical 'invalid' means the query is not entailed; its
+    // contradictory may still be. (Relational 'unknown' already tried the
+    // contradictory inside checkArgument.)
+    if (yes.method === 'PZ') {
+      const no = checkArgument(program, contradictory(query), opts);
+      if (no.verdict === 'valid') return { verdict: 'no', support: no };
+    }
+    return { verdict: 'unknown' };
+  }
+
+  // ── Program consistency (D6's banner API) ─────────────────────────────
+  //
+  // Complete for the atomic-categorical fragment (P/Z), sound elsewhere:
+  // `consistent: false` always carries a refutation derivation; a
+  // categorical inconsistency also carries the P/Z certificate. On the
+  // relational fragment `consistent: true` means "no contradiction found
+  // within fuel," honest about reach exactly as checkArgument is.
+  function checkProgramConsistency(program, opts = {}) {
+    program.forEach(validateProp);
+    const entries = program.map((prop) => ({ prop, rule: 'fact' }));
+    if (isAtomicCategorical(program)) {
+      const cert = checkInconsistent(program);
+      if (!cert) return { consistent: true, complete: true };
+      const proof = refuteSet(entries, opts);
+      return { consistent: false, complete: true, certificate: cert, proof: proof.found ? proof : null };
+    }
+    const proof = refuteSet(entries, opts);
+    return proof.found
+      ? { consistent: false, complete: false, proof }
+      : { consistent: true, complete: false };
+  }
+
+  // ── ?= <statement>: the equivalence neighbourhood ─────────────────────
+  //
+  // Database-independent: close the statement under the bidirectional
+  // immediate rules (obversion, contraposition; conversion and DN are
+  // already absorbed by the canonical form, so the closure is finite).
+  // Each equivalent carries the rule path that reaches it and a short
+  // reading. The given statement is the first entry.
+  function equivalents(prop, opts = {}) {
+    validateProp(prop);
+    const start = canonProp(prop);
+    const startKey = printProposition(start);
+    const nodes = new Map([[startKey, { prop: start, path: [], from: null }]]);
+    const queue = [start];
+    const ops = [['obverse', obverse], ['contrapositive', contrapositive]];
+    const limit = opts.maxNodes || 64;
+    while (queue.length && nodes.size < limit) {
+      const cur = queue.shift();
+      const curKey = printProposition(cur);
+      for (const [name, fn] of ops) {
+        const r = fn(cur);
+        if (!r) continue;
+        const key = printProposition(r);
+        if (nodes.has(key)) continue;
+        nodes.set(key, { prop: r, path: nodes.get(curKey).path.concat(name), from: curKey });
+        queue.push(r);
+      }
+    }
+    return [...nodes.values()].map((n) => ({
+      prop: n.prop,
+      text: printProposition(n.prop),
+      rule: n.path.length === 0 ? 'given' : n.path[n.path.length - 1],
+      reading: n.path.length === 0 ? 'the statement itself'
+        : n.path.length === 1 ? `its ${n.path[0]}`
+        : `its ${n.path.join(' then ')}`,
+      path: n.path,
+    }));
+  }
+
+  // ── ?= A , B: decide equivalence, show the certificate ────────────────
+  //
+  // Two propositional statements (Course 4: every atom a lowercase
+  // statement variable, no terms/relations/singulars) are equivalent iff
+  // they hold in the same worlds — the DNF fingerprint decides completely.
+  // Otherwise fall back to the immediate-rule rewrite path: equivalent iff
+  // one's equivalence neighbourhood reaches the other.
+  function decideEquivalence(a, b, opts = {}) {
+    validateProp(a);
+    validateProp(b);
+    const ma = statementModel(a), mb = statementModel(b);
+    if (ma && mb) {
+      const atoms = [...new Set([...ma.atoms, ...mb.atoms])].sort();
+      const rows = [];
+      let equal = true;
+      for (let m = 0; m < (1 << atoms.length); m++) {
+        const asg = {};
+        atoms.forEach((nm, i) => { asg[nm] = !!(m & (1 << i)); });
+        const va = ma.sat(asg), vb = mb.sat(asg);
+        if (va !== vb) equal = false;
+        if (va) rows.push(atoms.filter((nm) => asg[nm]).map((nm) => '+' + nm)
+          .concat(atoms.filter((nm) => !asg[nm]).map((nm) => '−' + nm)).join(''));
+      }
+      return { equivalent: equal, method: 'dnf', atoms, dnf: rows };
+    }
+    const closure = equivalents(a, opts);
+    const bKey = printProposition(canonProp(b));
+    const hit = closure.find((e) => printProposition(canonProp(e.prop)) === bKey);
+    return { equivalent: !!hit, method: 'rewrite', path: hit ? hit.path : null };
+  }
+
+  // A statement's truth-functional model over a one-element universe
+  // (Course 4: "statement logic is the syllogistic run in a one-member
+  // universe"). Returns { atoms, sat(assignment) } or null when the
+  // proposition is not purely propositional — any singular, relational
+  // complex, or uppercase (general-term) atom disqualifies it, so
+  // term-logic statements keep their coarser, correct equivalence.
+  function statementModel(prop) {
+    const atoms = new Set();
+    let ok = true;
+    const scanT = (t) => {
+      switch (t.type) {
+        case 'atom':
+          if (t.singular || !/^\p{Ll}/u.test(t.name)) ok = false;
+          else atoms.add(t.name);
+          return;
+        case 'neg': return scanT(t.term);
+        case 'compound': return t.elements.forEach((e) => scanT(e.term));
+        case 'rel': ok = false; return;
+        case 'propterm':
+          if (t.inner.type === 'prop') scanP(t.inner); else scanT(t.inner);
+      }
+    };
+    const scanP = (p) => { scanT(p.subject.term); scanT(p.predicate.term); };
+    scanP(prop);
+    if (!ok || atoms.size === 0 || atoms.size > 16) return null;
+
+    const evalT = (t, asg) => {
+      switch (t.type) {
+        case 'atom': return asg[t.name];
+        case 'neg': return !evalT(t.term, asg);
+        case 'compound':
+          return t.elements.every((e) => (e.sign === '-' ? !evalT(e.term, asg) : evalT(e.term, asg)));
+        case 'propterm':
+          return t.inner.type === 'prop' ? evalP(t.inner, asg) : evalT(t.inner, asg);
+      }
+    };
+    const evalP = (p, asg) => {
+      const S = evalT(p.subject.term, asg);
+      const P = evalT(p.predicate.term, asg);
+      const qual = p.predicate.sign === '+' ? P : !P;
+      // one world: universal S→qual (no import), particular S∧qual; wild
+      // cannot occur (it needs a singular, already excluded).
+      return p.subject.sign === '-' ? (!S || qual) : (S && qual);
+    };
+    return { atoms: [...atoms], sat: (asg) => evalP(prop, asg) };
+  }
+
   return {
     Atom, Neg, Compound, Rel, PropTerm, ST, Prop,
     termEq, propEq, stEq, ParseError, tokenize,
@@ -1241,6 +1518,9 @@
     derive, checkInconsistent, checkArgument,
     // D3 — deep relational layer
     isProtermName, isFixedRef, headRoles,
-    passives, pronominalize, indirectProof,
+    passives, pronominalize, indirectProof, refuteSet,
+    // D4 — programs and queries
+    parseProgram, queryTerm, queryProp, checkProgramConsistency,
+    equivalents, decideEquivalence, statementModel,
   };
 });

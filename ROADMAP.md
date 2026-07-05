@@ -26,10 +26,10 @@ completion. If a step grows beyond that during execution, split it before starti
 | TFL: The Full Language | ✅ 7 lessons |
 | TFL: Relational Syllogisms (Course 3) | ✅ 3 lessons |
 | TFL: Statement Logic & MPL (Course 4) | ✅ 6 lessons — **TFL curriculum complete (24 lessons)** |
-| TFL Lab engine (Track D) | 🔶 D1–D3 done: parser/printer (all-curricula acceptance harness), inference core (DON, immediate rules, two-tier validity, traced derivations), and the deep relational layer (guarded passive with pairing subscripts, proterms, indirect proof). 138 tests, five fuzz suites. No UI yet (D6). |
+| TFL Lab engine (Track D) | 🔶 D1–D4 done: parser/printer (all-curricula acceptance harness), inference core (DON, immediate rules, two-tier validity, traced derivations), the deep relational layer (guarded passive with pairing subscripts, proterms, indirect proof), and the program/query layer (`parseProgram`, `? term`/`? prop`/`?=` queries, consistency check). 156 tests, six fuzz suites. No UI yet (D6). |
 
 Tracks A, B, and C are fully executed. Track D is in progress — language core first
-(D1–D3 ✅, next D4), UI and lesson integration after.
+(D1–D4 ✅, next D5), UI and lesson integration after.
 
 ### Strengths
 
@@ -372,7 +372,7 @@ bolted on. Learners get to *run* the algebra all four courses taught.
     rule-step soundness includes `Pass`; all generators now produce proterms. Green at
     `-n 5000`: 21k rule steps, 5.2k passive equivalences (2.2k guarded off), 876 indirect
     refutations, all model-checked. 138 unit tests.
-- **D4** 🔲 Programs & queries: program = propositions + `--` comments; queries `? s`
+- **D4** ✅ Programs & queries: program = propositions + `--` comments; queries `? s`
   ("what is s" — saturate DON+Simp about a term, fuel-budgeted; results DN-normalized,
   subsumption-filtered, strongest form first) and `? −s+P` with the three-way verdict
   (yes / provably no / unknown, per design decisions). Facts and rules share one shape — the
@@ -384,6 +384,49 @@ bolted on. Learners get to *run* the algebra all four courses taught.
   `?= A , B` decides equivalence by canonical form and shows the rewrite path (for
   propositional statements, the DNF fingerprint as certificate). Tests reproduce the paper's
   Socrates/Fido example program in course notation.
+  Implementation notes (decisions made during execution):
+  - **`--` comment marker** (respelling the paper's `//`): two adjacent minuses can never
+    lex in valid notation — negative terms are always parenthesized, so `--` is never
+    double negation and `+-` (the wild alias) needs the `-` glued to a `+`. `parseProgram`
+    returns `{ propositions: [{prop,text,line}], errors: [{line,message,pos}] }` — one bad
+    line is reported with its line number, the rest survive, ready for D6's margin markers.
+  - **`? term` orients through conversion.** Canonical form converts `±Socrates*+Man` to
+    `+Man+Socrates*` (I-forms sort their sides), burying the singular in the predicate, so
+    the query re-orients each saturated line via the D3 `orientations` helper to put the
+    queried term back in subject position, dedups on the *canonical* key, and drops
+    tautologies (the `It` line and its obversions). Saturation runs DON+Simp+immediate
+    rules only — **not Add**, whose compounds would bury the answer. Subsumption filtering
+    keeps only unary-entailment-maximal answers (a small restricted saturation decides
+    a ⊢ b); no-import is respected, so `−Man+Animal` never subsumes `+Man+Animal`.
+  - **`? proposition` is checkArgument, read three ways**: `valid` → yes, `contradicted` →
+    no; for the categorical fragment (where checkArgument returns valid/invalid, never
+    `contradicted`) a second check on the query's contradictory decides provably-no vs
+    unknown. Open-world by construction — the negation-as-failure guess is D5's job.
+  - **Consistency** reuses D3's indirect-proof engine: `refuteSet` (the counterclaim
+    machinery, generalized to refute any set) always returns the ⊥ derivation, and the
+    categorical fragment additionally gets the P/Z certificate. `complete: true` flags the
+    categorical case (exact); relational `consistent: true` means "no refutation within
+    fuel," honest about reach exactly as checkArgument is.
+  - **The DNF fingerprint is one-world semantics** (Course 4 L3: "statement logic is the
+    syllogistic run in a one-member universe"). `statementModel` returns `{atoms, sat}`
+    or `null`; it opts *out* the moment a singular, relational complex, or **uppercase**
+    (general-term) atom appears, so term-logic statements keep their coarser, correct
+    equivalence and only genuine lowercase statement propositions get the truth-table
+    decision. `decideEquivalence` compares satisfying sets over the *union* of both atom
+    sets (so a contradiction over {p,q} equals one over {p}); term-logic pairs fall back
+    to the immediate-rule rewrite path. Cross-checked against the oracle's finite-model
+    semantics at n = 1 (new suite 6) — truth values on every assignment and the DNF
+    equivalence verdict both match.
+  - **PD** (the rule D2 parked here) needed no separate implementation: its
+    conjunctive-predicate half — `−X+(+Y+Z)` ⊣⊢ {`−X+Y`, `−X+Z`} — is exactly Simp one
+    way and Add the other (both already in the engine, and they operate on compound
+    structure whether the conjuncts are terms or statement brackets), and its propositional
+    content is decided completely by the DNF fingerprint. So the promise is kept by
+    composition rather than a new rule.
+  - Six oracle suites now (statement-model agreement joins the five); `saturate` gained an
+    `opts.rules` gate so the term query can run a restricted rule set. Green at `-n 4000`:
+    17k rule steps, 4.1k passive equivalences, 699 indirect refutations, 17k statement-model
+    evals + 4k DNF-equivalence verdicts, all model-checked. 156 unit tests.
 - **D5** 🔲 The Aristotelian layer (what makes it a *database*, not a proof checker):
   natural-language explanation per answer ("Because Socrates is a man, and every man is
   mortal…"); volunteer the stronger answer when a weaker one is asked (asked *some*, prove
@@ -420,9 +463,8 @@ bolted on. Learners get to *run* the algebra all four courses taught.
 
 ## Suggested order
 
-1. ~~C1~~ · ~~A1–A8~~ · ~~B1–B9~~ · ~~C2~~ · ~~D1~~ · ~~D2~~ · ~~D3~~ — complete.
-2. **D4** (rest of the language core, node-testable without UI) ← next: D4
-3. **D5** (the Aristotelian layer — the differentiator)
+1. ~~C1~~ · ~~A1–A8~~ · ~~B1–B9~~ · ~~C2~~ · ~~D1~~ · ~~D2~~ · ~~D3~~ · ~~D4~~ — complete.
+2. **D5** (the Aristotelian layer — the differentiator) ← next: D5
 4. **D6 → D7** (lab usable end-to-end, integrated into lessons)
 5. **D8** anytime from here on
 6. **D9 → D10** last, in that order (numerical quantifiers: engine, then lesson)

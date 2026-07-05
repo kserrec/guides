@@ -701,6 +701,160 @@ test('oracle agrees: proterms denote — the co-denotation pair', () => {
   assert.ok(!oracle.entails([P('+M+S'), P('+M+A')], P('+S+A'), { maxN: 3, cap: 60000 }));
 });
 
+// ══════════════════════════════════════════════════════════════════════════
+// D4 — programs and queries
+// ══════════════════════════════════════════════════════════════════════════
+
+const {
+  parseProgram, queryTerm, queryProp, checkProgramConsistency,
+  equivalents, decideEquivalence, statementModel, parseTerm: PT,
+} = require('./tfl.js');
+
+// The paper's Socrates/Fido program (Castro-Manzano et al. 2018 §6), in
+// course notation: singulars carry the star, terms are spelled out.
+const FIDO = [
+  '±Socrates*+Man',   // Socrates is a man
+  '±Fido*+Dog',       // Fido is a dog
+  '−Man+Animal',      // all men are animals
+  '−Dog+Animal',      // all dogs are animals
+  '−Man+Mortal',      // all men are mortal
+].map(P);
+
+// ── parseProgram ──────────────────────────────────────────────────────────
+
+test('parseProgram: -- comments and blank lines are skipped', () => {
+  const { propositions, errors } = parseProgram(
+    '−Man+Animal  -- all men are animals\n\n-- a whole-line comment\n±Socrates*+Man');
+  assert.strictEqual(errors.length, 0);
+  assert.deepStrictEqual(propositions.map((p) => p.text),
+    ['−Man+Animal', '±Socrates*+Man']);
+  assert.deepStrictEqual(propositions.map((p) => p.line), [1, 4]);
+});
+
+test('parseProgram: a bad line is reported, the rest survive', () => {
+  const { propositions, errors } = parseProgram('−Man+Animal\n+oops(\n−Dog+Animal');
+  assert.strictEqual(propositions.length, 2);
+  assert.strictEqual(errors.length, 1);
+  assert.strictEqual(errors[0].line, 2);
+  assert.strictEqual(typeof errors[0].pos, 'number');
+});
+
+test('parseProgram: -- never collides with double negation (it is parenthesized)', () => {
+  const { propositions } = parseProgram('−(−p)+q -- not-not-p implies q');
+  assert.strictEqual(propositions.length, 1);
+  assert.ok(propEqUpTo(propositions[0].prop, P('−(−p)+q')));
+});
+
+// ── ? term ("what is X") ──────────────────────────────────────────────────
+
+test('? Socrates* saturates the singular facts, strongest forms only', () => {
+  const answers = queryTerm(FIDO, PT('Socrates*')).map((a) => a.text).sort();
+  assert.deepStrictEqual(answers,
+    ['±Socrates*+Animal', '±Socrates*+Man', '±Socrates*+Mortal']);
+});
+
+test('? Fido* stops where the rules do (no dog-mortality rule)', () => {
+  const answers = queryTerm(FIDO, PT('Fido*')).map((a) => a.text).sort();
+  assert.deepStrictEqual(answers, ['±Fido*+Animal', '±Fido*+Dog']);
+  assert.ok(!answers.some((t) => t.includes('Mortal')));
+});
+
+test('? term drops tautologies from the answer set', () => {
+  const answers = queryTerm(FIDO, PT('Man')).map((a) => a.text);
+  assert.ok(!answers.some((t) => t === '−Man+Man' || t === '−Man−(−Man)'));
+});
+
+// ── ? proposition (three-way verdict) ─────────────────────────────────────
+
+test('? proposition: yes / no / unknown', () => {
+  assert.strictEqual(queryProp(FIDO, P('±Socrates*+Mortal')).verdict, 'yes');   // proven
+  assert.strictEqual(queryProp(FIDO, P('±Socrates*−Animal')).verdict, 'no');    // refuted
+  assert.strictEqual(queryProp(FIDO, P('±Fido*+Mortal')).verdict, 'unknown');   // open world
+});
+
+test('? proposition: the paper\'s query, Socrates is mortal, carries a proof', () => {
+  const r = queryProp(FIDO, P('±Socrates*+Mortal'));
+  assert.strictEqual(r.verdict, 'yes');
+  assert.ok(r.support, 'a supporting certificate/derivation is attached');
+});
+
+// ── Program consistency ───────────────────────────────────────────────────
+
+test('a consistent program reports consistent', () =>
+  assert.strictEqual(checkProgramConsistency(FIDO).consistent, true));
+
+test('an inconsistent program returns the contradiction derivation', () => {
+  const bad = ['±Socrates*+Man', '−Man+Mortal', '±Socrates*−Mortal'].map(P);
+  const res = checkProgramConsistency(bad);
+  assert.strictEqual(res.consistent, false);
+  assert.strictEqual(res.complete, true);           // atomic-categorical → exact
+  assert.ok(res.certificate, 'P/Z certificate present');
+  assert.ok(res.proof && res.proof.lines[res.proof.lines.length - 1].text === '⊥');
+});
+
+// ── ?= statement (equivalence neighbourhood) ──────────────────────────────
+
+test('?= closes a statement under obversion and contraposition', () => {
+  const eq = equivalents(P('−S+P'));
+  const texts = eq.map((e) => e.text);
+  assert.strictEqual(eq[0].rule, 'given');
+  assert.ok(texts.includes(printProposition(obverse(P('−S+P')))), 'obverse present');
+  assert.ok(texts.includes(printProposition(contrapositive(P('−S+P')))), 'contrapositive present');
+  // every listed equivalent is genuinely equivalent to the original
+  for (const e of eq) assert.ok(decideEquivalence(P('−S+P'), e.prop).equivalent, e.text);
+});
+
+test('?= terminates (canonical form absorbs DN and conversion)', () =>
+  assert.ok(equivalents(P('+p+q')).length <= 8));
+
+// ── ?= A , B (pairwise decision) ──────────────────────────────────────────
+
+test('?= term-logic pair decided by the rewrite path', () => {
+  const r = decideEquivalence(P('−Dog+Mammal'), P('−(−Mammal)+(−Dog)'));
+  assert.strictEqual(r.method, 'rewrite');
+  assert.strictEqual(r.equivalent, true);
+  assert.ok(r.path.includes('contrapositive'));
+});
+
+test('?= propositional pair decided by the DNF fingerprint', () => {
+  // p→q ≡ its contrapositive ¬q→¬p, over the same worlds
+  const r = decideEquivalence(P('−p+q'), P('−(−q)+(−p)'));
+  assert.strictEqual(r.method, 'dnf');
+  assert.strictEqual(r.equivalent, true);
+  // the excluded world is exactly +p−q
+  assert.ok(!r.dnf.includes('+p−q'));
+  assert.strictEqual(r.dnf.length, 3);
+});
+
+test('?= DNF catches an equivalence the immediate rules miss', () => {
+  // Both "true iff p", but +p+p (I-form) and −(−p)+p (A-form) are not
+  // inter-derivable by obversion/contraposition — only the DNF sees it.
+  const a = P('+p+p'), b = P('−(−p)+p');
+  assert.ok(!equivalents(a).some((e) => propEqUpTo(e.prop, b)), 'rewrite cannot reach it');
+  const r = decideEquivalence(a, b);
+  assert.strictEqual(r.method, 'dnf');
+  assert.strictEqual(r.equivalent, true);
+});
+
+test('?= reports genuine non-equivalence', () => {
+  assert.strictEqual(decideEquivalence(P('−p+q'), P('+p+q')).equivalent, false);
+  assert.strictEqual(decideEquivalence(P('−S+P'), P('−P+S')).equivalent, false); // no A-conversion
+});
+
+test('statementModel: propositional only — general terms opt out', () => {
+  assert.ok(statementModel(P('−p+q')) !== null);
+  assert.strictEqual(statementModel(P('−Dog+Mammal')), null);   // uppercase = term
+  assert.strictEqual(statementModel(P('±Socrates*+Wise')), null); // singular
+});
+
+test('statementModel agrees with the oracle on the one-world reading', () => {
+  const m = statementModel(P('−p+q'));
+  // p→q false only at p=1,q=0
+  assert.strictEqual(m.sat({ p: true, q: false }), false);
+  assert.strictEqual(m.sat({ p: true, q: true }), true);
+  assert.strictEqual(m.sat({ p: false, q: false }), true);
+});
+
 // ── Summary ───────────────────────────────────────────────────────────────
 
 console.log(`${passed} passed, ${failed} failed`);

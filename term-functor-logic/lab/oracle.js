@@ -39,7 +39,11 @@
 //      scope traps from Course 2 L3 must have counter-models;
 //   5. indirect-proof soundness — whenever indirectProof() refutes a
 //      counterclaim, no small model may satisfy the premises and refute
-//      the conclusion.
+//      the conclusion;
+//   6. statement-model agreement (D4) — statementModel's one-world truth
+//      value must match the finite-model semantics at n = 1 on every
+//      assignment, and decideEquivalence's DNF verdict must match mutual
+//      one-world entailment.
 
 'use strict';
 
@@ -49,6 +53,7 @@ const {
   parseProposition, printProposition, canonProp, contradictory,
   checkArgument, derive, obverse, contrapositive,
   headRoles, isProtermName, passives, indirectProof,
+  statementModel, decideEquivalence,
 } = TFL;
 
 const isFixedName = (t) => t.singular || isProtermName(t.name);
@@ -473,6 +478,74 @@ function fuzzIndirectProofs(iters, log) {
   return { mismatches: bad, note: `${proved} refutations found in ${iters} tries` };
 }
 
+// Suite 6: statement-model agreement (D4). A propositional statement's
+// one-world truth (statementModel) must equal the finite-model semantics
+// at n = 1, and decideEquivalence's DNF verdict must equal mutual n = 1
+// entailment.
+function randomStatementTerm(atoms) {
+  let out = Atom(atoms[rand(atoms.length)]); // lowercase → statement atom
+  const negs = rand(4) === 0 ? 1 + rand(2) : 0;
+  for (let i = 0; i < negs; i++) out = Neg(out);
+  if (rand(4) === 0) {
+    const els = Array.from({ length: 2 + rand(2) }, () =>
+      ST(rand(3) ? '+' : '-', Atom(atoms[rand(atoms.length)])));
+    out = Compound(els);
+  }
+  return out;
+}
+function randomStatementProp(atoms) {
+  return Prop(ST(rand(2) ? '+' : '-', randomStatementTerm(atoms)),
+             ST(rand(2) ? '+' : '-', randomStatementTerm(atoms)));
+}
+
+// A 1-element model from a boolean assignment of the statement atoms.
+function oneWorld(asg) {
+  const unary = {};
+  for (const k of Object.keys(asg)) unary[k] = asg[k] ? 1 : 0;
+  return { n: 1, full: 1, singular: {}, unary, rels: {} };
+}
+
+function fuzzStatementModel(iters, log) {
+  const atoms = ['p', 'q', 'r'];
+  let bad = 0, checked = 0, eqChecked = 0;
+  for (let k = 0; k < iters; k++) {
+    const a = randomStatementProp(atoms);
+    const ma = statementModel(a);
+    if (!ma) continue;
+    // (i) truth agreement across all assignments
+    for (let m = 0; m < (1 << ma.atoms.length); m++) {
+      const asg = {};
+      ma.atoms.forEach((nm, i) => { asg[nm] = !!(m & (1 << i)); });
+      checked++;
+      if (ma.sat(asg) !== evalProp(a, oneWorld(asg))) {
+        bad++;
+        log(`  MODEL MISMATCH ${printProposition(a)} at ${JSON.stringify(asg)}`);
+        if (bad >= 5) return { mismatches: bad, note: `${checked} evals` };
+      }
+    }
+    // (ii) decideEquivalence DNF verdict vs mutual one-world entailment
+    const b = randomStatementProp(atoms);
+    const mb = statementModel(b);
+    if (!mb) continue;
+    const dec = decideEquivalence(a, b);
+    if (dec.method !== 'dnf') continue;
+    eqChecked++;
+    const union = [...new Set([...ma.atoms, ...mb.atoms])];
+    let same = true;
+    for (let m = 0; m < (1 << union.length); m++) {
+      const asg = {};
+      union.forEach((nm, i) => { asg[nm] = !!(m & (1 << i)); });
+      if (evalProp(a, oneWorld(asg)) !== evalProp(b, oneWorld(asg))) { same = false; break; }
+    }
+    if (dec.equivalent !== same) {
+      bad++;
+      log(`  EQUIV MISMATCH ${printProposition(a)} vs ${printProposition(b)}: engine=${dec.equivalent} semantic=${same}`);
+      if (bad >= 5) return { mismatches: bad, note: `${checked} evals, ${eqChecked} equivs` };
+    }
+  }
+  return { mismatches: bad, note: `${checked} evals, ${eqChecked} equivs checked` };
+}
+
 // ── CLI ───────────────────────────────────────────────────────────────────
 
 if (require.main === module) {
@@ -486,6 +559,7 @@ if (require.main === module) {
     ['relational derivation soundness', fuzzRelationalDerivations, 1],
     ['passive equivalence', fuzzPassiveEquivalence, 1],
     ['indirect-proof soundness', fuzzIndirectProofs, 1],
+    ['statement-model agreement', fuzzStatementModel, 1],
   ]) {
     const t0 = Date.now();
     const { mismatches, note } = fn(Math.ceil(iters * scale), log);

@@ -29,8 +29,8 @@ currently two **subjects**, each containing **courses**, each containing **lesso
   *The Full Language* (7), *Relational Syllogisms* (3), *Statement Logic and the MPL
   Bridge* (6). A TFL analog of the Lambda Lab — a term-logic programming language and
   Aristotelian database — is Track D in `ROADMAP.md` and is **in progress**: the engine
-  core (parser, printer, inference, validity) exists and is node-tested (see §6), but no
-  page loads it yet — the UI arrives in step D6.
+  core (parser, printer, inference, validity, and the program/query layer) exists and is
+  node-tested (see §6), but no page loads it yet — the UI arrives in step D6.
 
 A lesson is a linear sequence of **blocks** that reveal one at a time: a *concept* block
 teaches (prose + examples), then an *exercise* block checks it, repeating in a
@@ -304,11 +304,11 @@ their own submission. First real usage: Foundations Lesson 5 ("Write It Yourself
 
 `term-functor-logic/lab/` holds the engine for the coming TFL Lab — a term-logic
 programming language and Aristotelian database (see Track D in `ROADMAP.md` for the full
-design record, including the source papers). As of D3 it is **engine only**: no course
+design record, including the source papers). As of D4 it is **engine only**: no course
 page loads these files, so nothing here is user-visible yet. It follows the Lambda Lab
 split exactly — a pure-logic UMD module plus node-only dev harnesses.
 
-- **`tfl.js`** (`window.TFL` / `module.exports`) — three layers in one file:
+- **`tfl.js`** (`window.TFL` / `module.exports`) — four layers in one file:
   - *D1, parser + printer*: AST for terms (atoms with proterm primes and subscripts,
     singulars `Socrates*`, quoted multi-word terms, negatives `(−T)`, compounds
     `(+White+Horse)`, n-ary/nested relational complexes `(Lov+(Adm−Teacher))`,
@@ -332,24 +332,32 @@ split exactly — a pure-logic UMD module plus node-only dev harnesses.
     witnesses to fresh proterms plus `±T'+T` anchors) feeding `indirectProof()` —
     counterclaim, pronominalize, saturate to a ⊥ pair — which `checkArgument` uses as
     its fallback for both valid and contradicted verdicts.
-- **`tfl.test.js`** — plain-assert suite (138 tests): notation round-trips, rule
+  - *D4, programs & queries*: `parseProgram` (a proposition per line, `--` comments,
+    per-line errors); `queryTerm` ("what is X" — DON+Simp saturation oriented back to the
+    term, subsumption-filtered); `queryProp` (the three-way yes/no/unknown verdict over
+    checkArgument); `checkProgramConsistency` (P/Z certificate + `refuteSet` derivation);
+    `equivalents` (`?=` immediate-rule neighbourhood) and `decideEquivalence` (`?= A , B`
+    — the DNF fingerprint via `statementModel`'s one-world truth for propositional
+    statements, the rewrite path for term-logic ones).
+- **`tfl.test.js`** — plain-assert suite (156 tests): notation round-trips, rule
   behavior, the named derivations (horse's head, Twain/Clemens, the boys-girls-cowards
-  indirect proof, scope traps…), and oracle spot checks.
+  indirect proof, scope traps…), the paper's Socrates/Fido program and its queries, and
+  oracle spot checks.
 - **`oracle.js`** — the correctness oracle: finite-model semantics for the whole
-  fragment (empty model included when nothing denotes) and five fuzz suites
-  (categorical exactness, rule-step soundness, relational derivation soundness, passive
-  equivalence, indirect-proof soundness). `node oracle.js -n 20000` is the long-haul
-  gate; it has caught real bugs (a DON wild-resolution unsoundness, two rounds of P/Z
-  incompleteness, and its own RNG feeding periodic low bits to the generators) and is
-  the reason to trust the engine. **Run it after any change to the inference layer.**
+  fragment (empty model included when nothing denotes) and six fuzz suites (categorical
+  exactness, rule-step soundness, relational derivation soundness, passive equivalence,
+  indirect-proof soundness, statement-model agreement). `node oracle.js -n 20000` is the
+  long-haul gate; it has caught real bugs (a DON wild-resolution unsoundness, two rounds
+  of P/Z incompleteness, and its own RNG feeding periodic low bits to the generators) and
+  is the reason to trust the engine. **Run it after any change to the inference layer.**
 - **`audit.js`** — the D1 acceptance harness: extracts every formula snippet from all
   four TFL curricula (631 of them) and classifies each (parsed / foreign / whitelisted),
   exiting nonzero on anything unexplained. It doubles as a regression gate when curricula
   are edited: new lesson content that prints notation the lab can't read will fail it.
 
-Remaining Track D steps (D4–D10, see the roadmap): programs & queries, the Aristotelian
-explanation layer, the panel + full-page UI, lesson chips, a `tfl-expression` exercise
-kind, and numerical quantifiers.
+Remaining Track D steps (D5–D10, see the roadmap): the Aristotelian explanation layer,
+the panel + full-page UI, lesson chips, a `tfl-expression` exercise kind, and numerical
+quantifiers.
 
 ## 7. Styling and theming
 
