@@ -1825,14 +1825,304 @@ const CURRICULUM = {
     },
 
     // ════════════════════════════════════════════════════════════════════════
-    // LESSON 6: The Limits and Power of TFL
+    // LESSON 6: Numerical Quantifiers — Most, Many, and Few
+    // ════════════════════════════════════════════════════════════════════════
+    {
+      id: "lesson-06-numerical",
+      title: "Lesson 6: Numerical Quantifiers — Most, Many, and Few",
+      navTitle: "Numerical Quantifiers",
+      description: "Extend the sign algebra past 'all' and 'some' to the intermediate quantifiers of ordinary speech — most, many, few — with Peterson and Thompson's SYLL⁺ recast as TFL⁺: quantity levels on the subject and one extra condition on the decision method.",
+      completionText: "You can now reason with the quantifiers ordinary speech actually uses. Most, many, and few become quantity levels 1–3 on a particular subject, and the plus-minus method gains a single new clause: a conclusion can be no stronger than its strongest premise. The same cancellation that drove Barbara now drives 'most voters are citizens, no fool is a citizen, so many voters are not fools' — and refuses 'most men are fascists' when only 'many' was given. What still lies beyond is exact and comparative counting — at least two, exactly three, more S than P — the province of Murphree's numerical term logic. With most/many/few in hand, the next and final lesson can weigh what term logic truly can and cannot do.",
+      blocks: [
+
+        // ── Concept: Beyond Some and Every ────────────────────────────────────
+        {
+          type: "concept",
+          id: "beyond-some-every",
+          title: "1. Beyond Some and Every",
+          content: `
+            <p>The syllogistic you have built has exactly two quantities: <strong>universal</strong>
+            (<em>every</em>, <em>no</em> — a minus subject) and <strong>particular</strong>
+            (<em>some</em> — a plus subject). But ordinary reasoning lives in between:</p>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>most</code><span>"Most voters are citizens" — more than half, but not necessarily all</span></div>
+              <div class="ex-row"><code>many</code><span>"Many men are cops" — a common share, weaker than "most"</span></div>
+              <div class="ex-row"><code>few</code><span>"Few cars are hybrid" — nearly none, the strong end next to "no"</span></div>
+            </div>
+
+            <p>These are the <strong>intermediate quantifiers</strong>. Peterson (1979) and
+            Thompson (1982) extended the syllogistic to cover them — the system
+            <strong>SYLL⁺</strong> — and showed the classical results survive: "most voters are
+            citizens; no fool is a citizen" still yields "many voters are not fools," by the same
+            middle-term reasoning as Barbara.</p>
+
+            <p>Ranked by strength, the affirmative quantities form a ladder — each rung entails the
+            one below it, never the reverse:</p>
+
+            <div class="syntax-box">every  ⊃  most  ⊃  many  ⊃  some</div>
+
+            <p>If <em>every</em> S is P then certainly <em>most</em> are, and if <em>most</em> then
+            <em>many</em>, and if <em>many</em> then at least <em>some</em>. "Few" is the mirror
+            image at the negative end, sitting just inside "no." The task of this lesson is to give
+            this ladder an algebra — to make "most" and "many" compute the way "+" and "−" already
+            do.</p>
+          `
+        },
+
+        // ── Exercise: the ladder ──────────────────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-num-ladder",
+          title: "Quick Check: The Quantity Ladder",
+          instruction: "One question on how the intermediate quantities relate.",
+          kind: "multiple-choice",
+          items: [
+            {
+              prompt: "\"Most students passed.\" Which of these follows with certainty?",
+              choices: [
+                "Many students passed",
+                "Every student passed",
+                "Exactly half the students passed",
+                "Few students passed"
+              ],
+              answer: 0,
+              explanation: "Most ⊃ many ⊃ some: 'most' guarantees the weaker 'many' (and 'some'), but never the stronger 'every,' nor an exact count, nor 'few' (its opposite end)."
+            }
+          ]
+        },
+
+        // ── Concept: Quantity Levels ──────────────────────────────────────────
+        {
+          type: "concept",
+          id: "quantity-levels",
+          title: "2. Quantity Levels",
+          content: `
+            <p>TFL⁺ (Castro-Manzano, Lozano-Cobos &amp; Reyes-Cárdenas 2018) keeps the whole
+            plus-minus notation and adds one thing: a <strong>quantity level</strong>, a small
+            digit on the <em>particular</em> subject that says <em>how</em> particular. The level
+            rides as a superscript (or, in plain text, after a caret <code>^</code>):</p>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>+S⁰+P</code><span>level 0 — <strong>some</strong> S are P (the ordinary particular)</span></div>
+              <div class="ex-row"><code>+S¹+P</code><span>level 1 — <strong>many</strong> S are P</span></div>
+              <div class="ex-row"><code>+S²+P</code><span>level 2 — <strong>most</strong> S are P</span></div>
+              <div class="ex-row"><code>+S³−P</code><span>level 3 — <strong>few</strong> S are P (the strong, near-negative end)</span></div>
+            </div>
+
+            <p>Two things stay fixed. The <strong>predicate sign</strong> is still quality —
+            <code>+P</code> for "are P," <code>−P</code> for "are not P" — so "most students are not
+            athletes" is <code>+S²−A</code>. And <strong>universals never carry a level</strong>:
+            "every" and "no" are already the top of the ladder, so <code>−S+P</code> and
+            <code>−S−P</code> stay level 0. A level only ever decorates a plus subject.</p>
+
+            <div class="syntax-box">Most voters are citizens  =  +V²+C  =  +V^2+C</div>
+
+            <p>Level 0 is exactly the classical <em>some</em>, and the printer hides it — so every
+            proposition you have written so far is already a level-0 TFL⁺ proposition. Nothing about
+            the old notation changes; the intermediate quantifiers simply fill in the rungs between
+            <em>some</em> (0) and <em>every</em> (the universal minus).</p>
+          `
+        },
+
+        // ── Exercise: representation ──────────────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-num-represent",
+          title: "Quick Check: Writing the Levels",
+          instruction: "Transcribe the intermediate quantifiers into TFL⁺.",
+          kind: "multiple-choice",
+          items: [
+            {
+              promptHtml: mcPrompt("Transcribe:", "Most men are cops"),
+              choices: ["+Men² + Cop", "−Men² + Cop", "+Men¹ + Cop", "+Men² − Cop"],
+              choicesAreCode: true,
+              answer: 0,
+              explanation: "Particular (a level rides only on a plus subject), 'most' = level 2, affirmed = +Cop. So +Men²+Cop."
+            },
+            {
+              promptHtml: mcPrompt("Transcribe:", "Many voters are not fools"),
+              choices: ["+Voter¹ − Fool", "+Voter² − Fool", "−Voter¹ − Fool", "+Voter¹ + Fool"],
+              choicesAreCode: true,
+              answer: 0,
+              explanation: "'Many' = level 1; 'are not' is negative quality → −Fool. So +Voter¹−Fool."
+            }
+          ]
+        },
+
+        // ── Concept: The Third Condition ──────────────────────────────────────
+        {
+          type: "concept",
+          id: "third-condition",
+          title: "3. The Third Condition",
+          content: `
+            <p>Recall the plus-minus test for a classical syllogism: a conclusion follows iff
+            <strong>(i)</strong> the premises sum algebraically to the conclusion (the middle term
+            cancels), and <strong>(ii)</strong> the number of particular premises equals the number
+            of particular conclusions. TFL⁺ adds exactly one clause for the levels:</p>
+
+            <div class="grammar-rule">
+              <span class="g-label">The TFL⁺ Decision Method</span>
+              A conclusion follows iff (i) the premises sum to the conclusion, (ii) the particular
+              counts match, and <strong>(iii) the conclusion is no stronger than the premise that
+              quantifies its subject</strong> — an intermediate quantity is carried only by the term
+              it quantifies, so a conclusion about <em>S</em> can be "most" only if a premise says
+              "most <em>S</em>…"; otherwise it is capped at "some."
+            </div>
+
+            <p>Condition (iii) is the algebra of the ladder. The signs still do all the work of (i)
+            and (ii); the level only says how strong the conclusion's own quantity may be, and it
+            inherits that strength from the premise about the very same term. Take the flagship
+            case:</p>
+
+            ${engSyl("No fool is a citizen.", "Most voters are citizens.", "Many voters are not fools.")}
+
+            ${syl([["−F−C", "no fool is a citizen"], ["+V²+C", "most voters are citizens"]], ["+V¹−F", "many voters are not fools"])}
+
+            <p><strong>(i)</strong> Sum: <code>−F−C</code> plus <code>+V²+C</code>; the <code>+C</code>
+            and <code>−C</code> cancel, leaving <code>+V−F</code> — the conclusion.
+            <strong>(ii)</strong> One particular premise (<code>+V²</code>), one particular
+            conclusion (<code>+V¹</code>) ✓. <strong>(iii)</strong> The conclusion is "many voters"
+            (level 1); its subject, <em>voters</em>, is quantified by the premise "most voters are
+            citizens" (level 2); 1 ≤ 2 ✓. All three hold — valid.</p>
+
+            <p>Notice condition (iii) let the conclusion come out <em>weaker</em> than the premise:
+            "most" in, "many" out. That is always safe. Run it in the lab and read the checklist:</p>
+
+            <div class="syntax-box stacked">−F−C
++V²+C
++V¹−F</div>
+          `
+        },
+
+        // ── Exercise: valid numerical syllogisms ──────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-num-valid",
+          title: "Quick Check: Does It Follow?",
+          instruction: "Apply the three conditions. Each conclusion is at or below its premises' strength.",
+          kind: "valid-or-invalid",
+          items: [
+            {
+              exprHtml: syl([["+C³−H", "few cars are hybrid"], ["−C+E", "all cars are expensive"]], ["+E−H", "some expensive things are not hybrid"]),
+              answer: "valid",
+              explanation: "Sum: +C³−H plus −C+E — the ±C cancels, leaving +E−H ✓. One particular premise, one particular conclusion ✓. Level: conclusion 'some' (0) ≤ premise 'few' (3) ✓. A far weaker conclusion than the premise, which is always safe. Valid."
+            },
+            {
+              exprHtml: syl([["+A²+B", "most A are B"], ["−B+C", "all B are C"]], ["+A²+C", "most A are C"]),
+              answer: "valid",
+              explanation: "Sum: +A+B plus −B+C → +A+C ✓. Particular counts match ✓. Level: conclusion 'most' (2) ≤ premise 'most' (2) ✓. The conclusion is exactly as strong as the strongest premise — the ceiling, but not over it. Valid."
+            }
+          ]
+        },
+
+        // ── Concept: You Can't Conclude More Than You Know ────────────────────
+        {
+          type: "concept",
+          id: "no-free-strength",
+          title: "4. You Can't Conclude More Than You Know",
+          content: `
+            <p>Condition (iii) earns its keep only when it <em>fails</em> — when the signs would
+            license a conclusion but its quantity is too strong for the premises. The classic case:</p>
+
+            ${engSyl("All cops are fascists.", "Many men are cops.", "Most men are fascists.")}
+
+            ${syl([["−C+F", "all cops are fascists"], ["+M¹+C", "many men are cops"]], ["+M²+F", "most men are fascists"])}
+
+            <p>Check the first two conditions and it looks airtight. <strong>(i)</strong> Sum:
+            <code>−C+F</code> plus <code>+M+C</code>; the <code>±C</code> cancels, leaving
+            <code>+M+F</code> — the conclusion's signs exactly. <strong>(ii)</strong> One particular
+            premise, one particular conclusion ✓. But <strong>(iii)</strong> fails: the conclusion
+            claims "<strong>most</strong> men" (level 2), yet the premise about <em>men</em> is only
+            "<strong>many</strong> men are cops" (level 1). You cannot squeeze <em>most</em> men out
+            of a premise that gave you only <em>many</em>. Invalid.</p>
+
+            <p>And the strength must ride the <em>right</em> term. "Most bakers are honest" would not
+            license "most honest people are artisans," however the signs fall — because the "most"
+            is about bakers, not about honest people. An intermediate quantity is conserved on the
+            term it quantifies, never transferred and never manufactured. Weaken "most" to "many"
+            here and the same argument goes through. Try both in the lab — the checklist marks the
+            failed condition:</p>
+
+            <div class="syntax-box stacked">−C+F
++M¹+C
++M²+F</div>
+
+            <p>The lab reads this as an argument (the last line is the conclusion), routes it to the
+            TFL⁺ decision method, and shows all three conditions — the third with a red ✗. Change the
+            conclusion to <code>+M¹+F</code> ("many men are fascists") and it turns green.</p>
+          `
+        },
+
+        // ── Concept: The Frontier — Exact Counts ──────────────────────────────
+        {
+          type: "concept",
+          id: "numerical-frontier",
+          title: "5. The Frontier: Exact and Comparative Counts",
+          content: `
+            <p>Most, many, and few now compute — but they are still <em>proportional</em>
+            quantifiers, about shares of a class. Ordinary speech also counts exactly and compares:</p>
+
+            <div class="ex-table">
+              <div class="ex-row"><code>exactly</code><span>"Exactly three students passed"</span></div>
+              <div class="ex-row"><code>at least</code><span>"At least two witnesses agree"</span></div>
+              <div class="ex-row"><code>more … than</code><span>"More senators than governors attended"</span></div>
+            </div>
+
+            <p>These lie beyond SYLL⁺. Extending term logic to them is the work of Murphree's
+            <strong>Numerical Term Logic</strong> (1998), which adds genuine numerical functors —
+            subscripted quantities that count individuals rather than rank proportions — and their
+            own inference rules. That is the honest present frontier of the algebra: proportional
+            quantity (this lesson) is in hand; exact and comparative quantity is charted but sits
+            past this curriculum.</p>
+
+            <p>Even so, the lesson to carry forward is how <em>little</em> had to change. The whole
+            apparatus of intermediate quantifiers rode on one new field — a level on the subject —
+            and one new clause in a decision method you already knew. The middle term still cancels;
+            the particular counts still match. Sommers' plus-minus algebra absorbed "most" and "many"
+            the way it absorbed relations, singulars, and statements: by extending the same engine,
+            not replacing it.</p>
+          `
+        },
+
+        // ── Exercise: Final Review ────────────────────────────────────────────
+        {
+          type: "exercise",
+          id: "ex-num-final",
+          isFinal: true,
+          title: "Final Review: Judge the Numerical Syllogisms",
+          instruction: "For each, run the three conditions — sum, particular counts, and level (conclusion no stronger than its strongest premise).",
+          kind: "valid-or-invalid",
+          items: [
+            {
+              exprHtml: syl([["−C−F", "no citizen is a fool"], ["+V²+C", "most voters are citizens"]], ["+V²−F", "most voters are not fools"]),
+              answer: "valid",
+              explanation: "Sum: −C−F plus +V²+C → the ±C cancels → +V−F ✓. Particular counts match ✓. Level: conclusion 'most' (2) ≤ premise 'most' (2) ✓. Valid."
+            },
+            {
+              exprHtml: syl([["−M+P", "all M are P"], ["+S¹+M", "many S are M"]], ["+S²+P", "most S are P"]),
+              answer: "invalid",
+              explanation: "Signs cancel to +S+P and the particular counts match, but the conclusion is 'most' (level 2) while the strongest premise is only 'many' (level 1). Condition (iii) fails — you cannot conclude more than the premises give. 'Many S are P' would be valid."
+            },
+            {
+              exprHtml: syl([["−B+A", "all bakers are artisans"], ["+B²+H", "most bakers are honest"]], ["+H²+A", "most honest people are artisans"]),
+              answer: "invalid",
+              explanation: "The signs do cancel (B is the middle term) and the particular counts match — but condition (iii) fails. The conclusion claims 'most honest people,' yet the 'most' in the premises is about bakers, not honest people. An intermediate quantity rides only its own term, so nothing here supports more than 'some honest people are artisans.' Invalid."
+            }
+          ]
+        }
+      ]
+    },
+
+    // ════════════════════════════════════════════════════════════════════════
+    // LESSON 7: The Limits and Power of TFL
     // ════════════════════════════════════════════════════════════════════════
     {
       id: "lesson-06",
-      title: "Lesson 6: The Limits and Power of TFL",
+      title: "Lesson 7: The Limits and Power of TFL",
       navTitle: "Limits & Power",
       description: "The final reckoning: audit the century-old indictment of term logic against everything this curriculum has built, concede the limits that are real, and weigh Sommers' wager — that the logic of natural language is a logic of terms.",
-      completionText: "Course complete — and with it, the whole Term Functor Logic curriculum: four courses, from the first plus-minus transcription to the MPL bridge and this final reckoning. The audit came out as Sommers wagered: every inference the moderns called impossible for term logic fell to the same sign algebra — relations, singulars, identity, statement logic — while MPL's genuine advantages lie in idioms and infrastructure, not verdicts. You leave with two fluent notations and one logic. If the algebra has won you over, the source is Sommers & Englebretsen's An Invitation to Formal Reasoning; the frontier beyond it is real — numerical functors, metatheory, and the standing wager that natural reasoning is term reasoning.",
+      completionText: "Course complete — and with it, the whole Term Functor Logic curriculum: four courses, from the first plus-minus transcription through most/many/few, the MPL bridge, and this final reckoning. The audit came out as Sommers wagered: every inference the moderns called impossible for term logic fell to the same sign algebra — relations, singulars, identity, statement logic, the intermediate quantifiers — while MPL's genuine advantages lie in exact counting and infrastructure, not verdicts. You leave with two fluent notations and one logic. If the algebra has won you over, the source is Sommers & Englebretsen's An Invitation to Formal Reasoning; the frontier beyond it is real — Murphree's numerical functors for exact and comparative counting, metatheory, and the standing wager that natural reasoning is term reasoning.",
       blocks: [
 
         // ── Concept: The Case Against Term Logic ──────────────────────────────
@@ -1970,17 +2260,20 @@ const CURRICULUM = {
             <p>An honest audit concedes what is genuinely on the other side. Two things
             are.</p>
 
-            <p><strong>Numerical quantity.</strong> "At least two students passed." MPL, with
-            its identity predicate and distinguishable variables, says it directly:</p>
+            <p><strong>Exact and comparative counting.</strong> The intermediate quantifiers of the
+            previous lesson — <em>most</em>, <em>many</em>, <em>few</em> — turned out to sit inside
+            the algebra after all: a level on the subject and one clause on the decision method. But
+            <em>counting</em> is a further step. "At least two students passed." MPL, with its
+            identity predicate and distinguishable variables, says it directly:</p>
 
             <div class="syntax-box"><code>∃x∃y(x ≠ y ∧ Sx ∧ Px ∧ Sy ∧ Py)</code></div>
 
-            <p>Two pronouns, certified distinct, each a passing student. The core TFL of this
-            curriculum has signs for <em>every</em> and <em>some</em> — but no functor for
-            <em>at least two</em>, <em>exactly three</em>, <em>most</em>. Extensions of term
-            logic add numerical functors, but they lie beyond the core system and beyond this
-            course. On numerical idioms, MPL's variable-and-identity trick is a real,
-            working advantage.</p>
+            <p>Two pronouns, certified distinct, each a passing student. TFL⁺ handles proportional
+            quantity, but has no native functor for <em>at least two</em>, <em>exactly three</em>, or
+            <em>more S than P</em>. Murphree's numerical term logic extends the algebra to these too,
+            but they lie beyond this curriculum. On exact and comparative counting, MPL's
+            variable-and-identity trick is a real, working advantage — and the honest present
+            frontier of the term-logic programme.</p>
 
             <p><strong>Infrastructure.</strong> A century of mathematics has been built on
             MPL's syntax: model theory, Gödel's completeness theorem, computability, proof
@@ -1993,9 +2286,10 @@ const CURRICULUM = {
             <div class="grammar-rule">
               <span class="g-label">A Fair Scorecard</span>
               Across everything this curriculum treated — categoricals, relationals, singulars,
-              identity, statement logic — the two systems match verdict for verdict. Beyond it,
-              MPL's numerical idioms and mature infrastructure are real advantages: answerable
-              in principle by extensions, answered in practice only partly.
+              identity, statement logic, and now the intermediate quantifiers — the two systems
+              match verdict for verdict. Beyond it, MPL's exact-counting idioms and mature
+              infrastructure are real advantages: answerable in principle by extensions, answered
+              in practice only partly.
             </div>
 
             <p>Note what the concessions are <em>not</em>. Neither is a class of valid

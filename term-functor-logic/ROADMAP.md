@@ -105,8 +105,8 @@ Book: Ch. 7 + Ch. 8
 | Introduction | 8 | ✅ complete |
 | The Full Language | 7 | ✅ complete |
 | Relational Syllogisms | 3 | ✅ complete |
-| Statement Logic and MPL | 6 | ✅ complete |
-| **Total** | **24** | ✅ **curriculum complete** |
+| Statement Logic and MPL | 7 | ✅ complete (L6 numerical quantifiers added in D10) |
+| **Total** | **25** | ✅ **curriculum complete** |
 
 ---
 
@@ -116,6 +116,12 @@ Book: Ch. 7 + Ch. 8
 - **REGAL acronym:** Not expanded in accessible excerpts — check the book directly when building Course 2 L5. Until confirmed, refer to it as "Sommers' algebraic validity test."
 - **Course 2 lesson 1 note:** Compound statements builds on Introduction L8 (propositions as terms, if-then = A-form). Assume that lesson as prerequisite — don't re-teach, just recall.
 - **Penguins item (L6, ex-mixed-final item 6):** Explanation revised in L6 rewrite — cleaner now but keep an eye on it.
-- **Numerical quantifiers (Murphree):** Beyond the core book. Now planned: main roadmap
-  Track D, steps D9 (TFL⁺ quantity levels in the lab engine) and D10 (advanced lesson —
-  most/many/few via Peterson/Thompson/TFL⁺, Murphree as the frontier).
+- **Numerical quantifiers (Murphree):** ✅ Resolved. TFL⁺'s intermediate quantifiers
+  (most/many/few via Peterson/Thompson) are now the engine's numerical decision method (D9)
+  and Statement-Logic-and-MPL **Lesson 6** (D10), which frames Murphree's exact/comparative
+  counting as the frontier beyond. Note on the decision method: the source paper's condition
+  (iii) as literally stated ("conclusion level ≤ max premise level") over-generates — it
+  wrongly passes a level riding the middle term (e.g. "most bakers are honest ⊢ most honest
+  are artisans"). The engine implements the correct **term-matched** condition (the
+  conclusion's level ≤ the level of the premise that quantifies the conclusion's *subject*),
+  which agrees with the paper's own Tables 10–13 and with the finite-model semantics.

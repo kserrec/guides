@@ -25,17 +25,16 @@ currently two **subjects**, each containing **courses**, each containing **lesso
   - Plus the **Lambda Lab**: a live editor/evaluator panel available on both course pages.
 - **Term Functor Logic** (purple theme, `term-functor-logic/`) — an algebraic treatment of
   Aristotelian logic, sourced from Sommers & Englebretsen, *An Invitation to Formal
-  Reasoning* (2000). Four courses, all complete (24 lessons total): *Introduction* (8),
+  Reasoning* (2000). Four courses, all complete (25 lessons total): *Introduction* (8),
   *The Full Language* (7), *Relational Syllogisms* (3), *Statement Logic and the MPL
-  Bridge* (6). A TFL analog of the Lambda Lab — a term-logic programming language and
-  Aristotelian database — is Track D in `ROADMAP.md` and is **in progress**: the engine
-  core (parser, printer, inference, validity, the program/query layer, and the natural-
-  language Aristotelian layer) exists and is node-tested (see §6), and as of D6–D8 the lab
-  UI is live, lesson-integrated, and exercise-graded — a slide-over panel on the course
-  pages plus a standalone page at `term-functor-logic/lab/`, "▸ try" chips on lesson syntax
-  boxes, and an engine-graded free-input `tfl-expression` exercise kind. As of D9 the engine
-  also decides numerical syllogisms (most/many/few via TFL⁺ quantity levels). Still ahead:
-  the numerical lesson (D10).
+  Bridge* (7). A TFL analog of the Lambda Lab — a term-logic programming language and
+  Aristotelian database — is Track D in `ROADMAP.md` and is **complete**: a node-tested
+  engine (parser, printer, inference, validity, the program/query layer, the natural-language
+  Aristotelian layer, and the TFL⁺ numerical decision method), the lab UI (a slide-over panel
+  on the course pages plus a standalone page at `term-functor-logic/lab/`), "▸ try" chips on
+  lesson syntax boxes, an engine-graded free-input `tfl-expression` exercise kind, and — in
+  Statement Logic Lesson 6 — an intermediate-quantifier lesson (most/many/few) that the lab
+  runs live.
 
 A lesson is a linear sequence of **blocks** that reveal one at a time: a *concept* block
 teaches (prose + examples), then an *exercise* block checks it, repeating in a
@@ -314,7 +313,7 @@ as incorrect (stored answer `'__revealed__'`, which fails the engine's `countCor
 comparison by construction). On completion, an "open in λ Lab" chip lets the user explore
 their own submission. First real usage: Foundations Lesson 5 ("Write It Yourself").
 
-## 6. The TFL Lab engine (Track D, in progress)
+## 6. The TFL Lab engine (Track D, complete)
 
 `term-functor-logic/lab/` holds the TFL Lab — a term-logic programming language and
 Aristotelian database (see Track D in `ROADMAP.md` for the full design record, including
@@ -404,7 +403,9 @@ It follows the Lambda Lab split exactly — pure-logic module, UI module, node d
   `checkExpression` grader. Finished items offer an "open in the TFL Lab" button via
   `window.TFLLab.load`.
 
-Remaining Track D step (D10, see the roadmap): the numerical-quantifiers lesson.
+Track D is complete (D1–D10). The intermediate-quantifier lesson (Statement Logic Lesson 6)
+is authored curriculum, not engine code; it drives the numerical decision method through the
+same lab the other courses use.
 
 ## 7. Styling and theming
 
@@ -453,10 +454,10 @@ There is no package.json; all scripts run on bare node:
   incorrect reducer teaches students wrong lessons.
 - **`node check-counts.js`** — loads every curriculum in a `vm` sandbox (prepending
   tfl-helpers for TFL), counts lessons, and greps the hub/home HTML for the hardcoded
-  card tags ("15 lessons", "6 lessons", "4 courses · 24 lessons"; in-progress courses use
+  card tags ("15 lessons", "7 lessons", "4 courses · 25 lessons"; in-progress courses use
   "N of M lessons"). Exits nonzero on drift. **Run after adding a lesson or course**, and
   update the HTML tags it flags.
-- **`node term-functor-logic/lab/tfl.test.js`** — 174 plain-assert tests for the TFL
+- **`node term-functor-logic/lab/tfl.test.js`** — 201 plain-assert tests for the TFL
   engine (notation, rules, named derivations). **Run after any change to tfl.js**, and
   for inference-layer changes also run the fuzz oracle:
 - **`node term-functor-logic/lab/oracle.js -n 20000`** — the semantic fuzz gate (§6);
@@ -536,10 +537,11 @@ DOM-free; anything visual goes in lab.js.
 - `ROADMAP.md` (root) is both plan and log: Track A (Lambda Lab, A1–A8, complete),
   Track B (TFL Courses 3–4, B1–B9, complete), Track C (housekeeping, complete), and
   Track D (TFL^PL — a term-logic programming language / Aristotelian database lab):
-  D1–D9 complete (parser/printer, inference core, deep relational layer, program/query
-  layer, Aristotelian layer, the lab UI, lesson chips, the exercise kind, and the numerical
-  decision method — §6), D10
-  ahead, with the full design-decision record in the track's preamble. Completed steps carry implementation
+  D1–D10 complete (parser/printer, inference core, deep relational layer, program/query
+  layer, Aristotelian layer, the lab UI, lesson chips, the exercise kind, the numerical
+  decision method, and the intermediate-quantifier lesson — §6) — Track D, and with it the
+  whole roadmap, is done, with the full design-decision record in the track's preamble.
+  Completed steps carry implementation
   notes recording decisions made along the way — it's the closest thing to an ADR log;
   read it before re-deciding anything.
 - `term-functor-logic/ROADMAP.md` maps book chapters to courses/lessons, records firm

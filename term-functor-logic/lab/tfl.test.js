@@ -1095,8 +1095,8 @@ test('Table 13 — ekg-2 is valid', () => {
   assert.strictEqual(r.verdict, 'valid');
 });
 
-test('numerical: a most-conclusion is fine when a most-premise licenses it', () =>
-  assert.strictEqual(arg(['+M^2+P', '-M+S'], '+S^2+P').verdict, 'valid'));
+test('numerical: a most-conclusion is fine when a most-premise on its subject licenses it', () =>
+  assert.strictEqual(arg(['-M+P', '+S^2+M'], '+S^2+P').verdict, 'valid')); // att-1
 
 test('numerical: any nonzero level routes to the decision method', () => {
   assert.ok(hasLevel(P('+V^2+C')));
@@ -1133,7 +1133,7 @@ test('readProp: many / most / few glosses', () => {
 test('answer: valid numerical syllogism reads yes with the three conditions', () => {
   const a = answer(['-F-C', '+V^2+C'].map(P), P('+V^1-F'));
   assert.strictEqual(a.verdict, 'yes');
-  assert.ok(/does not exceed/.test(a.explanation), a.explanation);
+  assert.ok(/no stronger than the premise/.test(a.explanation), a.explanation);
   assert.strictEqual(a.stronger, undefined);
   assert.strictEqual(a.nafGuess, undefined);
 });
@@ -1156,8 +1156,20 @@ test('guards: term/equivalence queries reject levels, consistency defers', () =>
 test('numericalDecision is exposed and reports the conditions directly', () => {
   const d = numericalDecision([P('+C^3-H'), P('-C+E')], P('+E-H'));
   assert.strictEqual(d.valid, true);
-  assert.strictEqual(d.maxPremiseLevel, 3);
   assert.strictEqual(d.conclusionLevel, 0);
+});
+
+test('condition (iii) is term-matched: an intermediate quantity rides its own term', () => {
+  // all bakers are artisans; MOST bakers are honest ⊬ MOST honest are artisans
+  // (the "most" is about bakers, not honest people) — sum and particular
+  // counts pass, level fails.
+  const r = arg(['-B+A', '+B^2+H'], '+H^2+A');
+  assert.strictEqual(r.verdict, 'invalid');
+  assert.deepStrictEqual(r.decision.conditions, { sum: true, particular: true, level: false });
+  // but the "some" conclusion does follow
+  assert.strictEqual(arg(['-B+A', '+B^2+H'], '+H+A').verdict, 'valid');
+  // and when the level DOES ride the conclusion's subject, it carries
+  assert.strictEqual(arg(['-M+P', '+S^2+M'], '+S^2+P').verdict, 'valid'); // att-1
 });
 
 // ── Summary ───────────────────────────────────────────────────────────────

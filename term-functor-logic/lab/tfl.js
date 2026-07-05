@@ -1305,13 +1305,24 @@
     const particularPremises = premises.filter((p) => p.subject.sign === '+').length;
     const particularConclusions = conclusion.subject.sign === '+' ? 1 : 0;
     const particular = particularPremises === particularConclusions;
-    // (iii) the conclusion's level ≤ the maximum premise level.
-    const maxPremiseLevel = Math.max(0, ...premises.map((p) => stLevel(p.subject)));
-    const level = stLevel(conclusion.subject) <= maxPremiseLevel;
+    // (iii) The conclusion can be no stronger than the premise that quantifies
+    // its subject. An intermediate quantity ("most", "many", "few") is carried
+    // by the term it quantifies: "most bakers are honest" says nothing about
+    // "most honest people", so a conclusion's nonzero level must be licensed by
+    // a premise whose own subject IS the conclusion's subject term. If none is,
+    // the conclusion is capped at level 0 (plain "some"). This is stricter than
+    // "≤ the max premise level", which would wrongly pass a level riding the
+    // middle term; it agrees with the paper's Tables 10–13 and with the
+    // finite-model semantics (att-3 with a "most" conclusion is invalid).
+    const cSubKey = termKey(conclusion.subject.term);
+    const carriedLevel = Math.max(0, ...premises
+      .filter((p) => p.subject.sign === '+' && termKey(p.subject.term) === cSubKey)
+      .map((p) => stLevel(p.subject)));
+    const level = stLevel(conclusion.subject) <= carriedLevel;
     return {
       valid: sum && particular && level,
       conditions: { sum, particular, level },
-      maxPremiseLevel, conclusionLevel: stLevel(conclusion.subject),
+      carriedLevel, conclusionLevel: stLevel(conclusion.subject),
       particularPremises, particularConclusions,
     };
   }
@@ -1745,7 +1756,7 @@
   function numericalExplanation(premises, conclusion, d) {
     const givens = premises.map(readProp).join(', and ');
     if (d.valid) {
-      return `Because ${givens}, ${readProp(conclusion)} — the premises sum to the conclusion, the particular counts match, and its level (${levelName(d.conclusionLevel)}) does not exceed the premises' (${levelName(d.maxPremiseLevel)}).`;
+      return `Because ${givens}, ${readProp(conclusion)} — the premises sum to the conclusion, the particular counts match, and its quantity (${levelName(d.conclusionLevel)}) is no stronger than the premise that quantifies its subject (${levelName(d.carriedLevel)}).`;
     }
     if (!d.conditions.sum) {
       return `That does not follow: the premises do not algebraically sum to ${readProp(conclusion)}.`;
@@ -1753,7 +1764,10 @@
     if (!d.conditions.particular) {
       return `That does not follow: ${d.particularPremises} particular premise(s) cannot yield ${d.particularConclusions} particular conclusion(s).`;
     }
-    return `That does not follow: the conclusion is “${levelName(d.conclusionLevel)}” but no premise is stronger than “${levelName(d.maxPremiseLevel)}”, and a conclusion can be no stronger than its premises.`;
+    if (d.carriedLevel === 0) {
+      return `That does not follow: it claims “${levelName(d.conclusionLevel)}” of its subject, but no premise makes an intermediate-quantity claim about that subject — an intermediate quantity is carried only by the term it quantifies, so the conclusion can only be “some”.`;
+    }
+    return `That does not follow: it claims “${levelName(d.conclusionLevel)}” of its subject, but the premise quantifying that subject reaches only “${levelName(d.carriedLevel)}” — a conclusion can be no stronger than the premise that quantifies its subject.`;
   }
 
   // ── The Aristotelian answer ───────────────────────────────────────────

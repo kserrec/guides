@@ -123,6 +123,9 @@
       ['Modus ponens as Barbara',    '−[p]+[q]\n+[p]+[p]',                      '? +[q]+[q]'],
       ['Contraposition holds',       '',                                       '?= −[p]+[q] , −(−[q])+(−[p])'],
       ['The converse does not',      '',                                       '?= −[p]+[q] , −[q]+[p]'],
+      ['Numerical: ekg-2 (valid)',   '−F−C\n+V^2+C',                           '? +V^1-F'],
+      ['Numerical: bao-3 (valid)',   '+C^3-H\n-C+E',                           '? +E-H'],
+      ['Numerical: akt-4 (too strong)', '-C+F\n+M^1+C',                        '? +M^2+F'],
     ],
     'default': [
       ['Socrates & Fido (flagship)', SEED_SRC,                                 '? ±Socrates*+Mortal'],
@@ -399,7 +402,7 @@
       outputEl.append(h('div', { className: 'tfl-conds' },
         row(c.sum, 'The premises sum to the conclusion'),
         row(c.particular, 'The particular counts match'),
-        row(c.level, 'The conclusion is no stronger than its premises')));
+        row(c.level, 'The conclusion is no stronger than the premise quantifying its subject')));
       return;
     }
 
@@ -575,6 +578,9 @@
     catch (e) { return null; }
     if (propositions.length === 1) {
       const p = propositions[0].text;
+      // A numerical proposition has no equivalence neighbourhood (?= is level
+      // 0); load it as a fact base to build an argument around instead.
+      if (T.hasLevel(propositions[0].prop)) return { src: p, qry: '' };
       return { src: p, qry: '?= ' + p };
     }
     const concl = propositions[propositions.length - 1].text;

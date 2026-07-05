@@ -1581,3 +1581,11 @@ mark.lab-mark { background: #fde68a; border-radius: 3px; padding: 0 1px; }
 .tfl-cond { font-size: 0.85rem; }
 .tfl-cond-ok { color: #166534; }
 .tfl-cond-no { color: #b91c1c; }
+
+/* Stacked syntax box: a multi-line formula/argument that both displays as
+   lines and parses line-by-line (so the TFL Lab "▸ try" chip reads it as an
+   argument). Used for numerical syllogisms in Course 4. */
+.syntax-box.stacked {
+  white-space: pre-line;
+  line-height: 1.75;
+}

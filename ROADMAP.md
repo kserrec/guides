@@ -28,11 +28,11 @@ completion. If a step grows beyond that during execution, split it before starti
 | TFL: Statement Logic & MPL (Course 4) | ✅ 6 lessons — **TFL curriculum complete (24 lessons)** |
 | TFL Lab engine (Track D) | 🔶 D1–D5 done: parser/printer, inference core (DON, immediate rules, two-tier validity, traced derivations), the deep relational layer (guarded passive, proterms, indirect proof), the program/query layer (`parseProgram`, `? term`/`? prop`/`?=`, consistency check), and the Aristotelian layer (NL explanations, stronger-answer, possibility, negation-as-failure, enthymeme recovery). 174 tests, six fuzz suites. |
 | TFL Lab UI (Track D) | 🔶 D6–D8 done: `lab.js` drives both the course-page panel and the standalone page at `term-functor-logic/lab/` (fact-base editor, palette, query line, consistency banner, derivation pane, `?=` square of opposition, `.tfl` import/export), "▸ try" chips + curated examples, and the engine-graded `tfl-expression` exercise kind (transcribe / derive / find-the-premise). |
-| Numerical quantifiers (Track D) | 🔶 D9 done: TFL⁺ quantity levels 0–3 (some/many/most/few) with the paper's three-condition decision method in the engine (`numericalDecision`, `checkArgument` routing); all four of Tables 10–13 verified. Next: D10 advanced lesson. |
+| Numerical quantifiers (Track D) | ✅ D9–D10 done: TFL⁺ quantity levels 0–3 (some/many/most/few) with the term-matched three-condition decision method (`numericalDecision`), plus **Statement Logic &amp; MPL Lesson 6** teaching them and softening the finale's "Real Limits." |
 
-Tracks A, B, and C are fully executed. Track D is in progress — language core first
-(D1–D5 ✅), lab UI live, lesson-integrated, and exercise-graded (D6–D8 ✅), the numerical
-engine done (D9 ✅), then the numerical lesson (D10).
+**All four tracks are complete.** Track D — the TFL Lab (language core D1–D5, lab UI D6,
+lesson chips D7, the `tfl-expression` exercise kind D8, and numerical quantifiers D9–D10) —
+is fully executed. The only work left in the roadmap is optional polish (see Gaps).
 
 ### Strengths
 
@@ -46,10 +46,11 @@ engine done (D9 ✅), then the numerical lesson (D10).
 
 1. **No unit tests for `engine.js`** (the λ-lab logic has them; engine behavior is exercised via
    ad-hoc headless-Chrome runs per change). Tolerable; revisit if the engine grows.
-2. **Numerical quantifiers taught nowhere yet** — the engine now decides numerical
-   syllogisms (D9: most/many/few via the three-condition method), but no lesson teaches
-   them and Course 4 L6 still concedes them as a "real limit." D10 adds the advanced lesson
-   and softens that concession.
+2. **Everything in the roadmap is now built.** Optional future work, none blocking: exact and
+   comparative counting (Murphree's numerical term logic — the frontier Course 4 Lesson 6 now
+   names), and a finite-model oracle for the intermediate-quantifier semantics (the numerical
+   decision method is currently gated by the paper's Tables 10–13 and condition-isolation
+   tests rather than a fuzz suite).
 
 ---
 
@@ -595,15 +596,39 @@ bolted on. Learners get to *run* the algebra all four courses taught.
     oracle; the Tables 10–13 plus condition-isolation cases are the gate (14 new tests). The
     six existing oracle suites still pass — the validation restructure left level-0 inference
     unchanged. 200 engine tests green.
-- **D10** 🔲 Numerical quantifiers, lesson half: an advanced lesson teaching most/many/few as
-  quantity levels (Peterson/Thompson SYLL⁺ → TFL⁺'s algebraic method), lab-integrated
-  examples, Murphree's numerical term logic framed as the frontier beyond. Soften Course 4
-  L6's "Real Limits" concession accordingly (most/many/few now taught; exact counts remain
-  beyond) and resolve the TFL roadmap's Murphree open question.
+- **D10** ✅ Numerical quantifiers, lesson half. New **Statement Logic &amp; MPL Lesson 6:
+  "Numerical Quantifiers — Most, Many, and Few"** (9 blocks: the quantity ladder, TFL⁺ levels
+  and Table-8 notation, the three-condition method with ekg-2 worked, the level-failure case
+  akt-4, the Murphree frontier, and two engine-checked valid-or-invalid exercises). The old
+  finale "The Limits and Power of TFL" becomes Lesson 7, so the audit now runs with the
+  intermediate quantifiers already in hand. Course 4 is 7 lessons; the curriculum is 25.
+  Implementation notes (decisions made during execution):
+  - **Placement.** Teaching numerical quantifiers *before* the limits finale (rather than
+    after) lets the "Real Limits" concession be softened from the inside: most/many/few are no
+    longer conceded, only exact/comparative counting (Murphree) is. New id `lesson-06-numerical`;
+    the finale keeps id `lesson-06` (so its completion state survives) but its title/nav become
+    "Lesson 7." No Course-4 prose refers to its own lessons by number, so nothing else moved.
+  - **Lab integration two ways.** Numerical examples (ekg-2, bao-3, akt-4) join the Course-4
+    dropdown, and worked syllogisms appear in `.syntax-box.stacked` boxes (a new class,
+    `white-space: pre-line`) that both display as an argument *and* parse line-by-line, so D7's
+    "▸ try" chip loads them as premises + `? conclusion`. `chipPlan` now skips `?=` for a lone
+    numerical proposition (it has no equivalence neighbourhood) and loads it as a fact base
+    instead. Verified headlessly: the chips load the argument and the lab shows the
+    three-condition checklist with the failing clause marked.
+  - **A soundness bug found and fixed while authoring.** Building the exercises surfaced that
+    the source paper's condition (iii) — "conclusion level ≤ *max* premise level" — is too
+    weak: it wrongly validates "all bakers are artisans, **most** bakers are honest ⊢ **most**
+    honest people are artisans," where the "most" rides the middle term. The engine now uses
+    the correct **term-matched** rule (conclusion level ≤ the level of the premise quantifying
+    the conclusion's *subject*, else capped at "some"), which agrees with all four of the
+    paper's own Tables 10–13 and with the finite-model semantics. Every syllogism shown or
+    graded in the lesson was cross-checked against the engine. 201 engine tests green (incl. an
+    att-3 regression test); the Murphree open question in the TFL roadmap is resolved.
+  **Track D complete — the TFL Lab is a full term-logic environment: language core, lab UI,
+  lesson chips, an exercise kind, and the numerical extension end to end.**
 
 ---
 
 ## Suggested order
 
-1. ~~C1~~ · ~~A1–A8~~ · ~~B1–B9~~ · ~~C2~~ · ~~D1~~ · ~~D2~~ · ~~D3~~ · ~~D4~~ · ~~D5~~ · ~~D6~~ · ~~D7~~ · ~~D8~~ · ~~D9~~ — complete.
-2. **D10** — numerical quantifiers, lesson half ← next (and last)
+1. ~~C1~~ · ~~A1–A8~~ · ~~B1–B9~~ · ~~C2~~ · ~~D1~~ · ~~D2~~ · ~~D3~~ · ~~D4~~ · ~~D5~~ · ~~D6~~ · ~~D7~~ · ~~D8~~ · ~~D9~~ · ~~D10~~ — **complete. All tracks done.**
