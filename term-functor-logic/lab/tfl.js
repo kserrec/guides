@@ -334,10 +334,615 @@
 
   const printProposition = (p) => printST(p.subject) + printST(p.predicate);
 
+  // ════════════════════════════════════════════════════════════════════════
+  // D2 — Inference core.
+  //
+  // Rule inventory (Englebretsen 1996 App. B, via Castro-Manzano et al. 2018,
+  // as the four courses teach it):
+  //   immediate — DN (double negation), EN (external negation: the
+  //   contradictory operation, used for counterclaims — not an entailment),
+  //   IN (internal negation / obversion), Com (conversion of I and E; folded
+  //   into canonical equality together with Assoc and DN), Contrap
+  //   (contraposition of A and O), It (the tautology move −T+T);
+  //   mediate — DON (dictum de omni: a donor premise with a net-− occurrence
+  //   of M licenses substituting its donation for a net-+ occurrence of M in
+  //   a host, at any nesting depth), Simp (drop a conjunct from a compound at
+  //   a net-+ occurrence; from +X+Y infer +X+X), Add (same-subject compound
+  //   introduction).
+  //
+  // Scope guards (per the roadmap's design decisions):
+  //   - level 0 only until D9 — any nonzero quantity level is rejected;
+  //   - the wild sign ± attaches only to singular terms and resolves to + or
+  //     − per use ("computes with whichever value the inference needs");
+  //   - no existential import: −S+P never yields +S+P; the only tautologies
+  //     introduced are the A-forms −T+T.
+  //
+  // Validity: for categorical arguments (no relational complexes) the P/Z
+  // counterclaim test decides — Sommers' REGAL as the courses derive it:
+  // a set is inconsistent iff some way of resolving the wilds and re-using
+  // universal premises leaves exactly one particular and an algebraic sum of
+  // zero. For relational arguments the engine reports what it can prove:
+  // 'valid' (traced derivation found), 'contradicted' (the conclusion's
+  // contradictory is derivable), or 'unknown' (D3's indirect proofs extend
+  // this reach).
+
+  class EngineError extends Error {
+    constructor(message) {
+      super(message);
+      this.name = 'EngineError';
+    }
+  }
+
+  // ── Engine-fragment validation ────────────────────────────────────────
+
+  function validateTerm(t, slot) {
+    switch (t.type) {
+      case 'atom': return;
+      case 'neg': return validateTerm(t.term, 'neg');
+      case 'compound':
+        for (const el of t.elements) {
+          if (el.sign === '±') throw new EngineError('± cannot sign a compound element (it marks quantity, not quality)');
+          if (el.level !== 0) throw new EngineError('quantity levels are not supported until D9');
+          validateTerm(el.term, 'compound');
+        }
+        return;
+      case 'rel':
+        validateTerm(t.head, 'rel-head');
+        for (const o of t.objects) {
+          if (o.level !== 0) throw new EngineError('quantity levels are not supported until D9');
+          if (o.sign === '±' && !(o.term.type === 'atom' && o.term.singular)) {
+            throw new EngineError('wild quantity (±) requires a singular term');
+          }
+          validateTerm(o.term, 'rel-object');
+        }
+        return;
+      case 'propterm':
+        if (t.inner.type === 'prop') validateProp(t.inner);
+        return;
+    }
+  }
+
+  function validateProp(p) {
+    for (const st of [p.subject, p.predicate]) {
+      if (st.level !== 0) throw new EngineError('quantity levels are not supported until D9');
+      validateTerm(st.term, 'top');
+    }
+    if (p.subject.sign === '±' && !(p.subject.term.type === 'atom' && p.subject.term.singular)) {
+      throw new EngineError('wild quantity (±) requires a singular subject');
+    }
+    if (p.predicate.sign === '±') {
+      throw new EngineError('± cannot sign a predicate (quality is + or −; write the quantity wild on the subject)');
+    }
+  }
+
+  // ── Canonical form: equality up to Com, Assoc, DN, and wild quantity ──
+  //
+  // DN strips; compounds flatten through +-signed nesting (Assoc) and sort
+  // (Com); I- and E-form propositions sort their two sides (conversion);
+  // quantity signs on singular subjects and singular relational objects
+  // normalize to ± (for a singleton, some/every are the same claim — the
+  // wild-quantity pun itself).
+
+  const isSingularAtom = (t) => t.type === 'atom' && t.singular;
+
+  function canonTerm(t) {
+    switch (t.type) {
+      case 'atom': return t;
+      case 'neg': {
+        const inner = canonTerm(t.term);
+        return inner.type === 'neg' ? inner.term : Neg(inner);
+      }
+      case 'compound': {
+        const els = [];
+        for (const el of t.elements) {
+          const c = canonTerm(el.term);
+          if (el.sign === '+' && c.type === 'compound') els.push(...c.elements);
+          else els.push(ST(el.sign, c));
+        }
+        if (els.length === 1) {
+          return els[0].sign === '-' ? canonTerm(Neg(els[0].term)) : els[0].term;
+        }
+        els.sort((a, b) => (printST(a) < printST(b) ? -1 : printST(a) > printST(b) ? 1 : 0));
+        return Compound(els);
+      }
+      case 'rel':
+        return Rel(canonTerm(t.head),
+          t.objects.map((o) => ST(isSingularAtom(o.term) ? '±' : o.sign, canonTerm(o.term))));
+      case 'propterm':
+        return PropTerm(t.inner.type === 'prop' ? canonProp(t.inner) : t.inner);
+    }
+  }
+
+  function canonProp(p) {
+    const sTerm = canonTerm(p.subject.term);
+    const qTerm = canonTerm(p.predicate.term);
+    const sSign = isSingularAtom(sTerm) ? '±' : p.subject.sign;
+    const qSign = p.predicate.sign;
+    // Conversion (Com): I-forms (+,+) and E-forms (−,−) commute; a wild
+    // singular subject joins in via whichever of its readings matches
+    // (±s*+P ⊣⊢ +P+s*, and ±s*−P ⊣⊢ −P−s*, sound on a singleton).
+    const iLike = (sSign === '+' || sSign === '±') && qSign === '+';
+    const eLike = (sSign === '-' || sSign === '±') && qSign === '-';
+    if ((iLike || eLike) && termKeyRaw(qTerm) < termKeyRaw(sTerm)) {
+      const base = iLike ? '+' : '-';
+      return Prop(ST(isSingularAtom(qTerm) ? '±' : base, qTerm), ST(base, sTerm));
+    }
+    // An un-swapped commutable side still normalizes its subject sign.
+    if (iLike || eLike) {
+      return Prop(ST(isSingularAtom(sTerm) ? '±' : (iLike ? '+' : '-'), sTerm), ST(qSign, qTerm));
+    }
+    return Prop(ST(sSign, sTerm), ST(qSign, qTerm));
+  }
+
+  const termKeyRaw = printTerm; // key of an already-canonical term
+  const propKey = (p) => printProposition(canonProp(p));
+  const termKey = (t) => printTerm(canonTerm(t));
+  const propEqUpTo = (a, b) => propKey(a) === propKey(b);
+
+  function nodeCount(t) {
+    switch (t.type) {
+      case 'atom': return 1;
+      case 'neg': return 1 + nodeCount(t.term);
+      case 'compound': return 1 + t.elements.reduce((n, e) => n + nodeCount(e.term), 0);
+      case 'rel': return 1 + nodeCount(t.head) + t.objects.reduce((n, o) => n + nodeCount(o.term), 0);
+      case 'propterm': return 2 + (t.inner.type === 'prop' ? propNodes(t.inner) : nodeCount(t.inner));
+    }
+  }
+  const propNodes = (p) => nodeCount(p.subject.term) + nodeCount(p.predicate.term);
+
+  // ── EN, IN, Contrap, It ───────────────────────────────────────────────
+
+  const flipSign = (s) => (s === '+' ? '-' : s === '-' ? '+' : '±');
+
+  // EN — the contradictory: flip quantity and quality (± stays wild).
+  const contradictory = (p) =>
+    canonProp(Prop(ST(flipSign(p.subject.sign), p.subject.term),
+                   ST(flipSign(p.predicate.sign), p.predicate.term)));
+
+  // IN — obversion: flip the quality and negate the predicate term.
+  const obverse = (p) =>
+    canonProp(Prop(p.subject, ST(flipSign(p.predicate.sign), Neg(p.predicate.term))));
+
+  // Contrap — contraposition of A (−S+P → −(−P)+(−S)) and O (+S−P → +(−P)−(−S)).
+  // A wild subject uses its universal reading for A, particular for O.
+  function contrapositive(p) {
+    const sSign = p.subject.sign, qSign = p.predicate.sign;
+    const aForm = (sSign === '-' || sSign === '±') && qSign === '+';
+    const oForm = (sSign === '+' || sSign === '±') && qSign === '-';
+    if (!aForm && !oForm) return null;
+    return canonProp(Prop(ST(aForm ? '-' : '+', Neg(p.predicate.term)),
+                          ST(aForm ? '+' : '-', Neg(p.subject.term))));
+  }
+
+  // It — the tautology move: −T+T for any term ("every T is T"; safe with no
+  // existential import, unlike +T+T).
+  const tautology = (t) => canonProp(Prop(ST('-', t), ST('+', t)));
+
+  // ── Net-sign occurrences and substitution ─────────────────────────────
+  //
+  // An occurrence is a term position inside a proposition together with the
+  // product of the signs governing it (Course 3 L2's net sign rule). A ± on
+  // the occurrence's own slot makes the net sign resolvable. Relation heads
+  // and the inside of propositional terms are opaque: the courses never
+  // substitute there.
+
+  function occurrences(p) {
+    const out = [];
+    const walk = (t, path, sign, ownWild) => {
+      out.push({ term: t, path, sign, ownWild });
+      switch (t.type) {
+        case 'neg':
+          walk(t.term, path.concat('neg'), -sign, false);
+          break;
+        case 'compound':
+          t.elements.forEach((el, i) =>
+            walk(el.term, path.concat(i), el.sign === '-' ? -sign : sign, false));
+          break;
+        case 'rel':
+          t.objects.forEach((o, i) =>
+            walk(o.term, path.concat(i),
+                 o.sign === '-' ? -sign : sign, o.sign === '±'));
+          break;
+      }
+    };
+    walk(p.subject.term, ['subject'], p.subject.sign === '-' ? -1 : 1, p.subject.sign === '±');
+    walk(p.predicate.term, ['predicate'], p.predicate.sign === '-' ? -1 : 1, false);
+    return out;
+  }
+
+  const canBePlus = (occ) => occ.ownWild || occ.sign === 1;
+
+  // Replace the term at `path` with `newTerm`. A ± slot being substituted
+  // must be fixed to the resolution that produced the wanted net sign —
+  // under an odd number of governing minuses only the universal reading of
+  // the wild puts the occurrence at net + (the fuzz oracle caught the
+  // + hard-coding this replaces). `fixSign` is that resolution; canonProp
+  // restores ± when the new term is itself singular, where the pun stays
+  // sound.
+  function replaceAt(p, path, newTerm, fixSign = '+') {
+    const [where, ...rest] = path;
+    const subTerm = (t, steps) => {
+      if (steps.length === 0) return newTerm;
+      const [step, ...more] = steps;
+      if (t.type === 'neg') return Neg(subTerm(t.term, more));
+      if (t.type === 'compound') {
+        return Compound(t.elements.map((el, i) =>
+          i === step ? ST(el.sign, subTerm(el.term, more)) : el));
+      }
+      if (t.type === 'rel') {
+        return Rel(t.head, t.objects.map((o, i) =>
+          i === step
+            ? ST(o.sign === '±' && more.length === 0 ? fixSign : o.sign, subTerm(o.term, more))
+            : o));
+      }
+      throw new EngineError('bad substitution path');
+    };
+    if (where === 'subject') {
+      const sign = rest.length === 0 && p.subject.sign === '±' ? fixSign : p.subject.sign;
+      return canonProp(Prop(ST(sign, subTerm(p.subject.term, rest)), p.predicate));
+    }
+    return canonProp(Prop(p.subject, ST(p.predicate.sign, subTerm(p.predicate.term, rest))));
+  }
+
+  // ── DON ───────────────────────────────────────────────────────────────
+
+  // Read a premise as a donor: −M+D donates D for M; −M−E donates (−E) (the
+  // obverse reading); a wild subject uses its universal reading.
+  function donorReadings(p) {
+    if (p.subject.sign === '+') return [];
+    const M = p.subject.term;
+    const D = p.predicate.sign === '+' ? p.predicate.term : canonTerm(Neg(p.predicate.term));
+    return [{ M, key: termKey(M), D }];
+  }
+
+  // All DON results of donor → host.
+  function applyDON(donor, host) {
+    const results = [];
+    for (const { M, key, D } of donorReadings(donor)) {
+      const dKey = termKey(D);
+      if (dKey === key) continue;
+      for (const occ of occurrences(host)) {
+        if (!canBePlus(occ)) continue;
+        if (termKey(occ.term) !== key) continue;
+        results.push(replaceAt(host, occ.path, D, occ.sign === 1 ? '+' : '-'));
+      }
+    }
+    return results;
+  }
+
+  // ── Simp and Add ──────────────────────────────────────────────────────
+
+  // Simp: at a net-+ occurrence of a compound, drop one conjunct; and from a
+  // particular +X±Y, +X+X ("some X is Y, so some X is X").
+  function applySimp(p) {
+    const results = [];
+    for (const occ of occurrences(p)) {
+      if (!canBePlus(occ) || occ.term.type !== 'compound') continue;
+      occ.term.elements.forEach((_, i) => {
+        const rest = occ.term.elements.filter((_, j) => j !== i);
+        const t = rest.length === 1
+          ? (rest[0].sign === '-' ? Neg(rest[0].term) : rest[0].term)
+          : Compound(rest);
+        results.push(replaceAt(p, occ.path, t));
+      });
+    }
+    if (p.subject.sign === '+' || p.subject.sign === '±') {
+      results.push(canonProp(Prop(ST('+', p.subject.term), ST('+', p.subject.term))));
+      if (p.predicate.sign === '+') {
+        results.push(canonProp(Prop(ST('+', p.predicate.term), ST('+', p.predicate.term))));
+      }
+    }
+    return results;
+  }
+
+  // Add: same-subject compound introduction — {−S+A, −S+B} ⊢ −S+(+A+B);
+  // {+S+A, −S+B} ⊢ +S+(+A+B).
+  function applyAdd(a, b) {
+    const results = [];
+    for (const [x, y] of [[a, b], [b, a]]) {
+      if (termKey(x.subject.term) !== termKey(y.subject.term)) continue;
+      if (x.predicate.sign !== '+' || y.predicate.sign !== '+') continue;
+      if (y.subject.sign !== '-' && y.subject.sign !== '±') continue;
+      const subjSign = x.subject.sign === '±' ? x.subject.sign : x.subject.sign;
+      results.push(canonProp(Prop(
+        ST(subjSign, x.subject.term),
+        ST('+', Compound([ST('+', x.predicate.term), ST('+', y.predicate.term)])))));
+    }
+    return results;
+  }
+
+  // ── Traced derivation search ──────────────────────────────────────────
+
+  // Forward-chaining saturation from the premises (plus tautology lines for
+  // the argument's own terms), fuel-bounded. Returns the goal's pruned
+  // ancestry: lines of { n, prop, text, rule, parents } with 1-based numbers.
+  function derive(premises, goal, opts = {}) {
+    premises.forEach(validateProp);
+    validateProp(goal);
+    const maxLines = opts.maxLines || 400;
+    const sizeCap = Math.max(...premises.map(propNodes), propNodes(goal)) + (opts.slack || 8);
+
+    const goalCanon = canonProp(goal);
+    const goalKey = printProposition(goalCanon);
+
+    const lines = [];
+    const seen = new Map(); // key → line index
+    const push = (prop, rule, parents) => {
+      const key = printProposition(prop);
+      if (seen.has(key)) return null;
+      if (propNodes(prop) > sizeCap) return null;
+      const line = { prop, key, rule, parents };
+      seen.set(key, lines.length);
+      lines.push(line);
+      return line;
+    };
+
+    for (const p of premises) push(canonProp(p), 'premise', []);
+    // Tautology lines for every term the argument mentions.
+    const tautTerms = new Map();
+    for (const p of [...premises, goal]) {
+      for (const occ of occurrences(canonProp(p))) tautTerms.set(termKey(occ.term), occ.term);
+    }
+    for (const t of tautTerms.values()) push(tautology(t), 'It', []);
+
+    if (seen.has(goalKey)) return extract(lines, seen.get(goalKey));
+
+    for (let i = 0; i < lines.length && lines.length < maxLines; i++) {
+      const li = lines[i];
+      const unary = [
+        [obverse(li.prop), 'IN'],
+        [contrapositive(li.prop), 'Contrap'],
+        ...applySimp(li.prop).map((p) => [p, 'Simp']),
+      ];
+      for (const [p, rule] of unary) {
+        if (p && push(p, rule, [i]) && printProposition(p) === goalKey) {
+          return extract(lines, lines.length - 1);
+        }
+      }
+      for (let j = 0; j < i && lines.length < maxLines; j++) {
+        const lj = lines[j];
+        const binary = [
+          ...applyDON(li.prop, lj.prop).map((p) => [p, 'DON', [i, j]]),
+          ...applyDON(lj.prop, li.prop).map((p) => [p, 'DON', [j, i]]),
+          ...applyAdd(li.prop, lj.prop).map((p) => [p, 'Add', [i, j]]),
+        ];
+        for (const [p, rule, parents] of binary) {
+          if (push(p, rule, parents) && printProposition(p) === goalKey) {
+            return extract(lines, lines.length - 1);
+          }
+        }
+      }
+    }
+    return { found: false, lines: [] };
+  }
+
+  // Prune to the goal's ancestry and renumber.
+  function extract(lines, goalIdx) {
+    const keep = new Set();
+    (function mark(i) {
+      if (keep.has(i)) return;
+      keep.add(i);
+      lines[i].parents.forEach(mark);
+    })(goalIdx);
+    const order = [...keep].sort((a, b) => a - b);
+    const renum = new Map(order.map((idx, n) => [idx, n + 1]));
+    return {
+      found: true,
+      lines: order.map((idx) => ({
+        n: renum.get(idx),
+        prop: lines[idx].prop,
+        text: lines[idx].key,
+        rule: lines[idx].rule,
+        parents: lines[idx].parents.map((p) => renum.get(p)),
+      })),
+    };
+  }
+
+  // ── The inconsistency decision for the atomic-categorical fragment ─────
+  //
+  // Scope: every side of every proposition is an atom under zero or more
+  // negations. On this fragment the decision is COMPLETE (fuzz-verified
+  // against the finite-model oracle):
+  //
+  //   - universals (subject − or wild) become literal implications
+  //     (−S+P gives S→P and ¬P→¬S);
+  //   - particulars (subject + or wild) become "points" — individuals with
+  //     two known literals; a wild statement contributes both readings,
+  //     which is exactly what wild quantity means on a singleton;
+  //   - every singular term seeds a point of its own (names denote);
+  //   - points close under the implications; points sharing a positive
+  //     singular literal are the same individual and merge; the set is
+  //     inconsistent iff some point ends up with a literal and its negation.
+  //
+  // No existential import: general terms may be empty (universals alone
+  // never clash), and the model built from consistent points witnesses
+  // consistency directly.
+  //
+  // The zero-sum cancellation of P/Z is reported as a certificate when one
+  // exists — it is the course's display form of the same fact — but the
+  // verdict rests on the closure, which also covers the vacuous-subject
+  // corners where nothing cancels term by term.
+
+  function coreLit(term, negations = 0) {
+    if (term.type === 'neg') return coreLit(term.term, negations + 1);
+    if (term.type !== 'atom') return null;
+    return { name: term.name, singular: term.singular, pol: negations % 2 === 0 };
+  }
+  const litKey = (l) => `${l.pol ? '+' : '-'}${l.name}${l.singular ? '*' : ''}`;
+  const negKey = (k) => (k[0] === '+' ? '-' : '+') + k.slice(1);
+
+  const isAtomicProp = (p) =>
+    coreLit(canonTerm(p.subject.term)) !== null && coreLit(canonTerm(p.predicate.term)) !== null;
+  const isAtomicCategorical = (props) => props.every(isAtomicProp);
+
+  // Inconsistency check for an atomic-categorical set. Returns null when
+  // consistent, else a certificate: the clashing point's literals, plus the
+  // classic cancellation display when one exists.
+  function checkInconsistent(props) {
+    props.forEach(validateProp);
+    if (!isAtomicCategorical(props)) {
+      throw new EngineError('the inconsistency check requires an atomic-categorical set');
+    }
+    const canon = props.map(canonProp);
+
+    const implications = []; // {from, to} over literal keys
+    const points = [];       // Sets of literal keys
+    const singulars = new Set();
+    for (const p of canon) {
+      const s = coreLit(canonTerm(p.subject.term));
+      let q = coreLit(canonTerm(p.predicate.term));
+      if (p.predicate.sign === '-') q = { ...q, pol: !q.pol };
+      const sK = litKey(s), qK = litKey(q);
+      const wild = p.subject.sign === '±';
+      if (p.subject.sign === '-' || wild) {
+        implications.push({ from: sK, to: qK }, { from: negKey(qK), to: negKey(sK) });
+      }
+      if (p.subject.sign === '+' || wild) points.push(new Set([sK, qK]));
+      for (const occ of occurrences(p)) {
+        if (occ.term.type === 'atom' && occ.term.singular) singulars.add(occ.term.name);
+      }
+    }
+    for (const name of singulars) points.push(new Set([`+${name}*`]));
+
+    const close = (set) => {
+      let grew = true;
+      while (grew) {
+        grew = false;
+        for (const { from, to } of implications) {
+          if (set.has(from) && !set.has(to)) { set.add(to); grew = true; }
+        }
+      }
+    };
+    // Close, merge points that share a positive singular literal, repeat.
+    let changed = true;
+    while (changed) {
+      changed = false;
+      points.forEach(close);
+      outer:
+      for (let i = 0; i < points.length; i++) {
+        for (let j = i + 1; j < points.length; j++) {
+          const shared = [...points[i]].some((k) => k[0] === '+' && k.endsWith('*') && points[j].has(k));
+          if (shared) {
+            for (const k of points[j]) points[i].add(k);
+            points.splice(j, 1);
+            changed = true;
+            break outer;
+          }
+        }
+      }
+    }
+    for (const point of points) {
+      const clash = [...point].find((k) => point.has(negKey(k)));
+      if (clash) {
+        return {
+          point: [...point],
+          clash: [clash, negKey(clash)],
+          cancellation: findCancellation(canon),
+        };
+      }
+    }
+    return null;
+  }
+
+  // The classic P/Z display: one particular plus re-used universals summing
+  // to zero, sign multiplication running through term negation. Wild
+  // subjects try both readings. Returns { particular, universals: [{prop,
+  // times}] } or null (the closure verdict stands either way).
+  function zOccurrences(p) {
+    const out = [];
+    const flat = (t, sign) => {
+      if (t.type === 'neg') flat(t.term, -sign);
+      else out.push({ key: termKeyRaw(t), sign });
+    };
+    flat(p.subject.term, p.subject.sign === '-' ? -1 : 1);
+    flat(p.predicate.term, p.predicate.sign === '-' ? -1 : 1);
+    return out;
+  }
+
+  function findCancellation(canonProps) {
+    const readings = canonProps.map((p) =>
+      p.subject.sign === '±'
+        ? [Prop(ST('+', p.subject.term), p.predicate), Prop(ST('-', p.subject.term), p.predicate)]
+        : [p]);
+    const tryResolved = (resolved) => {
+      const particulars = resolved.filter((p) => p.subject.sign === '+');
+      const universals = resolved.filter((p) => p.subject.sign === '-');
+      for (const particular of particulars) {
+        const total = new Map();
+        const bump = (occs, k) => {
+          for (const { key, sign } of occs) total.set(key, (total.get(key) || 0) + sign * k);
+        };
+        bump(zOccurrences(particular), 1);
+        const uOccs = universals.map(zOccurrences);
+        const used = new Array(universals.length).fill(0);
+        const dfs = (i) => {
+          if (i === universals.length) return [...total.values()].every((v) => v === 0);
+          for (let k = 0; k <= 3; k++) {
+            if (k > 0) bump(uOccs[i], 1);
+            used[i] = k;
+            if (dfs(i + 1)) return true;
+          }
+          bump(uOccs[i], -3);
+          used[i] = 0;
+          return false;
+        };
+        if (dfs(0)) {
+          return {
+            particular,
+            universals: universals.map((u, i) => ({ prop: u, times: used[i] })).filter((u) => u.times > 0),
+          };
+        }
+      }
+      return null;
+    };
+    // Wild readings multiply; cap the enumeration and fall back to the
+    // all-particular reading (certificates are best-effort).
+    const combos = readings.reduce((n, r) => n * r.length, 1);
+    if (combos > 256) return tryResolved(canonProps.map((r, i) => readings[i][0]));
+    const walk = (i, acc) => {
+      if (i === readings.length) return tryResolved(acc);
+      for (const r of readings[i]) {
+        const found = walk(i + 1, acc.concat([r]));
+        if (found) return found;
+      }
+      return null;
+    };
+    return walk(0, []);
+  }
+
+  // ── The argument checker ──────────────────────────────────────────────
+  //
+  // Atomic-categorical arguments get the complete verdict via the
+  // counterclaim test (Sommers' REGAL, decided by the closure). Everything
+  // else — relational complexes, compound or propositional term cores —
+  // gets what direct derivation can establish: valid / contradicted /
+  // unknown (D3's indirect proofs extend the reach).
+  function checkArgument(premises, conclusion, opts = {}) {
+    premises.forEach(validateProp);
+    validateProp(conclusion);
+    const counterclaim = [...premises, contradictory(conclusion)];
+    if (isAtomicCategorical(counterclaim)) {
+      const cert = checkInconsistent(counterclaim);
+      return cert
+        ? { verdict: 'valid', method: 'PZ', certificate: cert }
+        : { verdict: 'invalid', method: 'PZ' };
+    }
+    const proof = derive(premises, conclusion, opts);
+    if (proof.found) return { verdict: 'valid', method: 'derivation', proof };
+    const refutation = derive(premises, contradictory(conclusion), opts);
+    if (refutation.found) return { verdict: 'contradicted', method: 'derivation', proof: refutation };
+    return { verdict: 'unknown', method: 'derivation' };
+  }
+
   return {
     Atom, Neg, Compound, Rel, PropTerm, ST, Prop,
     termEq, propEq, stEq, ParseError, tokenize,
     parseProposition, parseTerm, parseSignedTerm,
     printTerm, printProposition, printSignedTerm: printST, isBareName,
+    // D2 — inference core
+    EngineError, validateProp, canonTerm, canonProp, propKey, termKey, propEqUpTo,
+    contradictory, obverse, contrapositive, tautology,
+    occurrences, applyDON, applySimp, applyAdd,
+    derive, checkInconsistent, checkArgument,
   };
 });

@@ -280,15 +280,41 @@ bolted on. Learners get to *run* the algebra all four courses taught.
     (`non-Lov`, whose `non-` prefix the lab deliberately reads as minus). Exits nonzero
     on any unexplained snippet. 63 node tests incl. a seeded random-AST round-trip
     property (parse ∘ print = id at the AST level).
-- **D2** 🔲 Inference core (direct derivations): the immediate rules (DN, EN, IN, Com, Assoc,
-  Contrap, PD, It) and mediate rules (DON, Simp, Add) as rewrites producing **traced
-  derivations** (formula + rule + parent lines); net-sign distribution computation so DON
-  reaches inside relational complexes; REGAL/P–Z validity check for premise sets; formula
-  equality up to Com/Assoc/DN. Tests: Barbara, hypothetical syllogism, the horse's head
-  (tautology premise, cancellation in-complex), the paper's nested faster-than derivation,
-  undistributed-middle failures, identity chains via singular middle terms (Twain/Clemens —
-  should fall out of DON with wild quantity; prove it). Plus the correctness oracle: the
-  finite-model checker and the fuzz harness comparing syntactic vs semantic verdicts.
+- **D2** ✅ Inference core (`tfl.js` inference layer + `oracle.js`).
+  Implementation notes (decisions made during execution):
+  - **Equality up to Com/Assoc/DN is a canonical form**: DN strips, compounds flatten and
+    sort, I/E propositions sort their sides; singular quantity signs normalize to ± (the
+    wild pun as an identity, on subjects and relational objects). Conversion never appears
+    as a derivation step — it's free. Side effect: double obversion can hand back the
+    contrapositive (the intermediate E-form commutes); both are correct.
+  - **Rules**: IN (obversion), Contrap (A and O), It (only −T+T — +T+T would smuggle
+    import), DON, Simp (conjunct-drop at net-+ occurrences, plus +X+Y ⊢ +X+X), Add
+    (same-subject compound intro). EN is exposed as the `contradictory` operation, not an
+    entailment. PD deferred to D4 (it needs statement-conjunction objects). Wild ±
+    resolves per use; substitution at a ± slot fixes the slot to the resolution that made
+    the net sign + — the fuzzer caught the naive always-+ version claiming "R's some
+    non-A" where only "R's every non-A" was licensed.
+  - **DON is monotone substitution**: donor −M+D (or ±m*+D, or −M−E donating (−E))
+    licenses replacing any net-+ occurrence of M — through negations, compound elements,
+    and relational objects at any depth. Proved out on the horse's head (via the It
+    tautology premise), Course 3 L2's donate-a-whole-complex showcase, a nested
+    faster-than chain, and Twain/Clemens (one DON step with the wild resolved universal —
+    identity chains do fall out, as conjectured).
+  - **The validity verdict is two-tier.** Atomic-categorical arguments (every side an
+    atom under negations) get the complete counterclaim decision — but implemented as
+    literal-implication closure with singular-point merging, NOT the flat zero-sum: the
+    fuzzer showed textbook P/Z misses vacuous-subject inconsistencies like {+A+B, −A+C,
+    −A−C} and singular-existence cases (names denote, so every singular seeds a point).
+    The classic one-particular/zero-sum cancellation is still computed as the display
+    certificate when it exists. Everything else (relational, compound-cored) gets
+    derivation verdicts: valid / contradicted / unknown — honest about what direct proof
+    reaches until D3 adds indirect proofs.
+  - **The oracle earned its keep.** `oracle.js`: finite-model semantics (bitmask sets,
+    n-ary relations, singleton singulars, brackets as truth-valued units, no import
+    anywhere) + three fuzz suites: categorical exactness (engine verdict ≡ semantic
+    entailment, 20k args), rule-step soundness (~92k steps incl. compound and relational
+    hosts), relational-derivation soundness (~20k found proofs, no counter-model to n=3).
+    All green after the two bugs above were fixed. 115 unit tests total.
 - **D3** 🔲 Deep relational layer: the passive transformation with Course 2 L3's symmetry
   guard (equivalent only when both participants share quantity or one is singular); proterms
   with fresh markers, anchors, and wild quantity; the indirect-proof procedure (counterclaim,
