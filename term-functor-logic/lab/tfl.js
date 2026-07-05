@@ -411,14 +411,14 @@
       case 'compound':
         for (const el of t.elements) {
           if (el.sign === '±') throw new EngineError('± cannot sign a compound element (it marks quantity, not quality)');
-          if (el.level !== 0) throw new EngineError('quantity levels are not supported until D9');
+          if (el.level !== 0) throw new EngineError('a quantity level attaches only to a categorical subject, not a compound element');
           validateTerm(el.term, 'compound');
         }
         return;
       case 'rel':
         validateTerm(t.head, 'rel-head');
         for (const o of t.objects) {
-          if (o.level !== 0) throw new EngineError('quantity levels are not supported until D9');
+          if (o.level !== 0) throw new EngineError('a quantity level attaches only to a categorical subject, not a relational object');
           if (o.sign === '±' && !isFixedRef(o.term)) {
             throw new EngineError('wild quantity (±) requires a singular term or proterm');
           }
@@ -432,10 +432,22 @@
   }
 
   function validateProp(p) {
-    for (const st of [p.subject, p.predicate]) {
-      if (st.level !== 0) throw new EngineError('quantity levels are not supported until D9');
-      validateTerm(st.term, 'top');
+    // Quantity levels (D9, TFL⁺): 0–3 mark the intermediate quantifiers —
+    // 0 some/every (classical), 1 many, 2 most, 3 few/predominant. A level
+    // rides only on the subject of a categorical proposition, and only on a
+    // particular (+) one (every universal a/e is level 0). The predicate is
+    // always level 0. See Castro-Manzano et al. 2018, Table 8.
+    if (p.predicate.level !== 0) {
+      throw new EngineError('a quantity level attaches only to the subject, not the predicate');
     }
+    if (p.subject.level < 0 || p.subject.level > 3) {
+      throw new EngineError('quantity level must be 0 (some/every), 1 (many), 2 (most) or 3 (few)');
+    }
+    if (p.subject.level > 0 && p.subject.sign !== '+') {
+      throw new EngineError('a nonzero quantity level marks an intermediate quantifier and needs a particular (+) subject');
+    }
+    validateTerm(p.subject.term, 'top');
+    validateTerm(p.predicate.term, 'top');
     if (p.subject.sign === '±' && !isFixedRef(p.subject.term)) {
       throw new EngineError('wild quantity (±) requires a singular or proterm subject');
     }
@@ -1245,9 +1257,73 @@
   // else — relational complexes, compound or propositional term cores —
   // gets what proof search can establish: valid (direct derivation, then
   // indirect proof) / contradicted / unknown.
+  // ── D9 — the numerical decision method (TFL⁺) ─────────────────────────
+  //
+  // Castro-Manzano et al. 2018, §5. When any proposition carries a nonzero
+  // quantity level, the argument is a numerical syllogism and its validity is
+  // decided by the paper's modified plus-minus algebra: a conclusion follows
+  // iff (i) the algebraic sum of the premises equals the conclusion, (ii) the
+  // number of particular (+) premises equals the number of particular
+  // conclusions, and (iii) the conclusion's quantity level does not exceed the
+  // maximum premise level. Sound and complete for the SYLL⁺ syllogistic moods
+  // (their proposition). The fragment is categorical: every side an atom under
+  // negations, subject quantity + or − (no wild — a level has no reading on a
+  // wild-quantity singular).
+  const stLevel = (st) => st.level || 0;
+  const hasLevel = (p) => stLevel(p.subject) > 0 || stLevel(p.predicate) > 0;
+  const anyLevel = (props) => props.some(hasLevel);
+
+  // A categorical side's algebraic coefficient: the occurrence sign times the
+  // term's own negation parity (so +(−P) counts as −P). Atomic by contract.
+  function sideCoeff(st) {
+    const lit = coreLit(st.term);
+    const occ = st.sign === '-' ? -1 : 1; // + and (nominally) ± read as +
+    return { key: lit.name + (lit.singular ? '*' : ''), coeff: occ * (lit.pol ? 1 : -1) };
+  }
+
+  function numericalDecision(premises, conclusion) {
+    const all = [...premises, conclusion];
+    all.forEach(validateProp);
+    if (!isAtomicCategorical(all)) {
+      throw new EngineError('quantity levels are supported only in categorical (atomic) syllogisms');
+    }
+    for (const p of all) {
+      if (p.subject.sign === '±') {
+        throw new EngineError('a wild ± subject has no quantity-level reading; use + (particular) or − (universal)');
+      }
+    }
+    // (i) the algebraic sum of the premises equals the conclusion.
+    const coeff = new Map();
+    const bump = (st, factor) => {
+      const c = sideCoeff(st);
+      coeff.set(c.key, (coeff.get(c.key) || 0) + factor * c.coeff);
+    };
+    for (const p of premises) { bump(p.subject, 1); bump(p.predicate, 1); }
+    bump(conclusion.subject, -1); bump(conclusion.predicate, -1);
+    const sum = [...coeff.values()].every((v) => v === 0);
+    // (ii) the particular counts match (a conclusion is 0 or 1 propositions).
+    const particularPremises = premises.filter((p) => p.subject.sign === '+').length;
+    const particularConclusions = conclusion.subject.sign === '+' ? 1 : 0;
+    const particular = particularPremises === particularConclusions;
+    // (iii) the conclusion's level ≤ the maximum premise level.
+    const maxPremiseLevel = Math.max(0, ...premises.map((p) => stLevel(p.subject)));
+    const level = stLevel(conclusion.subject) <= maxPremiseLevel;
+    return {
+      valid: sum && particular && level,
+      conditions: { sum, particular, level },
+      maxPremiseLevel, conclusionLevel: stLevel(conclusion.subject),
+      particularPremises, particularConclusions,
+    };
+  }
+
   function checkArgument(premises, conclusion, opts = {}) {
     premises.forEach(validateProp);
     validateProp(conclusion);
+    // Numerical fragment: any nonzero level routes to the D9 decision method.
+    if (anyLevel([...premises, conclusion])) {
+      const d = numericalDecision(premises, conclusion);
+      return { verdict: d.valid ? 'valid' : 'invalid', method: 'numerical', decision: d };
+    }
     const counterclaim = [...premises, contradictory(conclusion)];
     if (isAtomicCategorical(counterclaim)) {
       const cert = checkInconsistent(counterclaim);
@@ -1317,6 +1393,9 @@
   // collapsing equivalents to their simplest form. Strongest first.
   function queryTerm(program, term, opts = {}) {
     program.forEach(validateProp);
+    if (anyLevel(program)) {
+      throw new EngineError('“what is …?” saturation is a level-0 query; ask a numerical syllogism as an argument (premises ⊢ conclusion) instead');
+    }
     validateTerm(term, 'top');
     const key = termKey(term);
     const sizeCap = Math.max(...program.map(propNodes), nodeCount(term)) + (opts.slack || 6);
@@ -1404,6 +1483,10 @@
   // within fuel," honest about reach exactly as checkArgument is.
   function checkProgramConsistency(program, opts = {}) {
     program.forEach(validateProp);
+    // Consistency is a level-0 notion here (the paper defines only the
+    // numerical *decision* method, not numerical inconsistency); report the
+    // numerical fact base as undecided rather than run the level-0 machinery.
+    if (anyLevel(program)) return { consistent: true, complete: false, numerical: true };
     const entries = program.map((prop) => ({ prop, rule: 'fact' }));
     if (isAtomicCategorical(program)) {
       const cert = checkInconsistent(program);
@@ -1426,6 +1509,9 @@
   // reading. The given statement is the first entry.
   function equivalents(prop, opts = {}) {
     validateProp(prop);
+    if (hasLevel(prop)) {
+      throw new EngineError('the immediate rules (obversion, contraposition) are defined at level 0; a numerical quantifier has no equivalence neighbourhood here');
+    }
     const start = canonProp(prop);
     const startKey = printProposition(start);
     const nodes = new Map([[startKey, { prop: start, path: [], from: null }]]);
@@ -1465,6 +1551,9 @@
   function decideEquivalence(a, b, opts = {}) {
     validateProp(a);
     validateProp(b);
+    if (hasLevel(a) || hasLevel(b)) {
+      throw new EngineError('equivalence is decided at level 0; numerical quantifiers are compared only through the decision method');
+    }
     const ma = statementModel(a), mb = statementModel(b);
     if (ma && mb) {
       const atoms = [...new Set([...ma.atoms, ...mb.atoms])].sort();
@@ -1605,7 +1694,16 @@
       return qPlus ? `every ${S} ${relTail(pred, false)}`
                    : (relPred ? `no ${S} ${readTerm(pred)}` : `no ${S} is ${readTerm(pred)}`);
     }
-    // particular subject (+ or a stray ±)
+    // particular subject (+ or a stray ±). A nonzero quantity level names an
+    // intermediate quantifier (Table 8): 1 many, 2 most, 3 few. "Few" is the
+    // predominant complement, so it inverts the predicate polarity in English
+    // — +S³+P reads "few S are not P", +S³−P reads "few S are P".
+    const lvl = p.subject.level || 0;
+    if (lvl > 0 && !relPred) {
+      const word = lvl === 1 ? 'many' : lvl === 2 ? 'most' : 'few';
+      const affirmative = lvl === 3 ? !qPlus : qPlus;
+      return `${word} ${S} ${relTail(pred, !affirmative)}`;
+    }
     return qPlus ? `some ${S} ${relTail(pred, false)}`
                  : `some ${S} ${relTail(pred, true)}`;
   }
@@ -1639,6 +1737,25 @@
     return `Because ${because}, ${readProp(last.prop)}.`;
   }
 
+  // English name of a quantity level, for numerical explanations.
+  const levelName = (n) => ['some/every', 'many', 'most', 'few'][n] || `level ${n}`;
+
+  // Prose for a numerical decision: name the givens, then either affirm the
+  // conclusion or point at the first failing condition.
+  function numericalExplanation(premises, conclusion, d) {
+    const givens = premises.map(readProp).join(', and ');
+    if (d.valid) {
+      return `Because ${givens}, ${readProp(conclusion)} — the premises sum to the conclusion, the particular counts match, and its level (${levelName(d.conclusionLevel)}) does not exceed the premises' (${levelName(d.maxPremiseLevel)}).`;
+    }
+    if (!d.conditions.sum) {
+      return `That does not follow: the premises do not algebraically sum to ${readProp(conclusion)}.`;
+    }
+    if (!d.conditions.particular) {
+      return `That does not follow: ${d.particularPremises} particular premise(s) cannot yield ${d.particularConclusions} particular conclusion(s).`;
+    }
+    return `That does not follow: the conclusion is “${levelName(d.conclusionLevel)}” but no premise is stronger than “${levelName(d.maxPremiseLevel)}”, and a conclusion can be no stronger than its premises.`;
+  }
+
   // ── The Aristotelian answer ───────────────────────────────────────────
   //
   // Assembles queryProp's verdict with the Mozes extras. `reading` is the
@@ -1649,6 +1766,17 @@
   function answer(program, query, opts = {}) {
     program.forEach(validateProp);
     validateProp(query);
+
+    // Numerical syllogism (D9): the decision method gives a valid/invalid
+    // verdict with the three named conditions — none of the level-0 Mozes
+    // extras (derivation, stronger, perhaps, NAF, enthymeme) apply.
+    if (anyLevel([...program, query])) {
+      const d = numericalDecision(program, query);
+      const out = { verdict: d.valid ? 'yes' : 'unknown', reading: readProp(query), numerical: d };
+      out.explanation = numericalExplanation(program, query, d);
+      return out;
+    }
+
     const q = queryProp(program, query, opts);
     const out = { verdict: q.verdict, reading: readProp(query), support: q.support };
 
@@ -1886,5 +2014,7 @@
     strongerAnswer, possibility, suggestMissingPremise,
     // D8 — exercise grading
     checkExpression,
+    // D9 — numerical quantifiers (TFL⁺)
+    hasLevel, numericalDecision,
   };
 });

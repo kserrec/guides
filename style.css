@@ -1575,3 +1575,9 @@ mark.lab-mark { background: #fde68a; border-radius: 3px; padding: 0 1px; }
   .tfl-editor, .tfl-query { font-size: 16px; } /* prevents iOS focus auto-zoom */
   .tfl-square { grid-template-columns: 1fr; }
 }
+
+/* TFL Lab — numerical syllogism condition checklist (D9) */
+.tfl-conds { display: flex; flex-direction: column; gap: 0.25rem; }
+.tfl-cond { font-size: 0.85rem; }
+.tfl-cond-ok { color: #166534; }
+.tfl-cond-no { color: #b91c1c; }

@@ -27,11 +27,12 @@ completion. If a step grows beyond that during execution, split it before starti
 | TFL: Relational Syllogisms (Course 3) | ✅ 3 lessons |
 | TFL: Statement Logic & MPL (Course 4) | ✅ 6 lessons — **TFL curriculum complete (24 lessons)** |
 | TFL Lab engine (Track D) | 🔶 D1–D5 done: parser/printer, inference core (DON, immediate rules, two-tier validity, traced derivations), the deep relational layer (guarded passive, proterms, indirect proof), the program/query layer (`parseProgram`, `? term`/`? prop`/`?=`, consistency check), and the Aristotelian layer (NL explanations, stronger-answer, possibility, negation-as-failure, enthymeme recovery). 174 tests, six fuzz suites. |
-| TFL Lab UI (Track D) | 🔶 D6–D8 done: `lab.js` drives both the course-page panel and the standalone page at `term-functor-logic/lab/` (fact-base editor, palette, query line, consistency banner, derivation pane, `?=` square of opposition, `.tfl` import/export), "▸ try" chips + curated examples, and the engine-graded `tfl-expression` exercise kind (transcribe / derive / find-the-premise). Next: D9 numerical quantifiers. |
+| TFL Lab UI (Track D) | 🔶 D6–D8 done: `lab.js` drives both the course-page panel and the standalone page at `term-functor-logic/lab/` (fact-base editor, palette, query line, consistency banner, derivation pane, `?=` square of opposition, `.tfl` import/export), "▸ try" chips + curated examples, and the engine-graded `tfl-expression` exercise kind (transcribe / derive / find-the-premise). |
+| Numerical quantifiers (Track D) | 🔶 D9 done: TFL⁺ quantity levels 0–3 (some/many/most/few) with the paper's three-condition decision method in the engine (`numericalDecision`, `checkArgument` routing); all four of Tables 10–13 verified. Next: D10 advanced lesson. |
 
 Tracks A, B, and C are fully executed. Track D is in progress — language core first
-(D1–D5 ✅), lab UI live, lesson-integrated, and exercise-graded (D6–D8 ✅), then the
-numerical extension (D9–D10).
+(D1–D5 ✅), lab UI live, lesson-integrated, and exercise-graded (D6–D8 ✅), the numerical
+engine done (D9 ✅), then the numerical lesson (D10).
 
 ### Strengths
 
@@ -45,11 +46,10 @@ numerical extension (D9–D10).
 
 1. **No unit tests for `engine.js`** (the λ-lab logic has them; engine behavior is exercised via
    ad-hoc headless-Chrome runs per change). Tolerable; revisit if the engine grows.
-2. **Numerical quantifiers not yet supported** — the lab is live (D6), lesson-integrated
-   (D7), and grades free-input TFL answers (D8), but the engine still works at quantity
-   level 0 only (classical some/every). Most/many/few (TFL⁺) is the D9–D10 frontier; the AST
-   has carried the level field since D1, so D9 touches only parser, printer, and one
-   validity condition.
+2. **Numerical quantifiers taught nowhere yet** — the engine now decides numerical
+   syllogisms (D9: most/many/few via the three-condition method), but no lesson teaches
+   them and Course 4 L6 still concedes them as a "real limit." D10 adds the advanced lesson
+   and softens that concession.
 
 ---
 
@@ -563,10 +563,38 @@ bolted on. Learners get to *run* the algebra all four courses taught.
     (pass + fail paths); live-verified headlessly that the DOM handler grades all three,
     shows the non-leaking message, reveals→incorrect (score reflects it), and offers the lab
     button. 186 engine tests green.
-- **D9** 🔲 Numerical quantifiers, engine half (TFL⁺): quantity levels 0–3 on subject terms
-  (`+V²+C⁰` — "most voters are citizens"), ASCII `+V^2+C^0` (explicit `^` marker; see design
-  decisions); the three-condition decision method; parser/printer/derivation support. Tests
-  straight from the paper's Tables 10–13: kaa-1 ⊬, akt-4 ⊬, bao-3 ⊢, ekg-2 ⊢.
+- **D9** ✅ Numerical quantifiers, engine half (TFL⁺). The parser/printer already carried the
+  quantity-level syntax since D1 (superscript `²` / ASCII `^2`, printer omits level 0); D9
+  lifts the level-0-only guard and adds the decision method. All four of the paper's
+  Tables 10–13 come out right — kaa-1 ⊬, akt-4 ⊬, bao-3 ⊢, ekg-2 ⊢.
+  Implementation notes (decisions made during execution):
+  - **Levels mean intermediate quantifiers, on the subject only** (Castro-Manzano et al.
+    2018, Table 8): 0 some/every (classical), 1 many (`k`/`g`), 2 most (`t`/`d`), 3
+    few/predominant (`b`/`p`). `validateProp` now allows level 0–3 but only on the subject,
+    and a *nonzero* level requires a particular (+) subject (every universal a/e is level 0);
+    the predicate, compound elements, and relational objects must stay level 0. So `+V²+C`
+    is "most voters are citizens"; `−V²+C` and `+V+C²` are rejected with reasons.
+  - **The decision method (`numericalDecision`)** is the paper's modified plus-minus algebra:
+    a conclusion follows iff (i) the algebraic sum of the premises equals the conclusion
+    (a coefficient map over signed terms — occurrence sign times the term's negation parity —
+    that must cancel to zero), (ii) the number of particular (+) premises equals the number
+    of particular conclusions, and (iii) the conclusion's level ≤ the max premise level.
+    akt-4 is the discriminating case: it passes (i) and (ii) and fails **only** (iii) — a
+    "most" conclusion off a "many" premise. `checkArgument` routes any argument carrying a
+    nonzero level to this method (verdict `valid`/`invalid`, method `numerical`), leaving the
+    fuzz-verified level-0 P/Z and derivation paths untouched.
+  - **Numerical stays in its lane.** Levels are the syllogistic *decision* only — the paper
+    defines nothing else for them — so the level-0 machinery refuses them with a clear
+    message rather than compute nonsense: `queryTerm`, `equivalents`, `decideEquivalence`
+    throw, `checkProgramConsistency` returns `{ numerical: true }` (undecided), and `answer`
+    gives a numerical verdict + a three-condition explanation with none of the Mozes extras.
+    `readProp` glosses the quantifiers (many/most/few), including the level-3 "few" polarity
+    inversion (`+S³+P` reads "few S are not P", `+S³−P` "few S are P").
+  - No numerical oracle suite: the paper proves soundness/completeness for the SYLL⁺
+    syllogistic moods, and the intermediate-quantifier semantics aren't in the finite-model
+    oracle; the Tables 10–13 plus condition-isolation cases are the gate (14 new tests). The
+    six existing oracle suites still pass — the validation restructure left level-0 inference
+    unchanged. 200 engine tests green.
 - **D10** 🔲 Numerical quantifiers, lesson half: an advanced lesson teaching most/many/few as
   quantity levels (Peterson/Thompson SYLL⁺ → TFL⁺'s algebraic method), lab-integrated
   examples, Murphree's numerical term logic framed as the frontier beyond. Soften Course 4
@@ -577,5 +605,5 @@ bolted on. Learners get to *run* the algebra all four courses taught.
 
 ## Suggested order
 
-1. ~~C1~~ · ~~A1–A8~~ · ~~B1–B9~~ · ~~C2~~ · ~~D1~~ · ~~D2~~ · ~~D3~~ · ~~D4~~ · ~~D5~~ · ~~D6~~ · ~~D7~~ · ~~D8~~ — complete.
-2. **D9 → D10** last, in that order (numerical quantifiers: engine, then lesson) ← next: D9
+1. ~~C1~~ · ~~A1–A8~~ · ~~B1–B9~~ · ~~C2~~ · ~~D1~~ · ~~D2~~ · ~~D3~~ · ~~D4~~ · ~~D5~~ · ~~D6~~ · ~~D7~~ · ~~D8~~ · ~~D9~~ — complete.
+2. **D10** — numerical quantifiers, lesson half ← next (and last)

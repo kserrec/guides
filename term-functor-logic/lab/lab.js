@@ -390,6 +390,19 @@
 
     if (a.explanation) outputEl.append(h('div', { className: 'tfl-explain' }, a.explanation));
 
+    // Numerical syllogism (D9): show the three conditions, none of the
+    // level-0 machinery (derivation, stronger, perhaps, NAF, suggestions).
+    if (a.numerical) {
+      const c = a.numerical.conditions;
+      const row = (ok, text) => h('div', { className: 'tfl-cond tfl-cond-' + (ok ? 'ok' : 'no') },
+        (ok ? '✓ ' : '✗ ') + text);
+      outputEl.append(h('div', { className: 'tfl-conds' },
+        row(c.sum, 'The premises sum to the conclusion'),
+        row(c.particular, 'The particular counts match'),
+        row(c.level, 'The conclusion is no stronger than its premises')));
+      return;
+    }
+
     const proofOf = a.verdict === 'no' ? T.contradictory(prop) : prop;
     const proof = a.verdict === 'unknown' ? null : bestProof(program, proofOf, a.support);
     if (proof) outputEl.append(derivToggle(proof));

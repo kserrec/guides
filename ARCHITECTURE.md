@@ -33,8 +33,9 @@ currently two **subjects**, each containing **courses**, each containing **lesso
   language Aristotelian layer) exists and is node-tested (see §6), and as of D6–D8 the lab
   UI is live, lesson-integrated, and exercise-graded — a slide-over panel on the course
   pages plus a standalone page at `term-functor-logic/lab/`, "▸ try" chips on lesson syntax
-  boxes, and an engine-graded free-input `tfl-expression` exercise kind. Still ahead: the
-  numerical extension (D9–D10).
+  boxes, and an engine-graded free-input `tfl-expression` exercise kind. As of D9 the engine
+  also decides numerical syllogisms (most/many/few via TFL⁺ quantity levels). Still ahead:
+  the numerical lesson (D10).
 
 A lesson is a linear sequence of **blocks** that reveal one at a time: a *concept* block
 teaches (prose + examples), then an *exercise* block checks it, repeating in a
@@ -366,7 +367,13 @@ It follows the Lambda Lab split exactly — pure-logic module, UI module, node d
     `tfl-expression` exercise kind, with the three modes (`transcribe` / `derive` /
     `premise`); parse/validation errors become messages, never throws, and no failure
     message leaks the expected answer.
-- **`tfl.test.js`** — plain-assert suite (186 tests): notation round-trips, rule
+  - *D9, numerical quantifiers* (TFL⁺, Castro-Manzano et al. 2018): quantity levels 0–3 on a
+    particular subject (1 many, 2 most, 3 few) and `numericalDecision` — the three-condition
+    method (algebraic sum, particular-count match, conclusion level ≤ max premise level).
+    `checkArgument` routes any level-carrying argument here; the level-0-only queries
+    (`queryTerm`, `equivalents`, …) refuse levels rather than compute nonsense. Sound and
+    complete for the SYLL⁺ moods; the fragment is categorical only.
+- **`tfl.test.js`** — plain-assert suite (200 tests): notation round-trips, rule
   behavior, the named derivations (horse's head, Twain/Clemens, the boys-girls-cowards
   indirect proof, scope traps…), the paper's Socrates/Fido program and its queries, and
   oracle spot checks.
@@ -397,8 +404,7 @@ It follows the Lambda Lab split exactly — pure-logic module, UI module, node d
   `checkExpression` grader. Finished items offer an "open in the TFL Lab" button via
   `window.TFLLab.load`.
 
-Remaining Track D steps (D9–D10, see the roadmap): numerical quantifiers — the engine half
-then the lesson.
+Remaining Track D step (D10, see the roadmap): the numerical-quantifiers lesson.
 
 ## 7. Styling and theming
 
@@ -530,8 +536,9 @@ DOM-free; anything visual goes in lab.js.
 - `ROADMAP.md` (root) is both plan and log: Track A (Lambda Lab, A1–A8, complete),
   Track B (TFL Courses 3–4, B1–B9, complete), Track C (housekeeping, complete), and
   Track D (TFL^PL — a term-logic programming language / Aristotelian database lab):
-  D1–D8 complete (parser/printer, inference core, deep relational layer, program/query
-  layer, Aristotelian layer, the lab UI, lesson chips, and the exercise kind — §6), D9–D10
+  D1–D9 complete (parser/printer, inference core, deep relational layer, program/query
+  layer, Aristotelian layer, the lab UI, lesson chips, the exercise kind, and the numerical
+  decision method — §6), D10
   ahead, with the full design-decision record in the track's preamble. Completed steps carry implementation
   notes recording decisions made along the way — it's the closest thing to an ADR log;
   read it before re-deciding anything.

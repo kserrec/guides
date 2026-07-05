@@ -514,8 +514,8 @@ test('Add builds a compound conclusion from shared subjects', () =>
 
 // ── Engine guards ─────────────────────────────────────────────────────────
 
-test('quantity levels are rejected until D9', () =>
-  assert.throws(() => arg(['+V^2+C'], '+V+C'), EngineError));
+test('quantity levels drive the numerical decision method (D9), not an error', () =>
+  assert.strictEqual(arg(['+V^2+C'], '+V+C').method, 'numerical'));
 test('wild quantity requires a singular term', () =>
   assert.throws(() => validateProp(P('±Dog+Pet')), EngineError));
 test('wild predicates are rejected', () =>
@@ -1063,6 +1063,101 @@ test('premise: a premise that does not complete the argument is rejected', () =>
     { mode: 'premise', premises: ['−S+M'], conclusion: '−S+P', answer: '−M+P' });
   assert.strictEqual(r.ok, false);
   assert.ok(/still does not follow/.test(r.message), r.message);
+});
+
+// ── D9: numerical quantifiers (TFL⁺) ────────────────────────────────────────
+
+const { hasLevel, numericalDecision } = require('./tfl.js');
+
+// The paper's Tables 10–13 (Castro-Manzano et al. 2018).
+test('Table 10 — kaa-1 is invalid (fails the sum and particular counts)', () => {
+  const r = arg(['+H^1+I', '-g+H'], '-g+I');
+  assert.strictEqual(r.verdict, 'invalid');
+  assert.strictEqual(r.method, 'numerical');
+  assert.strictEqual(r.decision.conditions.sum, false);
+  assert.strictEqual(r.decision.conditions.particular, false);
+});
+
+test('Table 11 — akt-4 is invalid on the LEVEL condition alone', () => {
+  const r = arg(['-C+F', '+M^1+C'], '+M^2+F');
+  assert.strictEqual(r.verdict, 'invalid');
+  assert.deepStrictEqual(r.decision.conditions, { sum: true, particular: true, level: false });
+});
+
+test('Table 12 — bao-3 is valid', () => {
+  const r = arg(['+C^3-H', '-C+E'], '+E-H');
+  assert.strictEqual(r.verdict, 'valid');
+  assert.deepStrictEqual(r.decision.conditions, { sum: true, particular: true, level: true });
+});
+
+test('Table 13 — ekg-2 is valid', () => {
+  const r = arg(['-F-C', '+V^2+C'], '+V^1-F');
+  assert.strictEqual(r.verdict, 'valid');
+});
+
+test('numerical: a most-conclusion is fine when a most-premise licenses it', () =>
+  assert.strictEqual(arg(['+M^2+P', '-M+S'], '+S^2+P').verdict, 'valid'));
+
+test('numerical: any nonzero level routes to the decision method', () => {
+  assert.ok(hasLevel(P('+V^2+C')));
+  assert.ok(!hasLevel(P('-S+P')));
+  assert.strictEqual(arg(['-M+P', '-S+M'], '-S+P').method, 'PZ'); // level 0 stays P/Z
+});
+
+// Validation: where a level may and may not sit.
+test('validation: a level needs a particular (+) subject', () => {
+  validateProp(P('+V^2+C'));                              // ok
+  assert.throws(() => validateProp(P('-V^2+C')), EngineError); // universal + level
+});
+
+test('validation: no level on the predicate, no level > 3', () => {
+  assert.throws(() => validateProp(P('+V+C^2')), EngineError);
+  assert.throws(() => validateProp(P('+V^4+C')), EngineError);
+});
+
+test('validation: no level inside a compound or a relational object', () => {
+  assert.throws(() => validateProp(P('+(+A^2+B)+C')), EngineError);
+  assert.throws(() => validateProp(P('+A+(R+B^2)')), EngineError);
+});
+
+// readProp glosses the intermediate quantifiers (Table 8), with the "few"
+// polarity inversion.
+test('readProp: many / most / few glosses', () => {
+  assert.strictEqual(readProp(P('+V^1+C')), 'many v is c');
+  assert.strictEqual(readProp(P('+V^2+C')), 'most v is c');
+  assert.strictEqual(readProp(P('+C^3-H')), 'few c is h');   // SbP: few S are P
+  assert.strictEqual(readProp(P('+C^3+H')), 'few c is not h'); // SpP: few S are not P
+});
+
+// answer() gives a numerical verdict + explanation, none of the level-0 extras.
+test('answer: valid numerical syllogism reads yes with the three conditions', () => {
+  const a = answer(['-F-C', '+V^2+C'].map(P), P('+V^1-F'));
+  assert.strictEqual(a.verdict, 'yes');
+  assert.ok(/does not exceed/.test(a.explanation), a.explanation);
+  assert.strictEqual(a.stronger, undefined);
+  assert.strictEqual(a.nafGuess, undefined);
+});
+
+test('answer: an invalid numerical syllogism reads unknown, names the failed level', () => {
+  const a = answer(['-C+F', '+M^1+C'].map(P), P('+M^2+F'));
+  assert.strictEqual(a.verdict, 'unknown');
+  assert.ok(/no stronger/.test(a.explanation), a.explanation);
+});
+
+// The level-0-only queries refuse numerical propositions with a clear error.
+test('guards: term/equivalence queries reject levels, consistency defers', () => {
+  assert.throws(() => queryTerm([P('+V^2+C')], PT('V')), EngineError);
+  assert.throws(() => equivalents(P('+V^2+C')), EngineError);
+  assert.throws(() => decideEquivalence(P('+V^2+C'), P('+V^1+C')), EngineError);
+  const c = checkProgramConsistency([P('+V^2+C')]);
+  assert.strictEqual(c.numerical, true);
+});
+
+test('numericalDecision is exposed and reports the conditions directly', () => {
+  const d = numericalDecision([P('+C^3-H'), P('-C+E')], P('+E-H'));
+  assert.strictEqual(d.valid, true);
+  assert.strictEqual(d.maxPremiseLevel, 3);
+  assert.strictEqual(d.conclusionLevel, 0);
 });
 
 // ── Summary ───────────────────────────────────────────────────────────────
