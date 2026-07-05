@@ -1,0 +1,40 @@
+name: Deploy to GitHub Pages
+
+# Static site (no build step) deployed straight from the repo root.
+# Replaces GitHub's managed "deploy from branch" workflow so we control the
+# action versions — the managed one pins actions/checkout@v4 and
+# actions/upload-artifact@v4 to the deprecated Node 20.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a run finish before the next starts; never cancel a live deploy.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup Pages
+        uses: actions/configure-pages@v6
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: "."
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
