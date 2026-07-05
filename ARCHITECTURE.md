@@ -305,7 +305,7 @@ their own submission. First real usage: Foundations Lesson 5 ("Write It Yourself
 
 `term-functor-logic/lab/` holds the engine for the coming TFL Lab — a term-logic
 programming language and Aristotelian database (see Track D in `ROADMAP.md` for the full
-design record, including the source papers). As of D4 it is **engine only**: no course
+design record, including the source papers). As of D5 it is **engine only**: no course
 page loads these files, so nothing here is user-visible yet. It follows the Lambda Lab
 split exactly — a pure-logic UMD module plus node-only dev harnesses.
 
