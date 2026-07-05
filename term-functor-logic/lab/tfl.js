@@ -1,5 +1,7 @@
-// tfl.js — TFL Lab core engine, D1: parser + printer (pure logic, no DOM).
-// Loadable as a browser script (window.TFL) or via require() in node.
+// tfl.js — TFL Lab core engine (pure logic, no DOM). D1: parser + printer;
+// D2: inference core; D3: deep relational layer (passive transformation,
+// proterms, indirect proof). Loadable as a browser script (window.TFL) or
+// via require() in node.
 //
 // Notation accepted by the parser (the exact notation the four TFL courses
 // print, plus plain-ASCII aliases):
@@ -362,9 +364,9 @@
   // a set is inconsistent iff some way of resolving the wilds and re-using
   // universal premises leaves exactly one particular and an algebraic sum of
   // zero. For relational arguments the engine reports what it can prove:
-  // 'valid' (traced derivation found), 'contradicted' (the conclusion's
-  // contradictory is derivable), or 'unknown' (D3's indirect proofs extend
-  // this reach).
+  // 'valid' (traced direct derivation or indirect proof found),
+  // 'contradicted' (the conclusion's contradictory is derivable), or
+  // 'unknown'.
 
   class EngineError extends Error {
     constructor(message) {
@@ -390,8 +392,8 @@
         validateTerm(t.head, 'rel-head');
         for (const o of t.objects) {
           if (o.level !== 0) throw new EngineError('quantity levels are not supported until D9');
-          if (o.sign === '±' && !(o.term.type === 'atom' && o.term.singular)) {
-            throw new EngineError('wild quantity (±) requires a singular term');
+          if (o.sign === '±' && !isFixedRef(o.term)) {
+            throw new EngineError('wild quantity (±) requires a singular term or proterm');
           }
           validateTerm(o.term, 'rel-object');
         }
@@ -407,8 +409,8 @@
       if (st.level !== 0) throw new EngineError('quantity levels are not supported until D9');
       validateTerm(st.term, 'top');
     }
-    if (p.subject.sign === '±' && !(p.subject.term.type === 'atom' && p.subject.term.singular)) {
-      throw new EngineError('wild quantity (±) requires a singular subject');
+    if (p.subject.sign === '±' && !isFixedRef(p.subject.term)) {
+      throw new EngineError('wild quantity (±) requires a singular or proterm subject');
     }
     if (p.predicate.sign === '±') {
       throw new EngineError('± cannot sign a predicate (quality is + or −; write the quantity wild on the subject)');
@@ -423,7 +425,12 @@
   // normalize to ± (for a singleton, some/every are the same claim — the
   // wild-quantity pun itself).
 
-  const isSingularAtom = (t) => t.type === 'atom' && t.singular;
+  // A proterm (D3, Course 2 L4): an atom whose name ends in a prime. Its
+  // reference is fixed by an antecedent, so it earns the same wild-quantity
+  // treatment as a singular term — the all/some distinction collapses on
+  // fixed reference. "Fixed reference" is the union of the two.
+  const isProtermName = (name) => name.endsWith("'");
+  const isFixedRef = (t) => t.type === 'atom' && (t.singular || isProtermName(t.name));
 
   function canonTerm(t) {
     switch (t.type) {
@@ -445,9 +452,21 @@
         els.sort((a, b) => (printST(a) < printST(b) ? -1 : printST(a) > printST(b) ? 1 : 0));
         return Compound(els);
       }
-      case 'rel':
-        return Rel(canonTerm(t.head),
-          t.objects.map((o) => ST(isSingularAtom(o.term) ? '±' : o.sign, canonTerm(o.term))));
+      case 'rel': {
+        const objects = t.objects.map((o) => {
+          const c = canonTerm(o.term);
+          return ST(isFixedRef(c) ? '±' : o.sign, c);
+        });
+        let head = canonTerm(t.head);
+        if (head.type === 'atom') {
+          // Identity pairing subscripts (Lov₁₂ on a 2-participant complex)
+          // say nothing — the bare head is the canonical spelling.
+          const { base, roles } = headRoles(head.name, objects.length + 1);
+          const name = makeHeadName(base, roles);
+          if (name !== head.name) head = Atom(name, head.singular);
+        }
+        return Rel(head, objects);
+      }
       case 'propterm':
         return PropTerm(t.inner.type === 'prop' ? canonProp(t.inner) : t.inner);
     }
@@ -456,20 +475,21 @@
   function canonProp(p) {
     const sTerm = canonTerm(p.subject.term);
     const qTerm = canonTerm(p.predicate.term);
-    const sSign = isSingularAtom(sTerm) ? '±' : p.subject.sign;
+    const sSign = isFixedRef(sTerm) ? '±' : p.subject.sign;
     const qSign = p.predicate.sign;
     // Conversion (Com): I-forms (+,+) and E-forms (−,−) commute; a wild
-    // singular subject joins in via whichever of its readings matches
-    // (±s*+P ⊣⊢ +P+s*, and ±s*−P ⊣⊢ −P−s*, sound on a singleton).
+    // fixed-reference subject (singular or proterm) joins in via whichever
+    // of its readings matches (±s*+P ⊣⊢ +P+s*, and ±s*−P ⊣⊢ −P−s*, sound
+    // on a singleton).
     const iLike = (sSign === '+' || sSign === '±') && qSign === '+';
     const eLike = (sSign === '-' || sSign === '±') && qSign === '-';
     if ((iLike || eLike) && termKeyRaw(qTerm) < termKeyRaw(sTerm)) {
       const base = iLike ? '+' : '-';
-      return Prop(ST(isSingularAtom(qTerm) ? '±' : base, qTerm), ST(base, sTerm));
+      return Prop(ST(isFixedRef(qTerm) ? '±' : base, qTerm), ST(base, sTerm));
     }
     // An un-swapped commutable side still normalizes its subject sign.
     if (iLike || eLike) {
-      return Prop(ST(isSingularAtom(sTerm) ? '±' : (iLike ? '+' : '-'), sTerm), ST(qSign, qTerm));
+      return Prop(ST(isFixedRef(sTerm) ? '±' : (iLike ? '+' : '-'), sTerm), ST(qSign, qTerm));
     }
     return Prop(ST(sSign, sTerm), ST(qSign, qTerm));
   }
@@ -651,55 +671,216 @@
     return results;
   }
 
+  // ════════════════════════════════════════════════════════════════════════
+  // D3 — Deep relational layer: the passive transformation with Course 2
+  // L3's symmetry guard, proterms (Course 2 L4), and the indirect-proof
+  // procedure (Course 3 L3).
+
+  // ── Pairing subscripts on relation heads ──────────────────────────────
+  //
+  // The courses' passive keeps the relation symbol and changes the English
+  // gloss ("teaches" → "is taught by") — sound reading-to-reading, but a
+  // formula must carry its roles itself. The courses' own device is the
+  // pairing subscript (Course 2 L4's S₁₂): a trailing run of subscript
+  // digits on the head, one per participant in formula order (subject
+  // first, then objects), naming the relation slot each participant fills.
+  // A bare head is the identity pairing; a run that isn't a permutation of
+  // 1..n (or has the wrong length) is not pairing notation and stays part
+  // of the name.
+
+  function headRoles(name, arity) {
+    const m = /^(.+?)([₀₁₂₃₄₅₆₇₈₉]+)$/u.exec(name);
+    if (m && m[2].length === arity) {
+      const roles = [...m[2]].map((c) => SUBSCRIPTS.indexOf(c));
+      const sorted = [...roles].sort((a, b) => a - b);
+      if (sorted.every((r, i) => r === i + 1)) return { base: m[1], roles };
+    }
+    return { base: name, roles: Array.from({ length: arity }, (_, i) => i + 1) };
+  }
+
+  const makeHeadName = (base, roles) =>
+    roles.every((r, i) => r === i + 1)
+      ? base
+      : base + roles.map((r) => SUBSCRIPTS[r]).join('');
+
+  // ── The passive transformation (Course 2 L3) ──────────────────────────
+  //
+  // Swap the subject with one of the relational complex's objects; signs
+  // travel with their terms; the head keeps the relation but records the
+  // participant permutation in pairing subscripts (roles are carried by
+  // the subscripts, scope by subject position). The symmetry guard says
+  // when the swap preserves logical content: every pair of participants
+  // whose relative scope order changes must share a quantity sign or have
+  // a fixed-reference member (singular/proterm ±) — ∀∀ and ∃∃ commute,
+  // fixed reference has no scope; a −/+ crossing is the ∀∃/∃∀ trap.
+
+  const slotQuantity = (st) => (isFixedRef(st.term) ? '±' : st.sign);
+  const scopeCommutes = (a, b) => a === b || a === '±' || b === '±';
+
+  // A proposition and, for I- and E-forms, its converse — the two
+  // orientations conversion treats as the same statement.
+  function orientations(p) {
+    const sSign = slotQuantity(p.subject), qSign = p.predicate.sign;
+    const iLike = (sSign === '+' || sSign === '±') && qSign === '+';
+    const eLike = (sSign === '-' || sSign === '±') && qSign === '-';
+    if (!iLike && !eLike) return [p];
+    const base = iLike ? '+' : '-';
+    return [p, Prop(ST(isFixedRef(p.predicate.term) ? '±' : base, p.predicate.term),
+                    ST(base, p.subject.term))];
+  }
+
+  // All passives of a proposition (each object slot of a top-level
+  // relational predicate, in either orientation), tagged with the
+  // symmetry-guard verdict. Only `equivalent: true` results are inference-
+  // grade; the rest are the scope traps.
+  function passives(p) {
+    const out = [];
+    const seen = new Set();
+    for (const q of orientations(p)) {
+      if (q.predicate.sign !== '+' || q.predicate.term.type !== 'rel') continue;
+      const r = q.predicate.term;
+      const n = r.objects.length + 1;
+      if (r.head.type !== 'atom' || n > 9) continue;
+      const { base, roles } = headRoles(r.head.name, n);
+      const parts = [slotQuantity(q.subject), ...r.objects.map(slotQuantity)];
+      for (let k = 1; k < n; k++) {
+        // Swapping participants 0 and k reorders 0 and k against each
+        // other and both against everything strictly between them.
+        let equivalent = scopeCommutes(parts[0], parts[k]);
+        for (let i = 1; i < k && equivalent; i++) {
+          equivalent = scopeCommutes(parts[0], parts[i]) && scopeCommutes(parts[i], parts[k]);
+        }
+        const objects = r.objects.map((o) => ST(o.sign, o.term));
+        const newSubject = ST(objects[k - 1].sign, objects[k - 1].term);
+        objects[k - 1] = ST(q.subject.sign, q.subject.term);
+        const roles2 = roles.slice();
+        [roles2[0], roles2[k]] = [roles2[k], roles2[0]];
+        const head = Atom(makeHeadName(base, roles2), r.head.singular);
+        const prop = Prop(newSubject, ST('+', Rel(head, objects)));
+        const key = propKey(prop);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push({ prop, equivalent, swapped: k });
+      }
+    }
+    return out;
+  }
+
+  // ── Pronominalization (Course 3 L3) ───────────────────────────────────
+  //
+  // A particular statement hands out witnesses; rewrite it with fresh
+  // proterms fixing them, plus one anchor ±T'+T per witness. Witnesses are
+  // the general atoms the statement's existential force reaches: a '+'
+  // general-atom subject, and — through a '+' quality — atoms at '+'
+  // object slots of relational complexes, nested rels included. Universal
+  // slots, negations, heads and bracket interiors hand out nothing;
+  // singulars and proterms need no introduction. Universal statements
+  // (subject '−') cannot be pronominalized at all — they assert no
+  // witness. Returns { prop, anchors } or null; NOT an entailment (it
+  // introduces names — Skolemization), so it lives in indirect proofs
+  // only, never in direct derivation.
+  function pronominalize(p, used = new Set()) {
+    validateProp(p);
+    collectNames(p, used);
+    const attempt = (q) => {
+      if (q.subject.sign === '-') return null;
+      const anchors = [];
+      const names = [];
+      const fresh = (base) => {
+        let name = base + "'";
+        while (used.has(name) || names.includes(name)) name += "'";
+        names.push(name);
+        return name;
+      };
+      const isWitness = (t) => t.type === 'atom' && !t.singular && !isProtermName(t.name);
+      const mark = (t) => {
+        const pro = Atom(fresh(t.name));
+        anchors.push(Prop(ST('±', pro), ST('+', t)));
+        return pro;
+      };
+      const walkRel = (t) => Rel(t.head, t.objects.map((o) => {
+        if (o.sign !== '+' || o.level !== 0) return o;
+        if (isWitness(o.term)) return ST('±', mark(o.term));
+        if (o.term.type === 'rel') return ST('+', walkRel(o.term));
+        return o;
+      }));
+      let subject = q.subject;
+      if (subject.sign === '+' && isWitness(subject.term)) {
+        subject = ST('±', mark(subject.term));
+      } else if (subject.sign === '+' && subject.term.type === 'rel') {
+        subject = ST('+', walkRel(subject.term));
+      }
+      let predicate = q.predicate;
+      if (predicate.sign === '+' && predicate.term.type === 'rel') {
+        predicate = ST('+', walkRel(predicate.term));
+      }
+      return anchors.length ? { prop: Prop(subject, predicate), anchors, names } : null;
+    };
+    // Conversion may have hidden the richer orientation (canonical I-forms
+    // can put the complex in subject position); take the one that fixes
+    // the most witnesses.
+    const results = orientations(p).map(attempt).filter(Boolean);
+    if (results.length === 0) return null;
+    const best = results.reduce((a, b) => (b.anchors.length > a.anchors.length ? b : a));
+    best.names.forEach((n) => used.add(n));
+    return { prop: best.prop, anchors: best.anchors };
+  }
+
+  function collectNames(p, set) {
+    const walk = (t) => {
+      switch (t.type) {
+        case 'atom': set.add(t.name); return;
+        case 'neg': return walk(t.term);
+        case 'compound': return t.elements.forEach((e) => walk(e.term));
+        case 'rel': walk(t.head); return t.objects.forEach((o) => walk(o.term));
+        case 'propterm':
+          if (t.inner.type === 'prop') { walk(t.inner.subject.term); walk(t.inner.predicate.term); }
+          else walk(t.inner);
+      }
+    };
+    walk(p.subject.term);
+    walk(p.predicate.term);
+  }
+
   // ── Traced derivation search ──────────────────────────────────────────
 
-  // Forward-chaining saturation from the premises (plus tautology lines for
-  // the argument's own terms), fuel-bounded. Returns the goal's pruned
-  // ancestry: lines of { n, prop, text, rule, parents } with 1-based numbers.
-  function derive(premises, goal, opts = {}) {
-    premises.forEach(validateProp);
-    validateProp(goal);
+  // Forward-chaining saturation, fuel-bounded and shared by direct and
+  // indirect proof search. `setup(push)` seeds the initial lines (push
+  // returns the line's index, existing lines deduplicating); `onNewLine`
+  // inspects each genuinely new line and returns a non-null hit to stop.
+  // Rules applied: IN, Contrap, Simp, guarded Pass (unary); DON, Add
+  // (binary). Everything pushed must already be canonical.
+  function saturate(opts, setup, onNewLine) {
     const maxLines = opts.maxLines || 400;
-    const sizeCap = Math.max(...premises.map(propNodes), propNodes(goal)) + (opts.slack || 8);
-
-    const goalCanon = canonProp(goal);
-    const goalKey = printProposition(goalCanon);
-
     const lines = [];
     const seen = new Map(); // key → line index
+    let hit = null;
     const push = (prop, rule, parents) => {
       const key = printProposition(prop);
-      if (seen.has(key)) return null;
-      if (propNodes(prop) > sizeCap) return null;
-      const line = { prop, key, rule, parents };
-      seen.set(key, lines.length);
-      lines.push(line);
-      return line;
+      if (seen.has(key)) return seen.get(key);
+      if (propNodes(prop) > opts.sizeCap) return null;
+      const idx = lines.length;
+      seen.set(key, idx);
+      lines.push({ prop, key, rule, parents });
+      if (!hit) hit = onNewLine(idx, lines[idx], seen);
+      return idx;
     };
-
-    for (const p of premises) push(canonProp(p), 'premise', []);
-    // Tautology lines for every term the argument mentions.
-    const tautTerms = new Map();
-    for (const p of [...premises, goal]) {
-      for (const occ of occurrences(canonProp(p))) tautTerms.set(termKey(occ.term), occ.term);
-    }
-    for (const t of tautTerms.values()) push(tautology(t), 'It', []);
-
-    if (seen.has(goalKey)) return extract(lines, seen.get(goalKey));
-
-    for (let i = 0; i < lines.length && lines.length < maxLines; i++) {
+    setup(push);
+    for (let i = 0; !hit && i < lines.length && lines.length < maxLines; i++) {
       const li = lines[i];
       const unary = [
         [obverse(li.prop), 'IN'],
         [contrapositive(li.prop), 'Contrap'],
         ...applySimp(li.prop).map((p) => [p, 'Simp']),
+        ...passives(li.prop).filter((r) => r.equivalent)
+                            .map((r) => [canonProp(r.prop), 'Pass']),
       ];
       for (const [p, rule] of unary) {
-        if (p && push(p, rule, [i]) && printProposition(p) === goalKey) {
-          return extract(lines, lines.length - 1);
-        }
+        if (!p) continue;
+        push(p, rule, [i]);
+        if (hit) break;
       }
-      for (let j = 0; j < i && lines.length < maxLines; j++) {
+      for (let j = 0; !hit && j < i && lines.length < maxLines; j++) {
         const lj = lines[j];
         const binary = [
           ...applyDON(li.prop, lj.prop).map((p) => [p, 'DON', [i, j]]),
@@ -707,35 +888,109 @@
           ...applyAdd(li.prop, lj.prop).map((p) => [p, 'Add', [i, j]]),
         ];
         for (const [p, rule, parents] of binary) {
-          if (push(p, rule, parents) && printProposition(p) === goalKey) {
-            return extract(lines, lines.length - 1);
-          }
+          push(p, rule, parents);
+          if (hit) break;
         }
       }
     }
-    return { found: false, lines: [] };
+    return { lines, hit };
   }
 
-  // Prune to the goal's ancestry and renumber.
-  function extract(lines, goalIdx) {
+  // Tautology lines (It) for every term the argument mentions.
+  function mentionedTerms(props) {
+    const map = new Map();
+    for (const p of props) {
+      for (const occ of occurrences(canonProp(p))) map.set(termKey(occ.term), occ.term);
+    }
+    return map.values();
+  }
+
+  // Direct derivation of a goal from premises. Returns the goal's pruned
+  // ancestry: lines of { n, prop, text, rule, parents } with 1-based numbers.
+  function derive(premises, goal, opts = {}) {
+    premises.forEach(validateProp);
+    validateProp(goal);
+    const sizeCap = Math.max(...premises.map(propNodes), propNodes(goal)) + (opts.slack || 8);
+    const goalKey = printProposition(canonProp(goal));
+    const { lines, hit } = saturate(
+      { maxLines: opts.maxLines, sizeCap },
+      (push) => {
+        for (const p of premises) push(canonProp(p), 'premise', []);
+        for (const t of mentionedTerms([...premises, goal])) push(tautology(t), 'It', []);
+      },
+      (idx, line) => (line.key === goalKey ? { roots: [idx] } : null));
+    return hit ? extract(lines, hit.roots) : { found: false, lines: [] };
+  }
+
+  // ── Indirect proof (Course 3 L3) ──────────────────────────────────────
+  //
+  // Assume the counterclaim — the premises plus the contradictory of the
+  // conclusion — pronominalize its particular statements (fresh proterms +
+  // anchors), and saturate until some line's contradictory is already on
+  // the board: a fixed witness asserted and denied the same thing.
+  // Success refutes the counterclaim, so by PV the argument is valid.
+  // Sound by Skolemization (pronominalization preserves satisfiability;
+  // every other rule is truth-preserving), which is why pronominalization
+  // happens only here, at setup — it is not an entailment step.
+  function indirectProof(premises, conclusion, opts = {}) {
+    premises.forEach(validateProp);
+    validateProp(conclusion);
+    const cc = [...premises, contradictory(conclusion)];
+    const sizeCap = Math.max(...cc.map(propNodes)) + (opts.slack || 8);
+    const used = new Set();
+    cc.forEach((p) => collectNames(p, used));
+    const { lines, hit } = saturate(
+      { maxLines: opts.maxLines, sizeCap },
+      (push) => {
+        const idxs = cc.map((p, i) =>
+          push(canonProp(p), i < premises.length ? 'premise' : 'counterclaim', []));
+        cc.forEach((p, i) => {
+          const pron = pronominalize(p, used);
+          if (!pron) return;
+          push(canonProp(pron.prop), 'Pron', [idxs[i]]);
+          for (const a of pron.anchors) push(canonProp(a), 'Anchor', [idxs[i]]);
+        });
+        for (const t of mentionedTerms(cc)) push(tautology(t), 'It', []);
+      },
+      (idx, line, seen) => {
+        const ck = printProposition(contradictory(line.prop));
+        const other = seen.get(ck);
+        return other !== undefined && other !== idx ? { roots: [other, idx] } : null;
+      });
+    if (!hit) return { found: false, lines: [] };
+    return extract(lines, hit.roots,
+      { text: '⊥', rule: 'contradiction', parents: hit.roots });
+  }
+
+  // Prune to the given roots' ancestry and renumber; `closing` appends a
+  // synthetic final line (the ⊥ of an indirect proof).
+  function extract(lines, roots, closing) {
     const keep = new Set();
-    (function mark(i) {
+    const mark = (i) => {
       if (keep.has(i)) return;
       keep.add(i);
       lines[i].parents.forEach(mark);
-    })(goalIdx);
+    };
+    roots.forEach(mark);
     const order = [...keep].sort((a, b) => a - b);
     const renum = new Map(order.map((idx, n) => [idx, n + 1]));
-    return {
-      found: true,
-      lines: order.map((idx) => ({
-        n: renum.get(idx),
-        prop: lines[idx].prop,
-        text: lines[idx].key,
-        rule: lines[idx].rule,
-        parents: lines[idx].parents.map((p) => renum.get(p)),
-      })),
-    };
+    const out = order.map((idx) => ({
+      n: renum.get(idx),
+      prop: lines[idx].prop,
+      text: lines[idx].key,
+      rule: lines[idx].rule,
+      parents: lines[idx].parents.map((p) => renum.get(p)),
+    }));
+    if (closing) {
+      out.push({
+        n: out.length + 1,
+        prop: null,
+        text: closing.text,
+        rule: closing.rule,
+        parents: closing.parents.map((p) => renum.get(p)),
+      });
+    }
+    return { found: true, lines: out };
   }
 
   // ── The inconsistency decision for the atomic-categorical fragment ─────
@@ -749,14 +1004,21 @@
   //   - particulars (subject + or wild) become "points" — individuals with
   //     two known literals; a wild statement contributes both readings,
   //     which is exactly what wild quantity means on a singleton;
-  //   - every singular term seeds a point of its own (names denote);
-  //   - points close under the implications; points sharing a positive
-  //     singular literal are the same individual and merge; the set is
-  //     inconsistent iff some point ends up with a literal and its negation.
+  //   - every singular term or proterm seeds a point of its own (names and
+  //     fixed references denote);
+  //   - each point must satisfy the implications as a 2-SAT instance —
+  //     genuine case splits included, not just unit propagation: the
+  //     closure alone misses forced literals like B in {B→¬B, ¬B→¬A,
+  //     ¬A→B} (either way the point is B — the D3 fuzzer caught the
+  //     closure-only version);
+  //   - a point forced (2-SAT backbone) to carry a positive fixed-reference
+  //     literal is that named individual: points sharing one merge; the set
+  //     is inconsistent iff some point's 2-SAT instance is unsatisfiable.
   //
-  // No existential import: general terms may be empty (universals alone
-  // never clash), and the model built from consistent points witnesses
-  // consistency directly.
+  // No existential import anywhere, the world included: general terms may
+  // be empty, and with no particular and no name there is no individual at
+  // all, so universals alone never clash. A consistent point assignment
+  // witnesses consistency directly.
   //
   // The zero-sum cancellation of P/Z is reported as a certificate when one
   // exists — it is the course's display form of the same fact — but the
@@ -799,29 +1061,58 @@
       }
       if (p.subject.sign === '+' || wild) points.push(new Set([sK, qK]));
       for (const occ of occurrences(p)) {
-        if (occ.term.type === 'atom' && occ.term.singular) singulars.add(occ.term.name);
+        if (isFixedRef(occ.term)) singulars.add(litKey({ ...occ.term, pol: true }));
       }
     }
-    for (const name of singulars) points.push(new Set([`+${name}*`]));
+    for (const key of singulars) points.push(new Set([key]));
 
-    const close = (set) => {
-      let grew = true;
-      while (grew) {
-        grew = false;
+    // Is `units` + the implications satisfiable? Unit propagation plus a
+    // case split — completeness needs the splits (see the banner comment).
+    const sat = (units) => {
+      const assign = new Map(); // var (key minus sign) → bool
+      const queue = [...units];
+      while (queue.length) {
+        const k = queue.pop();
+        const v = k.slice(1), pol = k[0] === '+';
+        if (assign.has(v)) {
+          if (assign.get(v) !== pol) return false;
+          continue;
+        }
+        assign.set(v, pol);
         for (const { from, to } of implications) {
-          if (set.has(from) && !set.has(to)) { set.add(to); grew = true; }
+          if (from === k) queue.push(to);
+          if (to === negKey(k)) queue.push(negKey(from));
         }
       }
+      for (const { from } of implications) {
+        const v = from.slice(1);
+        if (assign.has(v)) continue;
+        return sat([...unitsOf(assign), from]) || sat([...unitsOf(assign), negKey(from)]);
+      }
+      return true;
     };
-    // Close, merge points that share a positive singular literal, repeat.
+    const unitsOf = (assign) => [...assign].map(([v, pol]) => (pol ? '+' : '-') + v);
+
+    // Fixpoint: a point forced to carry a positive fixed-reference literal
+    // (2-SAT backbone) is that named individual — make the literal an
+    // explicit unit, then merge points sharing one.
+    const fixedLits = [...singulars];
     let changed = true;
     while (changed) {
       changed = false;
-      points.forEach(close);
+      for (const point of points) {
+        for (const L of fixedLits) {
+          if (!point.has(L) && !sat([...point, negKey(L)])) {
+            point.add(L);
+            changed = true;
+          }
+        }
+      }
       outer:
       for (let i = 0; i < points.length; i++) {
         for (let j = i + 1; j < points.length; j++) {
-          const shared = [...points[i]].some((k) => k[0] === '+' && k.endsWith('*') && points[j].has(k));
+          const shared = [...points[i]].some((k) =>
+            k[0] === '+' && (k.endsWith('*') || isProtermName(k)) && points[j].has(k));
           if (shared) {
             for (const k of points[j]) points[i].add(k);
             points.splice(j, 1);
@@ -832,11 +1123,11 @@
       }
     }
     for (const point of points) {
-      const clash = [...point].find((k) => point.has(negKey(k)));
-      if (clash) {
+      if (!sat([...point])) {
+        const clash = [...point].find((k) => point.has(negKey(k)));
         return {
           point: [...point],
-          clash: [clash, negKey(clash)],
+          clash: clash ? [clash, negKey(clash)] : null,
           cancellation: findCancellation(canon),
         };
       }
@@ -915,8 +1206,8 @@
   // Atomic-categorical arguments get the complete verdict via the
   // counterclaim test (Sommers' REGAL, decided by the closure). Everything
   // else — relational complexes, compound or propositional term cores —
-  // gets what direct derivation can establish: valid / contradicted /
-  // unknown (D3's indirect proofs extend the reach).
+  // gets what proof search can establish: valid (direct derivation, then
+  // indirect proof) / contradicted / unknown.
   function checkArgument(premises, conclusion, opts = {}) {
     premises.forEach(validateProp);
     validateProp(conclusion);
@@ -929,8 +1220,12 @@
     }
     const proof = derive(premises, conclusion, opts);
     if (proof.found) return { verdict: 'valid', method: 'derivation', proof };
+    const indirect = indirectProof(premises, conclusion, opts);
+    if (indirect.found) return { verdict: 'valid', method: 'indirect', proof: indirect };
     const refutation = derive(premises, contradictory(conclusion), opts);
     if (refutation.found) return { verdict: 'contradicted', method: 'derivation', proof: refutation };
+    const indirectRef = indirectProof(premises, contradictory(conclusion), opts);
+    if (indirectRef.found) return { verdict: 'contradicted', method: 'indirect', proof: indirectRef };
     return { verdict: 'unknown', method: 'derivation' };
   }
 
@@ -944,5 +1239,8 @@
     contradictory, obverse, contrapositive, tautology,
     occurrences, applyDON, applySimp, applyAdd,
     derive, checkInconsistent, checkArgument,
+    // D3 — deep relational layer
+    isProtermName, isFixedRef, headRoles,
+    passives, pronominalize, indirectProof,
   };
 });

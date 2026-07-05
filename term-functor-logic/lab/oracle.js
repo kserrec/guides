@@ -1,18 +1,24 @@
-// oracle.js — D2 correctness oracle: finite-model semantics for the lab's
-// TFL fragment, plus the fuzz harness comparing the engine's syntactic
-// verdicts against semantic truth. Node-only.
+// oracle.js — D2/D3 correctness oracle: finite-model semantics for the
+// lab's TFL fragment, plus the fuzz harness comparing the engine's
+// syntactic verdicts against semantic truth. Node-only.
 //
 //   node oracle.js            quick run (1000 iterations per suite)
 //   node oracle.js -n 20000   the long haul
 //
 // Semantics (no existential import anywhere):
 //   - a model is a domain {0..n-1}, a subset for every unary atom, a
-//     singleton for every singular atom, and a (k+1)-ary relation for every
-//     atom used as a relation head with k objects;
+//     singleton for every singular atom AND every proterm (fixed reference
+//     denotes), and a (k+1)-ary relation for every relation-head base with
+//     k objects; the empty domain is a model too, unless some singular or
+//     proterm occurs — names need a world, nothing else does;
 //   - term denotations: negation = complement, compounds intersect (a −
 //     element intersects the complement), a relational complex (R s₁T₁ … )
 //     denotes the x's related by R to the objects — + object = some T,
-//     − object = every T, quantifiers read left to right;
+//     − object = every T, quantifiers read left to right (subject
+//     position = widest scope); pairing subscripts on the head (Lov₂₁,
+//     from the passive transformation) name the relation slot each
+//     participant fills — roles come from the subscripts, scope from the
+//     formula position;
 //   - propositional terms [p] denote the whole domain when the inner
 //     statement is true and ∅ otherwise (the singleton-universe pun);
 //   - ±S+P: quantity + = some, − = every; wild ± = some (equivalent to
@@ -21,13 +27,19 @@
 //
 // The fuzz suites:
 //   1. categorical exactness — checkArgument's P/Z verdict must equal
-//      semantic entailment on random categorical arguments (this fragment
-//      claims a complete decision method);
+//      semantic entailment on random categorical arguments, proterms
+//      included (this fragment claims a complete decision method);
 //   2. rule-step soundness — every single rewrite the engine's rules
-//      produce (DON, IN, Contrap, Simp, Add, It) must be semantically
-//      entailed by its parents, relational hosts included;
+//      produce (DON, IN, Contrap, Simp, Add, It, guarded Pass) must be
+//      semantically entailed by its parents, relational hosts included;
 //   3. relational derivations — whenever derive() finds a proof, no small
-//      model may satisfy the premises and refute the conclusion.
+//      model may satisfy the premises and refute the conclusion;
+//   4. passive equivalence — every guard-approved passive must be a
+//      semantic equivalence (both directions), and the two deterministic
+//      scope traps from Course 2 L3 must have counter-models;
+//   5. indirect-proof soundness — whenever indirectProof() refutes a
+//      counterclaim, no small model may satisfy the premises and refute
+//      the conclusion.
 
 'use strict';
 
@@ -36,7 +48,10 @@ const {
   Atom, Neg, Compound, Rel, PropTerm, ST, Prop,
   parseProposition, printProposition, canonProp, contradictory,
   checkArgument, derive, obverse, contrapositive,
+  headRoles, isProtermName, passives, indirectProof,
 } = TFL;
+
+const isFixedName = (t) => t.singular || isProtermName(t.name);
 
 // ── Vocabulary extraction ─────────────────────────────────────────────────
 
@@ -45,8 +60,10 @@ function vocabOf(props) {
   const walkTerm = (t, asHead, arity) => {
     switch (t.type) {
       case 'atom':
-        if (asHead) rels.set(`${t.name}/${arity}`, { name: t.name, arity });
-        else (t.singular ? singular : unary).add(t.name);
+        if (asHead) {
+          const { base } = headRoles(t.name, arity);
+          rels.set(`${base}/${arity}`, { name: base, arity });
+        } else (isFixedName(t) ? singular : unary).add(t.name);
         return;
       case 'neg': return walkTerm(t.term, false, 0);
       case 'compound': return t.elements.forEach((e) => walkTerm(e.term, false, 0));
@@ -71,7 +88,7 @@ function vocabOf(props) {
 function evalTerm(t, m) {
   switch (t.type) {
     case 'atom':
-      if (t.singular) return 1 << m.singular[t.name];
+      if (isFixedName(t)) return 1 << m.singular[t.name];
       return m.unary[t.name];
     case 'neg':
       return m.full & ~evalTerm(t.term, m);
@@ -85,7 +102,11 @@ function evalTerm(t, m) {
     }
     case 'rel': {
       if (t.head.type !== 'atom') throw new Error('oracle: only atomic relation heads are modeled');
-      const rel = m.rels[`${t.head.name}/${t.objects.length + 1}`];
+      const arity = t.objects.length + 1;
+      const { base, roles } = headRoles(t.head.name, arity);
+      const rel = m.rels[`${base}/${arity}`];
+      // Participant i (subject = 0, then objects) fills slot roles[i];
+      // quantifiers still read left to right — roles never change scope.
       const check = (objIdx, tuple) => {
         if (objIdx === t.objects.length) return rel.has(tuple.join(','));
         const o = t.objects[objIdx];
@@ -93,14 +114,20 @@ function evalTerm(t, m) {
         const every = o.sign === '-';
         for (let y = 0; y < m.n; y++) {
           if (!(den & (1 << y))) continue;
-          const hit = check(objIdx + 1, tuple.concat(y));
+          const next = tuple.slice();
+          next[roles[objIdx + 1] - 1] = y;
+          const hit = check(objIdx + 1, next);
           if (every && !hit) return false;
           if (!every && hit) return true;
         }
         return every; // ∀ over the empty denotation holds; ∃ fails
       };
       let mask = 0;
-      for (let x = 0; x < m.n; x++) if (check(0, [x])) mask |= 1 << x;
+      for (let x = 0; x < m.n; x++) {
+        const tuple = new Array(arity);
+        tuple[roles[0] - 1] = x;
+        if (check(0, tuple)) mask |= 1 << x;
+      }
       return mask;
     }
     case 'propterm': {
@@ -172,7 +199,10 @@ function allTuples(n, arity) {
 }
 
 let seed = 20260704;
-const rand = (k) => (seed = (seed * 1103515245 + 12345) & 0x7fffffff, seed % k);
+// Use the LCG's high bits: with a power-of-two modulus the low bits are
+// (nearly) periodic, and a rigid rand(2)/rand(3) call pattern then loops
+// through a handful of formulas instead of sampling the space.
+const rand = (k) => (seed = (seed * 1103515245 + 12345) & 0x7fffffff, (seed >>> 16) % k);
 
 function randomModel(vocab, n) {
   const full = (1 << n) - 1;
@@ -192,7 +222,10 @@ function randomModel(vocab, n) {
 // cap models per size).
 function counterModel(premises, conclusion, { maxN = 3, cap = 300000 } = {}) {
   const vocab = vocabOf([...premises, conclusion]);
-  for (let n = 1; n <= maxN; n++) {
+  // n = 0 is a real model when nothing denotes: no existential import
+  // anywhere, the world included. (With singulars/proterms in the
+  // vocabulary, fillSing yields nothing at n = 0 — names need a world.)
+  for (let n = 0; n <= maxN; n++) {
     for (const m of models(vocab, n, cap)) {
       if (premises.every((p) => evalProp(p, m)) && !evalProp(conclusion, m)) return m;
     }
@@ -204,7 +237,7 @@ const entails = (premises, conclusion, opts) => counterModel(premises, conclusio
 
 const consistent = (props, { maxN = 3, cap = 300000 } = {}) => {
   const vocab = vocabOf(props);
-  for (let n = 1; n <= maxN; n++) {
+  for (let n = 0; n <= maxN; n++) {
     for (const m of models(vocab, n, cap)) {
       if (props.every((p) => evalProp(p, m))) return true;
     }
@@ -214,31 +247,36 @@ const consistent = (props, { maxN = 3, cap = 300000 } = {}) => {
 
 // ── Random formula generation ─────────────────────────────────────────────
 
-// Atomic-categorical: atoms under 0–2 negations, singular subjects and
-// predicates included — the fragment where the engine claims a complete
-// decision.
-function randomAtomicTerm(atoms, singulars) {
-  const t = singulars.length && rand(6) === 0
-    ? Atom(singulars[rand(singulars.length)], true)
-    : Atom(atoms[rand(atoms.length)]);
+// Fixed-reference vocabulary: a singular and a proterm — both denote
+// singletons, both take ±.
+const FIXED = [{ name: 's', singular: true }, { name: "t'", singular: false }];
+const randFixedAtom = () => {
+  const f = FIXED[rand(FIXED.length)];
+  return Atom(f.name, f.singular);
+};
+
+// Atomic-categorical: atoms under 0–2 negations, singular and proterm
+// subjects and predicates included — the fragment where the engine claims
+// a complete decision.
+function randomAtomicTerm(atoms) {
+  const t = rand(6) === 0 ? randFixedAtom() : Atom(atoms[rand(atoms.length)]);
   const negs = rand(4) === 0 ? 1 + rand(2) : 0;
   let out = t;
   for (let i = 0; i < negs; i++) out = Neg(out);
   return out;
 }
 
-function randomCategoricalProp(atoms, singulars) {
-  const useSing = singulars.length > 0 && rand(4) === 0;
-  const subject = useSing
-    ? ST('±', Atom(singulars[rand(singulars.length)], true))
-    : ST(rand(2) ? '+' : '-', randomAtomicTerm(atoms, singulars));
-  const predicate = ST(rand(2) ? '+' : '-', randomAtomicTerm(atoms, singulars));
+function randomCategoricalProp(atoms) {
+  const subject = rand(4) === 0
+    ? ST('±', randFixedAtom())
+    : ST(rand(2) ? '+' : '-', randomAtomicTerm(atoms));
+  const predicate = ST(rand(2) ? '+' : '-', randomAtomicTerm(atoms));
   return Prop(subject, predicate);
 }
 
-function randomRelationalProp(atoms, singulars, relName) {
+function randomRelationalProp(atoms, relName) {
   const obj = () => {
-    if (singulars.length && rand(3) === 0) return ST('±', Atom(singulars[rand(singulars.length)], true));
+    if (rand(3) === 0) return ST('±', randFixedAtom());
     return ST(rand(2) ? '+' : '-', Atom(atoms[rand(atoms.length)]));
   };
   const complex = (depth) => Rel(Atom(relName),
@@ -246,8 +284,8 @@ function randomRelationalProp(atoms, singulars, relName) {
   const side = (allowRel) =>
     allowRel && rand(2) ? ST(rand(2) ? '+' : '-', complex(1))
                         : ST(rand(2) ? '+' : '-', Atom(atoms[rand(atoms.length)]));
-  const subject = rand(4) === 0 && singulars.length
-    ? ST('±', Atom(singulars[rand(singulars.length)], true))
+  const subject = rand(4) === 0
+    ? ST('±', randFixedAtom())
     : side(rand(4) === 0);
   return Prop(subject.sign === '±' ? subject : ST(subject.sign, subject.term), side(true));
 }
@@ -256,12 +294,11 @@ function randomRelationalProp(atoms, singulars, relName) {
 
 function fuzzCategoricalExactness(iters, log) {
   const atoms = ['A', 'B', 'C'];
-  const singulars = ['s'];
   let mismatches = 0, valids = 0;
   for (let k = 0; k < iters; k++) {
     const nPrem = 1 + rand(3);
-    const premises = Array.from({ length: nPrem }, () => randomCategoricalProp(atoms, singulars));
-    const conclusion = randomCategoricalProp(atoms, singulars);
+    const premises = Array.from({ length: nPrem }, () => randomCategoricalProp(atoms));
+    const conclusion = randomCategoricalProp(atoms);
     const verdict = checkArgument(premises, conclusion).verdict; // 'valid' | 'invalid'
     // Counter-model domains: each particular needs at most one witness, so
     // n = 4 comfortably covers 1–3 premises plus the denied conclusion.
@@ -280,25 +317,24 @@ function fuzzCategoricalExactness(iters, log) {
 
 // Compound-bearing categorical props so Simp's conjunct-drops and Add's
 // compound intros face the oracle too.
-function randomCompoundProp(atoms, singulars) {
+function randomCompoundProp(atoms) {
   const compound = () => Compound(Array.from({ length: 2 + rand(2) }, () =>
-    ST(rand(3) ? '+' : '-', randomAtomicTerm(atoms, singulars))));
+    ST(rand(3) ? '+' : '-', randomAtomicTerm(atoms))));
   const side = () => rand(2) ? ST(rand(2) ? '+' : '-', compound())
-                             : ST(rand(2) ? '+' : '-', randomAtomicTerm(atoms, singulars));
+                             : ST(rand(2) ? '+' : '-', randomAtomicTerm(atoms));
   return Prop(side(), side());
 }
 
 function fuzzStepSoundness(iters, log) {
   const atoms = ['A', 'B'];
-  const singulars = ['s'];
   let bad = 0, steps = 0;
   for (let k = 0; k < iters; k++) {
     const roll = rand(3);
     const gen = () => roll === 0
-      ? randomRelationalProp(atoms, singulars, 'R')
+      ? randomRelationalProp(atoms, 'R')
       : roll === 1
-        ? randomCompoundProp(atoms, singulars)
-        : randomCategoricalProp(atoms, singulars);
+        ? randomCompoundProp(atoms)
+        : randomCategoricalProp(atoms);
     const a = gen(), b = gen();
     let results;
     try {
@@ -306,6 +342,8 @@ function fuzzStepSoundness(iters, log) {
         { p: obverse(a), parents: [a] },
         { p: contrapositive(a), parents: [a] },
         ...TFL.applySimp(a).map((p) => ({ p, parents: [a] })),
+        ...passives(a).filter((r) => r.equivalent)
+                      .map((r) => ({ p: canonProp(r.prop), parents: [a] })),
         ...TFL.applyDON(a, b).map((p) => ({ p, parents: [a, b] })),
         ...TFL.applyDON(b, a).map((p) => ({ p, parents: [a, b] })),
         ...TFL.applyAdd(a, b).map((p) => ({ p, parents: [a, b] })),
@@ -326,14 +364,13 @@ function fuzzStepSoundness(iters, log) {
 
 function fuzzRelationalDerivations(iters, log) {
   const atoms = ['A', 'B'];
-  const singulars = ['s'];
   let proved = 0, bad = 0;
   for (let k = 0; k < iters; k++) {
     const premises = [
-      randomRelationalProp(atoms, singulars, 'R'),
-      randomRelationalProp(atoms, singulars, 'R'),
+      randomRelationalProp(atoms, 'R'),
+      randomRelationalProp(atoms, 'R'),
     ];
-    const conclusion = randomRelationalProp(atoms, singulars, 'R');
+    const conclusion = randomRelationalProp(atoms, 'R');
     let proof;
     try { proof = derive(premises, conclusion, { maxLines: 120 }); }
     catch { continue; }
@@ -352,6 +389,90 @@ function fuzzRelationalDerivations(iters, log) {
   return { mismatches: bad, note: `${proved} proofs found in ${iters} tries` };
 }
 
+// Suite 4: passive equivalence. Deterministic scope traps from Course 2
+// L3 first — the mixed-sign passives must have counter-models — then fuzz:
+// every guard-approved passive must be model-equivalent to its source.
+function fuzzPassiveEquivalence(iters, log) {
+  let bad = 0, equivs = 0, traps = 0;
+  // Course 2 L3's own trap pairs, in explicit pairing-subscript form.
+  // ∀∃ vs ∃∀: one direction of each pair may still be a valid entailment
+  // (∃∀ does entail ∀∃) — what must fail is the equivalence.
+  for (const [active, naive] of [
+    ['−A+(R+B)', '+B+(R₂₁−A)'],
+    ['+A+(R−B)', '−B+(R₂₁+A)'],
+  ]) {
+    const a = parseProposition(active), q = parseProposition(naive);
+    if (entails([a], q, { maxN: 3, cap: 120000 }) &&
+        entails([q], a, { maxN: 3, cap: 120000 })) {
+      bad++;
+      log(`  SCOPE TRAP MISSED: ${active} is model-equivalent to ${naive}`);
+    }
+    const marked = passives(a).find((r) => TFL.propKey(r.prop) === TFL.propKey(q));
+    if (!marked || marked.equivalent) {
+      bad++;
+      log(`  GUARD FAILURE: passive of ${active} not flagged as non-equivalent`);
+    }
+  }
+  // Fuzz: 1–2 objects so the n-ary crossing guard is exercised too.
+  const atoms = ['A', 'B'];
+  for (let k = 0; k < iters; k++) {
+    const obj = () => rand(3) === 0
+      ? ST('±', randFixedAtom())
+      : ST(rand(2) ? '+' : '-', Atom(atoms[rand(atoms.length)]));
+    const nObj = 1 + rand(2);
+    const rel = Rel(Atom('R'), Array.from({ length: nObj }, obj));
+    const subject = rand(3) === 0
+      ? ST('±', randFixedAtom())
+      : ST(rand(2) ? '+' : '-', Atom(atoms[rand(atoms.length)]));
+    const p = Prop(subject, ST('+', rel));
+    let results;
+    try { results = passives(p); } catch { continue; }
+    for (const r of results) {
+      if (!r.equivalent) { traps++; continue; }
+      equivs++;
+      // maxN 2 keeps arity-3 relations enumerable; the ∀∃/∃∀ scope
+      // separations all show up by two elements.
+      if (!entails([p], r.prop, { maxN: 2, cap: 60000 }) ||
+          !entails([r.prop], p, { maxN: 2, cap: 60000 })) {
+        bad++;
+        log(`  NOT EQUIVALENT: ${printProposition(p)} vs ${printProposition(r.prop)}`);
+        if (bad >= 5) return { mismatches: bad, note: `${equivs} equivalences` };
+      }
+    }
+  }
+  return { mismatches: bad, note: `${equivs} equivalences, ${traps} guarded off` };
+}
+
+// Suite 5: indirect-proof soundness — a found refutation of the
+// counterclaim must mean genuine entailment (Skolemization soundness,
+// checked model-theoretically).
+function fuzzIndirectProofs(iters, log) {
+  const atoms = ['A', 'B'];
+  let proved = 0, bad = 0;
+  for (let k = 0; k < iters; k++) {
+    const premises = [
+      randomRelationalProp(atoms, 'R'),
+      randomRelationalProp(atoms, 'R'),
+    ];
+    const conclusion = randomRelationalProp(atoms, 'R');
+    let proof;
+    try { proof = indirectProof(premises, conclusion, { maxLines: 150 }); }
+    catch { continue; }
+    if (!proof.found) continue;
+    proved++;
+    const counter = counterModel(premises, conclusion, { maxN: 3, cap: 120000 });
+    if (counter) {
+      bad++;
+      log('  UNSOUND indirect proof:');
+      premises.forEach((p) => log(`    premise    ${printProposition(p)}`));
+      log(`    conclusion ${printProposition(conclusion)}`);
+      proof.lines.forEach((l) => log(`    ${l.n}. ${l.text}  [${l.rule}${l.parents.length ? ' ' + l.parents.join(',') : ''}]`));
+      if (bad >= 3) break;
+    }
+  }
+  return { mismatches: bad, note: `${proved} refutations found in ${iters} tries` };
+}
+
 // ── CLI ───────────────────────────────────────────────────────────────────
 
 if (require.main === module) {
@@ -363,6 +484,8 @@ if (require.main === module) {
     ['categorical exactness', fuzzCategoricalExactness, 1],
     ['rule-step soundness', fuzzStepSoundness, 1],
     ['relational derivation soundness', fuzzRelationalDerivations, 1],
+    ['passive equivalence', fuzzPassiveEquivalence, 1],
+    ['indirect-proof soundness', fuzzIndirectProofs, 1],
   ]) {
     const t0 = Date.now();
     const { mismatches, note } = fn(Math.ceil(iters * scale), log);

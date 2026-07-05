@@ -304,11 +304,11 @@ their own submission. First real usage: Foundations Lesson 5 ("Write It Yourself
 
 `term-functor-logic/lab/` holds the engine for the coming TFL Lab — a term-logic
 programming language and Aristotelian database (see Track D in `ROADMAP.md` for the full
-design record, including the source papers). As of D2 it is **engine only**: no course
+design record, including the source papers). As of D3 it is **engine only**: no course
 page loads these files, so nothing here is user-visible yet. It follows the Lambda Lab
 split exactly — a pure-logic UMD module plus node-only dev harnesses.
 
-- **`tfl.js`** (`window.TFL` / `module.exports`) — two layers in one file:
+- **`tfl.js`** (`window.TFL` / `module.exports`) — three layers in one file:
   - *D1, parser + printer*: AST for terms (atoms with proterm primes and subscripts,
     singulars `Socrates*`, quoted multi-word terms, negatives `(−T)`, compounds
     `(+White+Horse)`, n-ary/nested relational complexes `(Lov+(Adm−Teacher))`,
@@ -321,24 +321,33 @@ split exactly — a pure-logic UMD module plus node-only dev harnesses.
     (EN) as an operation; DON is monotone net-sign substitution reaching inside
     complexes; `derive()` returns traced, fuel-bounded derivations; `checkArgument()`
     gives atomic-categorical arguments a complete valid/invalid decision (counterclaim
-    closure; the classic P/Z cancellation attached as a display certificate) and
-    relational/compound arguments valid/contradicted/unknown. No existential import
-    anywhere; wild ± only on singulars.
-- **`tfl.test.js`** — plain-assert suite (115 tests): notation round-trips, rule
-  behavior, the named derivations (horse's head, Twain/Clemens, nested faster-than…),
-  and oracle spot checks.
+    test via per-point 2-SAT with identity merging; the classic P/Z cancellation attached
+    as a display certificate) and relational/compound arguments
+    valid/contradicted/unknown. No existential import anywhere.
+  - *D3, deep relational layer*: the passive transformation with pairing-subscripted
+    heads (`Teaches₂₁` — roles in the subscripts, scope in subject position) and the
+    Course 2 L3 symmetry guard, applied in derivations as the `Pass` rule; proterms
+    (prime-suffixed atoms) as fixed reference with the full singular/wild treatment —
+    distributed proterms are D2's wild resolution; `pronominalize()` (Skolemization:
+    witnesses to fresh proterms plus `±T'+T` anchors) feeding `indirectProof()` —
+    counterclaim, pronominalize, saturate to a ⊥ pair — which `checkArgument` uses as
+    its fallback for both valid and contradicted verdicts.
+- **`tfl.test.js`** — plain-assert suite (138 tests): notation round-trips, rule
+  behavior, the named derivations (horse's head, Twain/Clemens, the boys-girls-cowards
+  indirect proof, scope traps…), and oracle spot checks.
 - **`oracle.js`** — the correctness oracle: finite-model semantics for the whole
-  fragment and three fuzz suites (categorical exactness, rule-step soundness, relational
-  derivation soundness). `node oracle.js -n 20000` is the long-haul gate; it has caught
-  real bugs (a DON wild-resolution unsoundness, flat P/Z incompleteness) and is the
-  reason to trust the engine. **Run it after any change to the inference layer.**
+  fragment (empty model included when nothing denotes) and five fuzz suites
+  (categorical exactness, rule-step soundness, relational derivation soundness, passive
+  equivalence, indirect-proof soundness). `node oracle.js -n 20000` is the long-haul
+  gate; it has caught real bugs (a DON wild-resolution unsoundness, two rounds of P/Z
+  incompleteness, and its own RNG feeding periodic low bits to the generators) and is
+  the reason to trust the engine. **Run it after any change to the inference layer.**
 - **`audit.js`** — the D1 acceptance harness: extracts every formula snippet from all
   four TFL curricula (631 of them) and classifies each (parsed / foreign / whitelisted),
   exiting nonzero on anything unexplained. It doubles as a regression gate when curricula
   are edited: new lesson content that prints notation the lab can't read will fail it.
 
-Remaining Track D steps (D3–D10, see the roadmap): deep relational layer (passive
-transformation, proterms, indirect proof), programs & queries, the Aristotelian
+Remaining Track D steps (D4–D10, see the roadmap): programs & queries, the Aristotelian
 explanation layer, the panel + full-page UI, lesson chips, a `tfl-expression` exercise
 kind, and numerical quantifiers.
 

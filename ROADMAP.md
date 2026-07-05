@@ -26,10 +26,10 @@ completion. If a step grows beyond that during execution, split it before starti
 | TFL: The Full Language | ✅ 7 lessons |
 | TFL: Relational Syllogisms (Course 3) | ✅ 3 lessons |
 | TFL: Statement Logic & MPL (Course 4) | ✅ 6 lessons — **TFL curriculum complete (24 lessons)** |
-| TFL Lab engine (Track D) | 🔶 D1–D2 done: parser/printer (63+ tests, all-curricula acceptance harness) + inference core (DON, immediate rules, two-tier validity, traced derivations, finite-model fuzz oracle). No UI yet (D6). |
+| TFL Lab engine (Track D) | 🔶 D1–D3 done: parser/printer (all-curricula acceptance harness), inference core (DON, immediate rules, two-tier validity, traced derivations), and the deep relational layer (guarded passive with pairing subscripts, proterms, indirect proof). 138 tests, five fuzz suites. No UI yet (D6). |
 
 Tracks A, B, and C are fully executed. Track D is in progress — language core first
-(D1 ✅, D2 ✅, next D3), UI and lesson integration after.
+(D1–D3 ✅, next D4), UI and lesson integration after.
 
 ### Strengths
 
@@ -318,11 +318,60 @@ bolted on. Learners get to *run* the algebra all four courses taught.
     entailment, 20k args), rule-step soundness (~92k steps incl. compound and relational
     hosts), relational-derivation soundness (~20k found proofs, no counter-model to n=3).
     All green after the two bugs above were fixed. 115 unit tests total.
-- **D3** 🔲 Deep relational layer: the passive transformation with Course 2 L3's symmetry
+- **D3** ✅ Deep relational layer: the passive transformation with Course 2 L3's symmetry
   guard (equivalent only when both participants share quantity or one is singular); proterms
   with fresh markers, anchors, and wild quantity; the indirect-proof procedure (counterclaim,
   pronominalize, derive a proterm contradiction). Tests: Course 3's 9-line worked proof,
   scope-trap cases where naive commuting is invalid.
+  Implementation notes (decisions made during execution):
+  - **The bare-notation passive is never formula-sound.** Swapping participants while
+    keeping the bare relation symbol claims the relation is symmetric — the courses fix
+    the reading in the English gloss ("teaches" → "is taught by"), which a formula cannot
+    carry. The engine emits the courses' own suppressed device explicitly: pairing
+    subscripts on the head (Course 2 L4's `S₁₂`), so the passive of
+    `−Philosopher+(Teaches+Student)` is `+Student+(Teaches₂₁−Philosopher)` — roles live in
+    the subscripts, scope in subject position. Identity subscripts strip canonically
+    (`Sees₁₂` ≡ `Sees`); a double passive composes back to the bare head. The symmetry
+    guard then governs the subscripted form exactly: equivalent iff every participant pair
+    whose relative scope order changes shares a quantity sign or has a fixed-reference
+    member (n-ary swaps check all crossed pairs). Guarded passives are a derivation rule
+    (`Pass`); unguarded ones are returned flagged — they are the scope traps.
+  - **Proterms are name-carried fixed reference**: an atom whose name ends in a prime gets
+    the entire singular treatment — ± validation and normalization, wild resolution in DON
+    (the course's "distributed proterms" fall out of D2's machinery for free), point
+    seeding in P/Z, singleton denotations in the oracle. Course 3 L3's anchor-hosting and
+    distributed-donor quick-checks are unit tests.
+  - **Pronominalization is Skolemization** — satisfiability-preserving, not
+    entailment-preserving — so it lives only in indirect-proof setup, never in `derive()`.
+    Witnesses: a `+` general-atom subject and general atoms at `+` object slots through
+    nested complexes; one anchor `±T'+T` per witness; fresh primes from a used-name
+    registry (a second pronominalization gets `''`); orientations hidden by conversion are
+    retried and the richest taken.
+  - **Indirect proof** = counterclaim, pronominalize its particulars, saturate until some
+    line's contradictory is already on the board; the trace prunes to the two clashing
+    lines plus a synthetic ⊥ line. `checkArgument` falls back direct → indirect for
+    *valid*, then both again for *contradicted*. The engine refutes the course's 9-line
+    showcase counterclaim in 5 lines (whole-complex DON needs no witnesses); the test that
+    genuinely needs the full stack is "some boy loves every girl, some girl is a rebel ⊢
+    some boy loves a rebel" — universal-object instantiation via Pron + Anchor + guarded
+    Pass around the fixed witness + wild DON. The one-way scope entailment ∃∀ ⊢ ∀∃ is
+    provable too (at ~4× default fuel; a passive of a tautology line feeds the chain), and
+    its converse stays unfound.
+  - **The fuzzer's RNG was lying.** The oracle's LCG handed out its low bits, which are
+    (nearly) periodic, so rigid generator call patterns cycled through a handful of
+    formulas — D2's suites were far weaker than their iteration counts suggested. Fixed
+    (high bits); the honest RNG immediately caught a real D2 gap: the P/Z verdict's
+    closure is unit propagation and misses case-split consequences (a fixed individual
+    with `{B→¬B, ¬B→¬A, ¬A→B}` must be B either way). Point consistency is now a
+    per-point 2-SAT decision, with 2-SAT-backbone extraction of forced fixed-reference
+    literals feeding identity merging. Dually, the oracle now admits the **empty model**
+    when nothing denotes — no existential import for the world itself — so pure-universal
+    sets cannot prove existence on either side of the comparison.
+  - Oracle suites now number five: passive equivalence (with Course 2 L3's two scope
+    traps as deterministic cases) and indirect-proof soundness join the original three;
+    rule-step soundness includes `Pass`; all generators now produce proterms. Green at
+    `-n 5000`: 21k rule steps, 5.2k passive equivalences (2.2k guarded off), 876 indirect
+    refutations, all model-checked. 138 unit tests.
 - **D4** 🔲 Programs & queries: program = propositions + `--` comments; queries `? s`
   ("what is s" — saturate DON+Simp about a term, fuel-budgeted; results DN-normalized,
   subsumption-filtered, strongest form first) and `? −s+P` with the three-way verdict
@@ -371,8 +420,8 @@ bolted on. Learners get to *run* the algebra all four courses taught.
 
 ## Suggested order
 
-1. ~~C1~~ · ~~A1–A8~~ · ~~B1–B9~~ · ~~C2~~ · ~~D1~~ · ~~D2~~ — complete.
-2. **D3 → D4** (rest of the language core, node-testable without UI) ← next: D3
+1. ~~C1~~ · ~~A1–A8~~ · ~~B1–B9~~ · ~~C2~~ · ~~D1~~ · ~~D2~~ · ~~D3~~ — complete.
+2. **D4** (rest of the language core, node-testable without UI) ← next: D4
 3. **D5** (the Aristotelian layer — the differentiator)
 4. **D6 → D7** (lab usable end-to-end, integrated into lessons)
 5. **D8** anytime from here on

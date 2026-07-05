@@ -533,6 +533,174 @@ test("oracle agrees: horse's head is semantically valid", () =>
 test('oracle agrees: no existential import', () =>
   assert.ok(!oracle.entails([P('−A+B')], P('+A+B'), { maxN: 2, cap: 60000 })));
 
+// ══════════════════════════════════════════════════════════════════════════
+// D3 — deep relational layer
+// ══════════════════════════════════════════════════════════════════════════
+
+const { passives, pronominalize, indirectProof } = require('./tfl.js');
+
+// ── Pairing subscripts and the passive transformation (Course 2 L3) ───────
+
+test('identity pairing subscripts are canonical noise', () => {
+  assert.ok(eqUpTo('−Dog+(Sees₁₂−Cat)', '−Dog+(Sees−Cat)'));
+  assert.ok(!eqUpTo('−Dog+(Sees₂₁−Cat)', '−Dog+(Sees−Cat)'));
+});
+
+test('subscripted heads round-trip through the printer', () => {
+  const src = '+Student+(Teaches₂₁−Philosopher)';
+  assert.strictEqual(printProposition(P(src)), src);
+});
+
+test('passive mechanics: participants swap, signs travel, roles land in the head', () => {
+  const [r] = passives(P('−Philosopher+(Teaches+Student)'));
+  assert.strictEqual(printProposition(r.prop), '+Student+(Teaches₂₁−Philosopher)');
+  // and the passive of the passive is the original
+  const back = passives(r.prop).map((x) => printProposition(x.prop));
+  assert.ok(back.includes('−Philosopher+(Teaches+Student)'), back.join(' | '));
+});
+
+test('symmetry guard: same quantity or a fixed participant is equivalent', () => {
+  for (const src of ['+Man+(Lov+Woman)', '−Man+(Lov−Woman)',
+                     '±Brutus*+(Stabbed±Caesar*)', '−Philosopher+(Loves±Mary*)']) {
+    assert.ok(passives(P(src)).every((r) => r.equivalent), src);
+  }
+});
+
+test('symmetry guard: mixed general quantities are the scope trap', () => {
+  for (const src of ['−Senator+(Admires+Philosopher)', '+Philosopher+(Teaches−Student)']) {
+    assert.ok(passives(P(src)).every((r) => !r.equivalent), src);
+  }
+});
+
+test('n-ary guard: every crossed pair must commute', () => {
+  assert.ok(passives(P('−S+(Gave+Rose+Girl)')).every((r) => !r.equivalent));
+  assert.ok(passives(P('+S+(Gave+Rose+Girl)')).every((r) => r.equivalent));
+});
+
+test('no passive without a relational predicate of + quality', () => {
+  assert.strictEqual(passives(P('−Boy−(Lov+Coward)')).length, 0);
+  assert.strictEqual(passives(P('−S+P')).length, 0);
+});
+
+test('derive uses the guarded passive (Pass) and refuses the trap', () => {
+  const ok = arg(['−Dog+(Sees−Cat)'], '−Cat+(Sees₂₁−Dog)');
+  assert.strictEqual(ok.verdict, 'valid');
+  assert.ok(ok.proof.lines.some((l) => l.rule === 'Pass'), 'expected a Pass step');
+  assert.strictEqual(
+    arg(['−Philosopher+(Teaches+Student)'], '+Student+(Teaches₂₁−Philosopher)').verdict,
+    'unknown');
+});
+
+test('the one-way scope entailment: ∃∀ proves ∀∃, never the reverse', () => {
+  // Needs a deep saturation (a passive of a tautology feeds the DON chain).
+  const res = indirectProof([P('+Philosopher+(Teaches−Student)')],
+                            P('−Student+(Teaches₂₁+Philosopher)'), { maxLines: 1600 });
+  assert.ok(res.found);
+  assert.strictEqual(
+    indirectProof([P('−A+(R+B)')], P('+B+(R₂₁−A)')).found, false);
+});
+
+// ── Proterms and pronominalization (Course 2 L4, Course 3 L3) ─────────────
+
+test('proterms take wild quantity; general terms still cannot', () => {
+  validateProp(P("±Boy'+(Lov±Girl')")); // must not throw
+  assert.throws(() => validateProp(P('±Dog+Pet')), EngineError);
+});
+
+test('pronominalization: the course example, verbatim', () => {
+  const used = new Set();
+  const pr = pronominalize(P('+Boy+(Lov+Girl)'), used);
+  assert.strictEqual(printProposition(pr.prop), "±Boy'+(Lov±Girl')");
+  assert.deepStrictEqual(pr.anchors.map(printProposition), ["±Boy'+Boy", "±Girl'+Girl"]);
+  // fresh primes each time — different witnesses are never conflated
+  const pr2 = pronominalize(P('+Boy+(Lov+Girl)'), used);
+  assert.strictEqual(printProposition(pr2.prop), "±Boy''+(Lov±Girl'')");
+});
+
+test('only particulars introduce witnesses', () => {
+  assert.strictEqual(pronominalize(P('−Dog+Pet')), null);
+  assert.strictEqual(pronominalize(P('−Bird−(Eats+Seed)')), null);
+});
+
+test('UDT subjects need no introduction; their objects still do', () => {
+  const pr = pronominalize(P('±Ada*+(Reads+Manuscript)'));
+  assert.strictEqual(printProposition(pr.prop), "±Ada*+(Reads±Manuscript')");
+  assert.deepStrictEqual(pr.anchors.map(printProposition), ["±Manuscript'+Manuscript"]);
+});
+
+test('anchors host universal donors (Course 3 quick-check)', () =>
+  assert.ok(derive([P("±Cat'+Cat"), P('−Cat−(Fears+Dog)')],
+                   P("±Cat'−(Fears+Dog)")).found));
+
+test('distributed proterm: a ± donor read as − (Course 3 quick-check)', () =>
+  assert.ok(derive([P("±Owl'+(Watches±Mouse')"), P("±Mouse'+Rodent")],
+                   P("±Owl'+(Watches+Rodent)")).found));
+
+test('proterm co-denotation is what makes the categorical pair valid', () => {
+  // some men were shouting; THEY are alarmed ⊢ some shouters are alarmed —
+  // and without the prime the two groups may differ (Course 2 L4).
+  assert.strictEqual(arg(["+M'+S", "±M'+A"], '+S+A').verdict, 'valid');
+  assert.strictEqual(arg(['+M+S', '+M+A'], '+S+A').verdict, 'invalid');
+});
+
+// ── Indirect proof (Course 3 L3) ──────────────────────────────────────────
+
+test("the worked proof's argument: boys, girls, cowards", () => {
+  const res = arg(['+Boy+(Lov+Girl)', '−Boy−(Lov+Coward)'], '+Girl−Coward');
+  assert.strictEqual(res.verdict, 'valid');
+  assert.strictEqual(res.method, 'indirect');
+  const rules = res.proof.lines.map((l) => l.rule);
+  assert.ok(rules.includes('counterclaim'), 'assumes the counterclaim');
+  assert.strictEqual(rules[rules.length - 1], 'contradiction', 'ends in ⊥');
+  assert.strictEqual(res.proof.lines[res.proof.lines.length - 1].text, '⊥');
+});
+
+test('an indirect proof that needs the whole D3 stack', () => {
+  // Some boy loves every girl; some girl is a rebel ⊢ some boy loves a
+  // rebel. Universal-object instantiation: only reachable by
+  // pronominalizing, passivizing around the fixed witness, and donating
+  // through the anchor.
+  const res = arg(['+Boy+(Lov−Girl)', '+Girl+Rebel'], '+Boy+(Lov+Rebel)');
+  assert.strictEqual(res.verdict, 'valid');
+  assert.strictEqual(res.method, 'indirect');
+  const rules = res.proof.lines.map((l) => l.rule);
+  for (const need of ['Pron', 'Anchor', 'Pass', 'DON', 'contradiction']) {
+    assert.ok(rules.includes(need), `expected a ${need} line, got ${rules.join(',')}`);
+  }
+});
+
+test('Barbara falls to indirect proof too (Course 3 quick-check)', () => {
+  const res = indirectProof([P('−A+B'), P('−B+C')], P('−A+C'));
+  assert.ok(res.found);
+  assert.strictEqual(res.lines[res.lines.length - 1].rule, 'contradiction');
+});
+
+test('indirect proof does not overclaim', () => {
+  assert.strictEqual(
+    arg(['+Boy+(Lov+Girl)', '−Boy−(Lov+Coward)'], '+Girl+Coward').verdict, 'unknown');
+  assert.strictEqual(
+    indirectProof([P('+Critic+(Praises+Film)'), P('+Film+Masterpiece')],
+                  P('+Critic+(Praises+Masterpiece)')).found, false);
+});
+
+// ── D3 oracle spot checks ─────────────────────────────────────────────────
+
+test('oracle agrees: subscripted passive is equivalent, bare swap is not', () => {
+  const a = P('+Man+(Lov+Woman)');
+  assert.ok(oracle.entails([a], P('+Woman+(Lov₂₁+Man)'), { maxN: 3, cap: 60000 }));
+  assert.ok(oracle.entails([P('+Woman+(Lov₂₁+Man)')], a, { maxN: 3, cap: 60000 }));
+  // the bare swap claims Lov is symmetric — a different statement
+  assert.ok(!oracle.entails([a], P('+Woman+(Lov+Man)'), { maxN: 3, cap: 60000 }));
+});
+
+test('oracle agrees: the ∀∃/∃∀ scope trap is real', () =>
+  assert.ok(!oracle.entails([P('−A+(R+B)')], P('+B+(R₂₁−A)'), { maxN: 3, cap: 60000 })));
+
+test('oracle agrees: proterms denote — the co-denotation pair', () => {
+  assert.ok(oracle.entails([P("+M'+S"), P("±M'+A")], P('+S+A'), { maxN: 3, cap: 60000 }));
+  assert.ok(!oracle.entails([P('+M+S'), P('+M+A')], P('+S+A'), { maxN: 3, cap: 60000 }));
+});
+
 // ── Summary ───────────────────────────────────────────────────────────────
 
 console.log(`${passed} passed, ${failed} failed`);
