@@ -855,6 +855,125 @@ test('statementModel agrees with the oracle on the one-world reading', () => {
   assert.strictEqual(m.sat({ p: false, q: false }), true);
 });
 
+// ══════════════════════════════════════════════════════════════════════════
+// D5 — the Aristotelian layer
+// ══════════════════════════════════════════════════════════════════════════
+
+const {
+  readProp, explainProof, answer,
+  strongerAnswer, possibility, suggestMissingPremise,
+} = require('./tfl.js');
+
+// ── Natural-language reading ──────────────────────────────────────────────
+
+test('readProp: the four categorical forms', () => {
+  assert.strictEqual(readProp(P('−Man+Mortal')), 'every man is mortal');
+  assert.strictEqual(readProp(P('−Man−Mortal')), 'no man is mortal');
+  assert.strictEqual(readProp(P('+Man+Wise')), 'some man is wise');
+  assert.strictEqual(readProp(P('+Man−Wise')), 'some man is not wise');
+});
+
+test('readProp: singulars are named individuals with an article', () => {
+  assert.strictEqual(readProp(P('±Socrates*+Man')), 'Socrates is a man');
+  assert.strictEqual(readProp(P('±Socrates*−Man')), 'Socrates is not a man');
+  assert.strictEqual(readProp(P('±Ada*+Animal')), 'Ada is an animal');
+});
+
+test('readProp orients a converted singular back to the individual', () => {
+  // canonProp turns ±Socrates*+Man into +Man+Socrates*; the reading undoes it
+  assert.strictEqual(readProp(canon(P('±Socrates*+Man'))), 'Socrates is a man');
+});
+
+test('readProp: proterms read as "that X"', () =>
+  assert.strictEqual(readProp(P("±Boy'+Coward")), 'that boy is a coward'));
+
+// ── Explanation ───────────────────────────────────────────────────────────
+
+const FIDO5 = ['±Socrates*+Man', '±Fido*+Dog', '−Man+Animal', '−Dog+Animal', '−Man+Mortal'].map(P);
+
+test('explainProof: the flagship, Because Socrates is a man…', () => {
+  const a = answer(FIDO5, P('±Socrates*+Mortal'));
+  assert.strictEqual(a.verdict, 'yes');
+  assert.ok(/Because Socrates is a man/.test(a.explanation), a.explanation);
+  assert.ok(/every man is mortal/.test(a.explanation), a.explanation);
+  assert.ok(/Socrates is (a )?mortal/.test(a.explanation), a.explanation);
+});
+
+test('a "no" answer explains via the contradictory', () => {
+  const a = answer(FIDO5, P('±Socrates*−Animal'));
+  assert.strictEqual(a.verdict, 'no');
+  assert.ok(/^No —/.test(a.explanation), a.explanation);
+  assert.ok(/Socrates is an animal/.test(a.explanation), a.explanation);
+});
+
+// ── Stronger answer (asked some, prove every) ─────────────────────────────
+
+test('volunteers the stronger universal when a particular is asked', () => {
+  const prog = [P('−Bird+Flyer')]; // every bird flies (no import)
+  const st = strongerAnswer(prog, P('+Bird+Flyer'));
+  assert.ok(st, 'a stronger answer is offered');
+  assert.ok(propEqUpTo(st.prop, P('−Bird+Flyer')));
+  assert.ok(/every bird is flyer/.test(st.reading));
+});
+
+test('no stronger answer when the universal is not provable', () =>
+  assert.strictEqual(strongerAnswer([P('+Bird+Flyer')], P('+Bird+Flyer')), null));
+
+test('no stronger answer for a singular query', () =>
+  assert.strictEqual(strongerAnswer(FIDO5, P('±Socrates*+Mortal')), null));
+
+// ── Possibility ("perhaps") and negation-as-failure ───────────────────────
+
+test('an unknown positive particular is a "perhaps"', () => {
+  const poss = possibility(FIDO5, P('±Fido*+Mortal'));
+  assert.ok(poss && /Perhaps/.test(poss.note), JSON.stringify(poss));
+});
+
+test('a program-inconsistent query is not a possibility', () =>
+  assert.strictEqual(possibility([P('−Bird−Flyer')], P('±Tweety*+Bird')) &&
+    possibility([P('−Bird−Flyer'), P('±Tweety*+Bird')], P('±Tweety*+Flyer')), null));
+
+test('unknown verdict carries a labelled negation-as-failure guess', () => {
+  const a = answer(FIDO5, P('±Fido*+Mortal'));
+  assert.strictEqual(a.verdict, 'unknown');
+  assert.strictEqual(a.nafGuess.basis, 'negation as failure');
+  assert.strictEqual(a.nafGuess.verdict, 'no');
+  assert.ok(/Fido is not (a )?mortal/.test(a.nafGuess.note), a.nafGuess.note);
+});
+
+// ── Missing-premise suggestion (enthymeme recovery) ───────────────────────
+
+test('recovers the isolated tacit premise: Poodle', () => {
+  const s = suggestMissingPremise([P('+Poodle*+Dog')], P('+Poodle*+Animal'));
+  assert.ok(s.some((x) => propEqUpTo(x.prop, P('−Dog+Animal'))), s.map((x) => x.text).join());
+});
+
+test('recovers the isolated tacit premise: Ted (E-form)', () => {
+  const s = suggestMissingPremise([P('+Ted*+Priest')], P('+Ted*−Married'));
+  assert.ok(s.some((x) => propEqUpTo(x.prop, P('−Priest−Married'))), s.map((x) => x.text).join());
+});
+
+test('suggestions never make the base inconsistent (no ex falso)', () => {
+  const s = suggestMissingPremise(FIDO5, P('±Fido*+Mortal'));
+  assert.ok(s.length > 0);
+  for (const x of s) {
+    assert.ok(checkProgramConsistency([...FIDO5, x.prop]).consistent,
+      `${x.text} makes the base inconsistent`);
+    assert.strictEqual(checkArgument([...FIDO5, x.prop], P('±Fido*+Mortal')).verdict, 'valid');
+  }
+  // the natural rule (about mortality) is offered
+  assert.ok(s.some((x) => propEqUpTo(x.prop, P('−Dog+Mortal'))), s.map((x) => x.text).join());
+});
+
+test('existential-import suggestion when the universal holds but some was asked', () => {
+  const s = suggestMissingPremise([P('−Bird+Flyer')], P('+Bird+Flyer'));
+  assert.ok(s.some((x) => x.kind === 'existential-import' && propEqUpTo(x.prop, P('+Bird+Bird'))),
+    s.map((x) => x.text).join());
+});
+
+test('no suggestions for an already-proven query', () =>
+  assert.strictEqual(suggestMissingPremise(FIDO5, P('±Socrates*+Mortal')).length, 0));
+
 // ── Summary ───────────────────────────────────────────────────────────────
 
 console.log(`${passed} passed, ${failed} failed`);

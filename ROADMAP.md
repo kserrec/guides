@@ -26,10 +26,10 @@ completion. If a step grows beyond that during execution, split it before starti
 | TFL: The Full Language | ✅ 7 lessons |
 | TFL: Relational Syllogisms (Course 3) | ✅ 3 lessons |
 | TFL: Statement Logic & MPL (Course 4) | ✅ 6 lessons — **TFL curriculum complete (24 lessons)** |
-| TFL Lab engine (Track D) | 🔶 D1–D4 done: parser/printer (all-curricula acceptance harness), inference core (DON, immediate rules, two-tier validity, traced derivations), the deep relational layer (guarded passive with pairing subscripts, proterms, indirect proof), and the program/query layer (`parseProgram`, `? term`/`? prop`/`?=` queries, consistency check). 156 tests, six fuzz suites. No UI yet (D6). |
+| TFL Lab engine (Track D) | 🔶 D1–D5 done: parser/printer, inference core (DON, immediate rules, two-tier validity, traced derivations), the deep relational layer (guarded passive, proterms, indirect proof), the program/query layer (`parseProgram`, `? term`/`? prop`/`?=`, consistency check), and the Aristotelian layer (NL explanations, stronger-answer, possibility, negation-as-failure, enthymeme recovery). 173 tests, six fuzz suites. No UI yet (D6). |
 
 Tracks A, B, and C are fully executed. Track D is in progress — language core first
-(D1–D4 ✅, next D5), UI and lesson integration after.
+(D1–D5 ✅, next D6), UI and lesson integration after.
 
 ### Strengths
 
@@ -427,13 +427,42 @@ bolted on. Learners get to *run* the algebra all four courses taught.
     `opts.rules` gate so the term query can run a restricted rule set. Green at `-n 4000`:
     17k rule steps, 4.1k passive equivalences, 699 indirect refutations, 17k statement-model
     evals + 4k DNF-equivalence verdicts, all model-checked. 156 unit tests.
-- **D5** 🔲 The Aristotelian layer (what makes it a *database*, not a proof checker):
+- **D5** ✅ The Aristotelian layer (what makes it a *database*, not a proof checker):
   natural-language explanation per answer ("Because Socrates is a man, and every man is
   mortal…"); volunteer the stronger answer when a weaker one is asked (asked *some*, prove
   *every*); "possibility" answers from I-forms (Mozes' *perhaps*); labeled
   negation-as-failure guess lines on *unknown* verdicts; missing-premise suggestion via
   enthymeme recovery under Course 2 L6's three constraints — including the
   existential-import case ("would follow if `+S+S`; add it?").
+  Implementation notes (decisions made during execution):
+  - **`readProp` orients before reading.** Canonical form converts `±Socrates*+Man` to
+    `+Man+Socrates*`; the reader runs the D3 `orientations` helper first to put the fixed
+    individual back in subject position, so it reads "Socrates is a man," not "some man is
+    Socrates." General terms lowercase to common nouns; singulars keep their case as proper
+    names and take an article on a plain-noun predicate ("Socrates is a man"), matching the
+    courses' own glosses. Relationals/compounds read mechanically but unambiguously.
+  - **`answer` assembles the Mozes bundle** over `queryProp`'s verdict: `explanation`
+    (from a re-derived trace — "Because <givens>, <conclusion>"; a refutation ends "— which
+    is impossible"), `stronger`, `possibility`, `nafGuess`, `suggestions`. Each piece is
+    also a standalone export so D6 can compose the panel as it likes.
+  - **Stronger-answer and enthymeme suggestions are verified by construction** — every one
+    calls `checkArgument` to confirm the completed argument is actually valid before it is
+    offered, so the heuristic layer can never emit an unsound suggestion (this is why D5
+    needs no oracle suite of its own: it only ever reports what the fuzz-checked engine
+    certifies).
+  - **The ex-falso trap in enthymeme search.** Recovering the tacit premise in a *fact
+    base* (not the courses' isolated two-line argument) is a bounded search over the
+    argument's own general terms for a premise that makes the query follow. The catch the
+    first cut missed: a premise that makes the base *inconsistent* validates the query ex
+    falso — "no animal is a man" "proves" Fido is mortal — so candidates are filtered
+    through `checkProgramConsistency`, and the survivors are ranked (introduces a goal term
+    first, universals/rules before particulars). The isolated Poodle/Ted cases still
+    recover their unique premise; a database offers the handful of consistent bridging
+    rules, mortality-about-dogs first.
+  - **Possibility = consistency** (Mozes' *perhaps*): an unknown positive particular that
+    stays consistent with the base is offered as possible-but-unproven — a faithful reading
+    of "perhaps" that stays honest about the open-world gap the NAF guess also flags.
+  - No engine changes; 173 unit tests (17 new). Six oracle suites unchanged and still green.
 - **D6** 🔲 Lab UI, two surfaces from one codebase: the λ-Lab-style panel on TFL course
   pages (toggle button, right panel, per-pathname localStorage buffer) and a standalone
   full page at `term-functor-logic/lab/` for document-scale work. Editor + query line +
@@ -463,8 +492,7 @@ bolted on. Learners get to *run* the algebra all four courses taught.
 
 ## Suggested order
 
-1. ~~C1~~ · ~~A1–A8~~ · ~~B1–B9~~ · ~~C2~~ · ~~D1~~ · ~~D2~~ · ~~D3~~ · ~~D4~~ — complete.
-2. **D5** (the Aristotelian layer — the differentiator) ← next: D5
-4. **D6 → D7** (lab usable end-to-end, integrated into lessons)
-5. **D8** anytime from here on
-6. **D9 → D10** last, in that order (numerical quantifiers: engine, then lesson)
+1. ~~C1~~ · ~~A1–A8~~ · ~~B1–B9~~ · ~~C2~~ · ~~D1~~ · ~~D2~~ · ~~D3~~ · ~~D4~~ · ~~D5~~ — complete.
+2. **D6 → D7** (lab usable end-to-end, integrated into lessons) ← next: D6
+3. **D8** anytime from here on
+4. **D9 → D10** last, in that order (numerical quantifiers: engine, then lesson)

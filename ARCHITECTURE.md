@@ -29,8 +29,9 @@ currently two **subjects**, each containing **courses**, each containing **lesso
   *The Full Language* (7), *Relational Syllogisms* (3), *Statement Logic and the MPL
   Bridge* (6). A TFL analog of the Lambda Lab — a term-logic programming language and
   Aristotelian database — is Track D in `ROADMAP.md` and is **in progress**: the engine
-  core (parser, printer, inference, validity, and the program/query layer) exists and is
-  node-tested (see §6), but no page loads it yet — the UI arrives in step D6.
+  core (parser, printer, inference, validity, the program/query layer, and the natural-
+  language Aristotelian layer) exists and is node-tested (see §6), but no page loads it
+  yet — the UI arrives in step D6.
 
 A lesson is a linear sequence of **blocks** that reveal one at a time: a *concept* block
 teaches (prose + examples), then an *exercise* block checks it, repeating in a
@@ -308,7 +309,7 @@ design record, including the source papers). As of D4 it is **engine only**: no 
 page loads these files, so nothing here is user-visible yet. It follows the Lambda Lab
 split exactly — a pure-logic UMD module plus node-only dev harnesses.
 
-- **`tfl.js`** (`window.TFL` / `module.exports`) — four layers in one file:
+- **`tfl.js`** (`window.TFL` / `module.exports`) — five layers in one file:
   - *D1, parser + printer*: AST for terms (atoms with proterm primes and subscripts,
     singulars `Socrates*`, quoted multi-word terms, negatives `(−T)`, compounds
     `(+White+Horse)`, n-ary/nested relational complexes `(Lov+(Adm−Teacher))`,
@@ -339,7 +340,14 @@ split exactly — a pure-logic UMD module plus node-only dev harnesses.
     `equivalents` (`?=` immediate-rule neighbourhood) and `decideEquivalence` (`?= A , B`
     — the DNF fingerprint via `statementModel`'s one-world truth for propositional
     statements, the rewrite path for term-logic ones).
-- **`tfl.test.js`** — plain-assert suite (156 tests): notation round-trips, rule
+  - *D5, the Aristotelian layer* (Mozes 1989): `readProp` (English glosses, orienting
+    singulars back to subject), `explainProof` ("Because …, …"), and `answer` bundling the
+    Mozes features — `strongerAnswer` (asked some, prove every), `possibility` (Mozes'
+    *perhaps* = consistent-but-unproven), a labelled negation-as-failure guess, and
+    `suggestMissingPremise` (enthymeme recovery: existential import `+S+S`, plus a
+    consistency-guarded search for the tacit rule). Every suggestion is checkArgument-
+    verified before it is offered, so nothing here can be unsound.
+- **`tfl.test.js`** — plain-assert suite (173 tests): notation round-trips, rule
   behavior, the named derivations (horse's head, Twain/Clemens, the boys-girls-cowards
   indirect proof, scope traps…), the paper's Socrates/Fido program and its queries, and
   oracle spot checks.
@@ -355,9 +363,8 @@ split exactly — a pure-logic UMD module plus node-only dev harnesses.
   exiting nonzero on anything unexplained. It doubles as a regression gate when curricula
   are edited: new lesson content that prints notation the lab can't read will fail it.
 
-Remaining Track D steps (D5–D10, see the roadmap): the Aristotelian explanation layer,
-the panel + full-page UI, lesson chips, a `tfl-expression` exercise kind, and numerical
-quantifiers.
+Remaining Track D steps (D6–D10, see the roadmap): the panel + full-page UI, lesson
+chips, a `tfl-expression` exercise kind, and numerical quantifiers.
 
 ## 7. Styling and theming
 

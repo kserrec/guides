@@ -1506,6 +1506,283 @@
     return { atoms: [...atoms], sat: (asg) => evalP(prop, asg) };
   }
 
+  // ════════════════════════════════════════════════════════════════════════
+  // D5 — The Aristotelian layer.
+  //
+  // What turns a proof checker into a *database à la Mozes* (Mozes 1989):
+  // deductions explained in natural language; the stronger answer
+  // volunteered when a weaker one is asked; "possibility" (perhaps)
+  // answers; a labelled negation-as-failure guess on the open-world gap;
+  // and missing-premise suggestion by enthymeme recovery (Course 2 L6's
+  // three constraints), the existential-import case included.
+
+  // ── Natural-language reading ──────────────────────────────────────────
+  //
+  // Renders the notation the way the courses gloss it. Categorical forms
+  // read idiomatically; relationals and brackets read mechanically but
+  // unambiguously. Singulars and proterms are the individuals the algebra
+  // fixes ("Socrates", "that boy").
+
+  const looksLikeName = (name) => /^\p{Lu}/u.test(name); // capitalised → a name/kind
+
+  function baseName(name) {
+    const bare = name.replace(/'+$/, ''); // strip proterm primes
+    return bare;
+  }
+
+  function readTerm(t) {
+    switch (t.type) {
+      case 'atom': {
+        const nm = baseName(t.name);
+        if (t.singular) return nm;                        // proper name: keep case
+        if (isProtermName(t.name)) return `that ${nm.toLowerCase()}`;
+        return nm.toLowerCase();                          // general term: common noun
+      }
+      case 'neg': return `non-${readTerm(t.term)}`;
+      case 'compound':
+        return t.elements
+          .map((e) => (e.sign === '-' ? `non-${readTerm(e.term)}` : readTerm(e.term)))
+          .join(' and ');
+      case 'rel': {
+        const objs = t.objects.map((o) => {
+          const q = o.sign === '-' ? 'every ' : o.sign === '±' ? '' : 'some ';
+          return q + readTerm(o.term);
+        });
+        return `${readTerm(t.head).toLowerCase()} ${objs.join(' ')}`.trim();
+      }
+      case 'propterm':
+        return t.inner.type === 'prop' ? `“${readProp(t.inner)}”` : readTerm(t.inner);
+    }
+  }
+
+  // Read a proposition as an English sentence. First orient it so a fixed
+  // individual (singular/proterm) is the subject — canonical form converts
+  // `±Socrates*+Man` to `+Man+Socrates*`, but "Socrates is a man" is the
+  // reading, not "some man is Socrates".
+  function readProp(raw) {
+    let p = raw;
+    for (const o of orientations(raw)) {
+      if (isFixedRef(o.subject.term)) { p = o; break; }
+    }
+    const sTerm = p.subject.term;
+    const qPlus = p.predicate.sign === '+';
+    const pred = p.predicate.term;
+    const relPred = pred.type === 'rel';
+    // Singular / proterm subject: a definite individual. A plain-noun
+    // predicate takes an article ("Socrates is a man"); a relation,
+    // negation or compound does not.
+    if (isFixedRef(sTerm)) {
+      const who = readTerm(sTerm);
+      if (relPred) return `${who} ${qPlus ? '' : 'does not '}${readTerm(pred)}`;
+      const plain = pred.type === 'atom' && !pred.singular;
+      const art = plain ? (/^[aeiou]/i.test(readTerm(pred)) ? 'an ' : 'a ') : '';
+      return `${who} ${qPlus ? 'is ' : 'is not '}${art}${readTerm(pred)}`;
+    }
+    const S = readTerm(sTerm);
+    if (p.subject.sign === '-') {
+      return qPlus ? `every ${S} ${relTail(pred, false)}`
+                   : (relPred ? `no ${S} ${readTerm(pred)}` : `no ${S} is ${readTerm(pred)}`);
+    }
+    // particular subject (+ or a stray ±)
+    return qPlus ? `some ${S} ${relTail(pred, false)}`
+                 : `some ${S} ${relTail(pred, true)}`;
+  }
+
+  // Predicate tail for general-subject readings ("… loves some girl" /
+  // "… is a mortal" / "… is not a mortal").
+  function relTail(pred, neg) {
+    if (pred.type === 'rel') return `${neg ? 'does not ' : ''}${readTerm(pred)}`;
+    return `${neg ? 'is not' : 'is'} ${readTerm(pred)}`;
+  }
+
+  // ── Explanation of a derivation ───────────────────────────────────────
+  //
+  // "Because <premises>, <conclusion>." A multi-step proof threads its
+  // derived lines as "so …" clauses; a refutation ends "— which is
+  // impossible."
+  function explainProof(proof) {
+    if (!proof || !proof.found) return null;
+    const lines = proof.lines;
+    const isGiven = (r) => r === 'premise' || r === 'fact' || r === 'counterclaim';
+    const givens = lines.filter((l) => isGiven(l.rule) && l.prop);
+    const last = lines[lines.length - 1];
+    const closing = last.text === '⊥';
+    const because = givens.map((l) => readProp(l.prop)).join(', and ');
+    if (closing) {
+      // the two clashing lines make the impossibility vivid
+      const clash = last.parents.map((n) => lines.find((l) => l.n === n)).filter(Boolean);
+      const pair = clash.map((l) => readProp(l.prop)).join(', yet ');
+      return `Because ${because}, it would follow that ${pair} — which is impossible.`;
+    }
+    return `Because ${because}, ${readProp(last.prop)}.`;
+  }
+
+  // ── The Aristotelian answer ───────────────────────────────────────────
+  //
+  // Assembles queryProp's verdict with the Mozes extras. `reading` is the
+  // English question; `explanation` justifies a yes/no; `stronger`
+  // volunteers a proven universal when a particular was asked; `possibility`
+  // is the "perhaps"; `nafGuess` is the labelled closed-world guess on an
+  // unknown; `suggestions` are the enthymeme repairs.
+  function answer(program, query, opts = {}) {
+    program.forEach(validateProp);
+    validateProp(query);
+    const q = queryProp(program, query, opts);
+    const out = { verdict: q.verdict, reading: readProp(query), support: q.support };
+
+    if (q.verdict === 'yes') {
+      const proof = derive(program, query, opts);
+      out.explanation = proof.found ? explainProof(proof)
+        : `Because the program entails it, ${readProp(query)}.`;
+    } else if (q.verdict === 'no') {
+      const ref = derive(program, contradictory(query), opts);
+      out.explanation = ref.found
+        ? `No — because ${ref.lines.filter((l) => l.rule === 'premise' || l.rule === 'fact')
+            .map((l) => readProp(l.prop)).join(', and ')}, in fact ${readProp(contradictory(query))}.`
+        : `No — the program entails that ${readProp(contradictory(query))}.`;
+    }
+
+    // Volunteer the stronger answer: asked "some", prove "every".
+    const st = strongerAnswer(program, query, opts);
+    if (st) out.stronger = st;
+
+    if (q.verdict === 'unknown') {
+      const poss = possibility(program, query, opts);
+      if (poss) out.possibility = poss;
+      out.nafGuess = {
+        verdict: 'no',
+        basis: 'negation as failure',
+        note: `By negation as failure (closed-world guess): not provable, so presume ${readProp(contradictory(query))}.`,
+      };
+    }
+    if (q.verdict !== 'yes') {
+      const sugg = suggestMissingPremise(program, query, opts);
+      if (sugg.length) out.suggestions = sugg;
+    }
+    return out;
+  }
+
+  // Stronger-answer volunteering: a particular query whose universal
+  // strengthening the program actually proves (asked some, prove every).
+  function strongerAnswer(program, query, opts = {}) {
+    if (query.subject.sign !== '+') return null;      // already universal/singular
+    if (isFixedRef(query.subject.term)) return null;  // singular: no stronger form
+    const universal = Prop(ST('-', query.subject.term), query.predicate);
+    if (checkArgument(program, universal, opts).verdict !== 'valid') return null;
+    // Only volunteer when the asked particular is not itself provable.
+    if (queryProp(program, query, opts).verdict === 'yes') return null;
+    return {
+      prop: universal,
+      text: printProposition(universal),
+      reading: readProp(universal),
+      note: `Not that ${readProp(query)} — but in fact ${readProp(universal)}.`,
+    };
+  }
+
+  // Possibility ("perhaps", Mozes): an unknown positive-particular query
+  // that stays consistent with the program — nothing rules it out.
+  function possibility(program, query, opts = {}) {
+    if (query.predicate.sign !== '+') return null;
+    if (query.subject.sign === '-') return null; // universals are not "perhaps"
+    const consistent = checkProgramConsistency([...program, query], opts).consistent;
+    if (!consistent) return null;
+    return { note: `Perhaps — ${readProp(query)} is consistent with what is known, though unproven.` };
+  }
+
+  // ── Missing-premise suggestion (enthymeme recovery, Course 2 L6) ───────
+  //
+  // For a query the program does not (yet) settle, find a premise that
+  // would make it follow. Two sources: the algebraic tacit premise
+  // (conclusion − given, under the regularity/term/equality constraints),
+  // and the existential-import premise (+S+S) when the universal is proven
+  // but the particular was asked.
+  function suggestMissingPremise(program, query, opts = {}) {
+    const out = [];
+
+    // Existential import: every S is P is provable, some S is P was asked.
+    if (query.subject.sign === '+' && query.predicate.sign === '+' &&
+        !isFixedRef(query.subject.term)) {
+      const universal = Prop(ST('-', query.subject.term), query.predicate);
+      if (checkArgument(program, universal, opts).verdict === 'valid') {
+        const imp = Prop(ST('+', query.subject.term), ST('+', query.subject.term));
+        out.push({
+          prop: imp,
+          text: printProposition(imp),
+          kind: 'existential-import',
+          note: `It would follow if some ${readTerm(query.subject.term)} exists — add ${printProposition(imp)}?`,
+        });
+      }
+    }
+
+    // Tacit-premise recovery over the categorical fragment (Course 2 L6):
+    // the missing premise is what closes the gap between the fact base and
+    // the query. In an isolated argument the algebra pins it down uniquely;
+    // in a fact base several rules may bridge the gap, so we search the
+    // argument's own vocabulary for premises that (a) are not already
+    // entailed and (b) make the query follow. Universals (rules) first.
+    if (isAtomicCategorical([...program, query]) &&
+        checkArgument(program, query, opts).verdict !== 'valid') {
+      for (const tacit of tacitCandidates(program, query, opts)) {
+        if (out.some((s) => propEqUpTo(s.prop, tacit))) continue;
+        out.push({
+          prop: tacit,
+          text: printProposition(tacit),
+          kind: 'tacit-premise',
+          note: `It would follow given ${readProp(tacit)} (${printProposition(tacit)}).`,
+        });
+        if (out.length >= (opts.maxSuggestions || 4)) break;
+      }
+    }
+    return out;
+  }
+
+  // Categorical tacit-premise search: every two-term proposition over the
+  // argument's general terms that (a) is not already entailed, (b) keeps
+  // the program consistent — a premise that only "works" by making the
+  // base contradictory proves the query ex falso and is no explanation —
+  // and (c) makes the query follow. Ranked: premises that introduce a goal
+  // term first, universals (rules) before particulars, then alphabetical.
+  function tacitCandidates(program, query, opts = {}) {
+    const names = new Set();
+    const scan = (t) => {
+      if (t.type === 'atom') { if (!t.singular) names.add(t.name); }
+      else if (t.type === 'neg') scan(t.term);
+      else if (t.type === 'compound') t.elements.forEach((e) => scan(e.term));
+    };
+    for (const p of [...program, query]) { scan(p.subject.term); scan(p.predicate.term); }
+    const atoms = [...names];
+    if (atoms.length === 0 || atoms.length > 8) return []; // keep the search bounded
+    const goal = new Set([termKey(query.subject.term), termKey(query.predicate.term)]);
+
+    const found = [];
+    const keys = new Set();
+    for (const sSign of ['-', '+']) {
+      for (const a of atoms) {
+        for (const b of atoms) {
+          if (a === b) continue;
+          for (const qSign of ['+', '-']) {
+            const cand = Prop(ST(sSign, Atom(a)), ST(qSign, Atom(b)));
+            const key = propKey(cand);
+            if (keys.has(key)) continue;
+            if (propEqUpTo(cand, query)) continue;                          // not the query itself
+            if (checkArgument(program, cand, opts).verdict === 'valid') continue; // already known
+            if (!checkProgramConsistency([...program, cand], opts).consistent) continue; // no ex falso
+            if (checkArgument([...program, cand], query, opts).verdict !== 'valid') continue;
+            keys.add(key);
+            found.push(canonProp(cand));
+          }
+        }
+      }
+    }
+    const mentionsGoal = (p) =>
+      [p.subject.term, p.predicate.term].some((t) => goal.has(termKey(t))) ? 1 : 0;
+    found.sort((x, y) =>
+      (mentionsGoal(y) - mentionsGoal(x)) ||
+      ((y.subject.sign === '-' ? 1 : 0) - (x.subject.sign === '-' ? 1 : 0)) ||
+      (printProposition(x) < printProposition(y) ? -1 : 1));
+    return found;
+  }
+
   return {
     Atom, Neg, Compound, Rel, PropTerm, ST, Prop,
     termEq, propEq, stEq, ParseError, tokenize,
@@ -1522,5 +1799,8 @@
     // D4 — programs and queries
     parseProgram, queryTerm, queryProp, checkProgramConsistency,
     equivalents, decideEquivalence, statementModel,
+    // D5 — the Aristotelian layer
+    readTerm, readProp, explainProof, answer,
+    strongerAnswer, possibility, suggestMissingPremise,
   };
 });
