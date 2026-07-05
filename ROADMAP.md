@@ -254,12 +254,32 @@ bolted on. Learners get to *run* the algebra all four courses taught.
 
 ### Steps
 
-- **D1** 🔲 Parser + printer core (`tfl.js` + `tfl.test.js`): AST for terms (general,
-  singular*, negative, compound, relational complex, propositional `[p]`) and propositions
-  (signed pairs in ENF); parse the exact notation used across all four TFL curricula plus
-  ASCII aliases; pretty-printer with round-trip property; positioned parse errors. Acceptance
-  harness (built in this step): drive every TFL syntax-box formula through the parser,
-  A7-style.
+- **D1** ✅ Parser + printer core (`tfl.js` + `tfl.test.js` + `audit.js`).
+  Implementation notes (decisions made during execution):
+  - Group disambiguation is purely syntactic, matching the courses' own convention: a
+    parenthesized group whose first element is *signed* is a negative term `(−T)` or
+    compound `(+White+Horse)`; an *unsigned* head makes it a relational complex
+    `(Lov+Girl)`, n-ary and nested. `(T)` and `(+T)` are transparent.
+  - `parseSignedTerm` is exposed alongside `parseProposition`/`parseTerm` — the signed
+    term is D2's working unit, and the courses display them constantly (`+T`, `±Mary*`).
+  - A `"` following a name character lexes as a double prime (Course 2 prints `+A"+C`
+    for `+A″+C`); unambiguous, since a quoted term can never directly follow a name.
+    Typographic `′`/`″` normalize to ASCII `'`/`''` inside names; subscript digits are
+    name characters (`S₁₂`, `B'₁`).
+  - Quantity-level *syntax* (`^2` / superscript `²`, level on any signed-term occurrence,
+    printer omits level 0) landed here rather than D9 — it's pure syntax, so D9 now only
+    touches the decision method. The D2–D8 engine stays level-0.
+  - ASCII wild alias is `+-` (adjacent), safe because negative terms are always
+    parenthesized. Printer emits typographic `−`/`±`, superscript levels, compact
+    spacing, and quotes any name that isn't a bare identifier.
+  - Acceptance harness (`audit.js`, node): drives all 631 unique formula snippets
+    (syntax boxes *and* `<code>` runs) from the four curricula through the parser —
+    484 parse as lab notation (394 single propositions/terms/signed terms, the rest
+    premise-sum algebra and multi-formula argument displays, every part parsed), 146
+    verified foreign (MPL, prose, tree diagrams, schemas), 1 whitelisted with a reason
+    (`non-Lov`, whose `non-` prefix the lab deliberately reads as minus). Exits nonzero
+    on any unexplained snippet. 63 node tests incl. a seeded random-AST round-trip
+    property (parse ∘ print = id at the AST level).
 - **D2** 🔲 Inference core (direct derivations): the immediate rules (DN, EN, IN, Com, Assoc,
   Contrap, PD, It) and mediate rules (DON, Simp, Add) as rewrites producing **traced
   derivations** (formula + rule + parent lines); net-sign distribution computation so DON
