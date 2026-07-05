@@ -97,22 +97,54 @@
 
   // ── Examples ──────────────────────────────────────────────────────────
 
-  const EXAMPLES = [
-    ['Socrates & Fido (flagship)', SEED_SRC, '? ±Socrates*+Mortal'],
-    ['What is Socrates?',          SEED_SRC, '? Socrates*'],
-    ['Barbara',                    '−Man+Mortal\n−Greek+Man',        '? −Greek+Mortal'],
-    ['A relational proof',         '+Boy+(Lov+Girl)\n+Girl+Rebel\n−Girl+Girl', '? +Boy+(Lov+Rebel)'],
-    ['Open world (unknown)',       SEED_SRC, '? ±Fido*+Mortal'],
-    ['An inconsistent base',       '+A+B\n−A+C\n−A−C',               '? +A+C'],
-    ['Equivalents of −S+P',        '',                               '?= −S+P'],
-    ['Decide equivalence',         '',                               '?= −Dog+Mammal , −(−Mammal)+(−Dog)'],
-  ];
+  // Curated per course — every program/query below runs through the D1–D5
+  // engine and is verified. The standalone page (no course in the path) gets
+  // a greatest-hits set spanning all four.
+  const EXAMPLES = {
+    'introduction': [
+      ['Barbara',                    '−Man+Mortal\n−Greek+Man',                '? −Greek+Mortal'],
+      ['Socrates is mortal',         '−Human+Mortal\n±Socrates*+Human',        '? ±Socrates*+Mortal'],
+      ['The square of opposition',   '',                                       '?= −S+P'],
+      ['An inconsistent base',       '+A+B\n−A+C\n−A−C',                       '? +A+C'],
+    ],
+    'language-extended': [
+      ['Donate a whole complex',     '−Boy+(Lov+Girl)\n−Girl+(Adm−Teacher)',   '? −Boy+(Lov+(Adm−Teacher))'],
+      ['The passive transformation', '−Dog+(Sees−Cat)',                        '? −Cat+(Sees₂₁−Dog)'],
+      ['Obvert a compound term',     '',                                       '?= −(+White+Horse)+Gentle'],
+      ['Contraposition (statements)', '',                                      '?= −[p]+[q] , −(−[q])+(−[p])'],
+    ],
+    'relational-syllogisms': [
+      ["De Morgan's horse's head",   '−Horse+Animal',                          '? −(Head+Horse)+(Head+Animal)'],
+      ['A faster-than chain',        '−Horse+(Faster+Dog)\n−Dog+(Faster+Cat)', '? −Horse+(Faster+(Faster+Cat))'],
+      ['Some boy loves a rebel',     '+Boy+(Lov−Girl)\n+Girl+Rebel',           '? +Boy+(Lov+Rebel)'],
+      ['Honest "unknown"',           '+Critic+(Praises+Film)\n+Film+Masterpiece', '? +Critic+(Praises+Masterpiece)'],
+    ],
+    'statement-logic-and-mpl': [
+      ['Modus ponens as Barbara',    '−[p]+[q]\n+[p]+[p]',                      '? +[q]+[q]'],
+      ['Contraposition holds',       '',                                       '?= −[p]+[q] , −(−[q])+(−[p])'],
+      ['The converse does not',      '',                                       '?= −[p]+[q] , −[q]+[p]'],
+    ],
+    'default': [
+      ['Socrates & Fido (flagship)', SEED_SRC,                                 '? ±Socrates*+Mortal'],
+      ['What is Socrates?',          SEED_SRC,                                 '? Socrates*'],
+      ['Barbara',                    '−Man+Mortal\n−Greek+Man',                '? −Greek+Mortal'],
+      ["De Morgan's horse's head",   '−Horse+Animal',                          '? −(Head+Horse)+(Head+Animal)'],
+      ['Some boy loves a rebel',     '+Boy+(Lov−Girl)\n+Girl+Rebel',           '? +Boy+(Lov+Rebel)'],
+      ['The square of opposition',   '',                                       '?= −S+P'],
+      ['An inconsistent base',       '+A+B\n−A+C\n−A−C',                       '? +A+C'],
+    ],
+  };
+  const courseKey =
+    ['introduction', 'language-extended', 'relational-syllogisms', 'statement-logic-and-mpl']
+      .find((k) => location.pathname.includes('/' + k + '/')) || 'default';
+  const exampleList = EXAMPLES[courseKey];
+
   const examplesSel = h('select', { className: 'tfl-examples lab-examples', title: 'Load an example' },
     h('option', { value: '' }, 'Examples…'),
-    ...EXAMPLES.map(([label], i) => h('option', { value: String(i) }, label)));
+    ...exampleList.map(([label], i) => h('option', { value: String(i) }, label)));
   examplesSel.addEventListener('change', () => {
     if (examplesSel.value === '') return;
-    const [, src, qry] = EXAMPLES[+examplesSel.value];
+    const [, src, qry] = exampleList[+examplesSel.value];
     load(src, qry);
     examplesSel.value = '';
   });
@@ -201,9 +233,19 @@
 
   // ── Program parsing (shared by banner + query) ────────────────────────
 
+  // A line can parse yet still be semantically invalid (e.g. wild quantity ±
+  // on a general term needs a singular/proterm) — the engine's validateProp
+  // rejects those. Surface both parse errors and validation errors so the
+  // banner and query never hit an uncaught EngineError.
   function currentProgram() {
-    const { propositions, errors } = T.parseProgram(editor.value);
-    return { props: propositions.map((p) => p.prop), errors };
+    const { propositions, errors: parseErrors } = T.parseProgram(editor.value);
+    const props = [], errors = [...parseErrors];
+    for (const p of propositions) {
+      try { T.validateProp(p.prop); props.push(p.prop); }
+      catch (e) { errors.push({ line: p.line, message: e.message }); }
+    }
+    errors.sort((a, b) => a.line - b.line);
+    return { props, errors };
   }
 
   // ── Consistency banner (always on) ────────────────────────────────────
@@ -266,6 +308,7 @@
       return renderTermQuery(props, term, body);
     } catch (err) {
       if (err instanceof T.ParseError) return outputEl.append(parseError(err, raw));
+      if (err instanceof T.EngineError) return outputEl.append(engineError(err));
       throw err;
     }
   }
@@ -288,6 +331,11 @@
         `${source}\n${' '.repeat(err.pos)}^`));
     }
     return box;
+  }
+
+  // A well-formed-but-invalid query (e.g. wild ± on a general term).
+  function engineError(err) {
+    return h('div', { className: 'lab-error tfl-error' }, err.message);
   }
 
   // Derivation pane: numbered lines, printed proposition, rule + citations.
@@ -494,6 +542,54 @@
   refreshBanner();
   if (isPage) runQuery();
 
-  // Public surface for D7's lesson chips.
+  // ── "▸ try" chips on lesson syntax boxes (D7) ─────────────────────────
+  // A6's pattern, ported: any .syntax-box whose text parses cleanly as one
+  // or more propositions gets a chip that opens it in the lab. Schematic
+  // notation, sign-arithmetic, tables and prose fail parseProgram and are
+  // skipped — no authoring flags in the curricula. A single proposition
+  // loads with its equivalence neighbourhood (?=, so the square shows); a
+  // multi-line box is read as an argument — every line but the last is the
+  // fact base, the last is the conclusion to test (? …).
+
+  function chipPlan(text) {
+    if (!text || text.length > 400) return null;
+    const { propositions, errors } = T.parseProgram(text);
+    if (errors.length || propositions.length === 0) return null;
+    // Parse alone isn't enough — a box may print a schematic that parses but
+    // isn't a valid proposition (wild ± on a general term). Only chip boxes
+    // the engine will actually accept.
+    try { propositions.forEach((p) => T.validateProp(p.prop)); }
+    catch (e) { return null; }
+    if (propositions.length === 1) {
+      const p = propositions[0].text;
+      return { src: p, qry: '?= ' + p };
+    }
+    const concl = propositions[propositions.length - 1].text;
+    const prem = propositions.slice(0, -1).map((l) => l.text).join('\n');
+    return { src: prem, qry: '? ' + concl };
+  }
+
+  function addTryButtons(scope) {
+    for (const box of scope.querySelectorAll('.syntax-box')) {
+      if ('tflTry' in box.dataset) continue;
+      box.dataset.tflTry = '';
+      if (box.querySelector('table')) continue;
+      const plan = chipPlan(box.textContent.trim());
+      if (!plan) continue;
+      const btn = h('button', { className: 'lab-try', type: 'button', title: 'Open in the TFL Lab' }, '▸ try');
+      btn.addEventListener('click', () => load(plan.src, plan.qry));
+      box.prepend(btn);
+    }
+  }
+
+  const stage = document.getElementById('stage');
+  if (stage) {
+    addTryButtons(stage);
+    // Lessons reveal blocks incrementally; catch each newly shown box.
+    new MutationObserver(() => addTryButtons(stage))
+      .observe(stage, { childList: true, subtree: true });
+  }
+
+  // Public surface for lesson chips / other lab-side modules.
   window.TFLLab = { load };
 })();

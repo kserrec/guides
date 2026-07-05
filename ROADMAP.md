@@ -27,10 +27,11 @@ completion. If a step grows beyond that during execution, split it before starti
 | TFL: Relational Syllogisms (Course 3) | ✅ 3 lessons |
 | TFL: Statement Logic & MPL (Course 4) | ✅ 6 lessons — **TFL curriculum complete (24 lessons)** |
 | TFL Lab engine (Track D) | 🔶 D1–D5 done: parser/printer, inference core (DON, immediate rules, two-tier validity, traced derivations), the deep relational layer (guarded passive, proterms, indirect proof), the program/query layer (`parseProgram`, `? term`/`? prop`/`?=`, consistency check), and the Aristotelian layer (NL explanations, stronger-answer, possibility, negation-as-failure, enthymeme recovery). 174 tests, six fuzz suites. |
-| TFL Lab UI (Track D) | 🔶 D6 done: `lab.js` drives both the course-page panel and the standalone page at `term-functor-logic/lab/` (fact-base editor, palette, query line, consistency banner, derivation pane, `?=` square of opposition, `.tfl` import/export). Next: D7 lesson chips. |
+| TFL Lab UI (Track D) | 🔶 D6–D7 done: `lab.js` drives both the course-page panel and the standalone page at `term-functor-logic/lab/` (fact-base editor, palette, query line, consistency banner, derivation pane, `?=` square of opposition, `.tfl` import/export), plus "▸ try" chips on lesson syntax boxes and curated per-course examples. Next: D8 `tfl-expression` exercise kind. |
 
 Tracks A, B, and C are fully executed. Track D is in progress — language core first
-(D1–D5 ✅), lab UI live (D6 ✅, next D7 lesson chips), then the numerical extension.
+(D1–D5 ✅), lab UI live and lesson-integrated (D6–D7 ✅), then the exercise kind (D8) and
+the numerical extension (D9–D10).
 
 ### Strengths
 
@@ -44,9 +45,9 @@ Tracks A, B, and C are fully executed. Track D is in progress — language core 
 
 1. **No unit tests for `engine.js`** (the λ-lab logic has them; engine behavior is exercised via
    ad-hoc headless-Chrome runs per change). Tolerable; revisit if the engine grows.
-2. **TFL lab UI is live but not yet wired into lessons** — the panel and standalone page
-   ship (D6), so learners can run the engine directly, but the in-lesson "▸ try" chips that
-   make it discoverable from the curriculum are still to come (D7).
+2. **No `tfl-expression` exercise kind yet** — the lab is live (D6) and lesson-integrated
+   via "▸ try" chips (D7), but the curriculum can't yet *grade* free-input TFL answers
+   through the engine the way λ-lessons do (A8). That's D8.
 
 ---
 
@@ -501,9 +502,37 @@ bolted on. Learners get to *run* the algebra all four courses taught.
     answers, the `?=` neighbourhood + square, `decideEquivalence` ✓, the parse-error caret,
     the inconsistent-base red banner, and the palette insert — plus a clean course-page load
     (panel populated, no console errors). No engine changes; 174 engine tests still green.
-- **D7** 🔲 Lesson integration: "▸ try" chips on TFL syntax boxes that parse as programs
-  (A6's MutationObserver pattern); curated examples per course (Barbara, horse's head, a
-  REGAL check, the proterm proof); verified headlessly across all four courses.
+- **D7** ✅ Lesson integration (in `lab.js`, no curriculum/engine edits): "▸ try" chips on
+  TFL `.syntax-box`es (A6's `#stage` MutationObserver, reusing the `.lab-try` chip style),
+  plus curated per-course example dropdowns (course detected from the path; the standalone
+  page gets a greatest-hits set).
+  Implementation notes (decisions made during execution):
+  - **Chips gate on *validation*, not just parsing.** A headless audit across all four
+    curricula (inject every lesson's HTML, run the filter over each box's `textContent`)
+    showed that TFL schematics with placeholder words/letters — `±Subject±(Relation±Object)`,
+    `±S+(R±O)` — *parse* but are invalid propositions (wild ± needs a singular/proterm), so
+    `parseProgram` alone let them through. The fix, and a real robustness bug it exposed:
+    `parseProgram` reports only `ParseError`s, so a parseable-but-invalid line reaches
+    `validateProp` and throws `EngineError` — which `runQuery` didn't catch. Now
+    `currentProgram` validates every line (surfacing invalid ones in the banner with their
+    line number), `runQuery` catches `EngineError` too (friendly message, no caret), and
+    `chipPlan` validates before offering a chip. Result: schematic boxes drop out; the
+    remaining chips are all valid and meaningful.
+  - **What a chip loads.** A single-proposition box loads that proposition with a `?=`
+    equivalence query, so the neighbourhood + square of opposition show immediately (the
+    A/E/I/O forms `−S+P`/`−S−P`/`+S+P`/`+S−P` in Course 1 become a one-click tour of the
+    square). A multi-line box is read as an argument: every line but the last is the fact
+    base, the last is the conclusion tested with `? …`.
+  - **Coverage, honestly.** Post-filter chip counts: Introduction 4, The Full Language 2,
+    Relational Syllogisms 1, Statement Logic 0 (its lessons teach through truth tables,
+    trees, and MPL notation the lab doesn't parse as programs) — so the curated examples
+    dropdown is Course 4's lab on-ramp. The examples themselves (Barbara, Socrates, the
+    square, horse's head, faster-than chain, "some boy loves a rebel," modus-ponens-as-
+    Barbara, statement contraposition, and an honest *unknown*) are each verified through
+    the engine. Live-verified headlessly: the observer chips a revealed box, the chip opens
+    the panel with the query prefilled and the square rendered, an invalid query renders an
+    error instead of throwing, and an invalid fact-base line shows in the banner.
+    174 engine tests still green.
 - **D8** 🔲 `tfl-expression` exercise kind graded by the D2 engine (modes: transcribe-English
   — equal up to immediate rules; derive-the-conclusion; find-the-missing-premise); first real
   usage in one existing lesson, wiring pattern documented like A8.
@@ -521,7 +550,6 @@ bolted on. Learners get to *run* the algebra all four courses taught.
 
 ## Suggested order
 
-1. ~~C1~~ · ~~A1–A8~~ · ~~B1–B9~~ · ~~C2~~ · ~~D1~~ · ~~D2~~ · ~~D3~~ · ~~D4~~ · ~~D5~~ · ~~D6~~ — complete.
-2. **D7** (lab chips integrated into lessons) ← next: D7
-3. **D8** anytime from here on
-4. **D9 → D10** last, in that order (numerical quantifiers: engine, then lesson)
+1. ~~C1~~ · ~~A1–A8~~ · ~~B1–B9~~ · ~~C2~~ · ~~D1~~ · ~~D2~~ · ~~D3~~ · ~~D4~~ · ~~D5~~ · ~~D6~~ · ~~D7~~ — complete.
+2. **D8** (`tfl-expression` exercise kind) ← next: D8
+3. **D9 → D10** last, in that order (numerical quantifiers: engine, then lesson)

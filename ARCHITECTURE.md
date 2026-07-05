@@ -30,10 +30,10 @@ currently two **subjects**, each containing **courses**, each containing **lesso
   Bridge* (6). A TFL analog of the Lambda Lab — a term-logic programming language and
   Aristotelian database — is Track D in `ROADMAP.md` and is **in progress**: the engine
   core (parser, printer, inference, validity, the program/query layer, and the natural-
-  language Aristotelian layer) exists and is node-tested (see §6), and as of D6 the lab UI
-  is live — a slide-over panel on the course pages plus a standalone page at
-  `term-functor-logic/lab/`. Still ahead: the in-lesson "▸ try" chips (D7) and the
-  numerical extension (D8–D10).
+  language Aristotelian layer) exists and is node-tested (see §6), and as of D6–D7 the lab
+  UI is live and lesson-integrated — a slide-over panel on the course pages plus a
+  standalone page at `term-functor-logic/lab/`, with "▸ try" chips on lesson syntax boxes.
+  Still ahead: the `tfl-expression` exercise kind (D8) and the numerical extension (D9–D10).
 
 A lesson is a linear sequence of **blocks** that reveal one at a time: a *concept* block
 teaches (prose + examples), then an *exercise* block checks it, repeating in a
@@ -370,14 +370,18 @@ It follows the Lambda Lab split exactly — pure-logic module, UI module, node d
   exiting nonzero on anything unexplained. It doubles as a regression gate when curricula
   are edited: new lesson content that prints notation the lab can't read will fail it.
 
-- **`lab.js`** — the D6 UI (DOM only), driving both surfaces from one codebase: the
+- **`lab.js`** — the D6–D7 UI (DOM only), driving both surfaces from one codebase: the
   course-page slide-over panel (`#tfl-lab` + `#tfl-lab-toggle`) and the standalone page
   (`#tfl-lab-page`). Fact-base editor, glyph palette, query line dispatching `? term` /
   `? prop` / `?=`, always-on consistency banner, lazy derivation panes, the `?=` square of
-  opposition, and `.tfl` import/export. Exposes `window.TFLLab.load(src, qry)` for D7's chips.
+  opposition, and `.tfl` import/export. It validates every fact-base line (invalid-but-
+  parseable lines surface in the banner) and catches both `ParseError` and `EngineError` on
+  queries. D7 adds the `#stage` MutationObserver that puts "▸ try" chips on `.syntax-box`es
+  whose text *validates* as a program, plus per-course example dropdowns. Exposes
+  `window.TFLLab.load(src, qry)`.
 
-Remaining Track D steps (D7–D10, see the roadmap): lesson chips, a `tfl-expression`
-exercise kind, and numerical quantifiers.
+Remaining Track D steps (D8–D10, see the roadmap): a `tfl-expression` exercise kind and
+numerical quantifiers.
 
 ## 7. Styling and theming
 
@@ -509,9 +513,9 @@ DOM-free; anything visual goes in lab.js.
 - `ROADMAP.md` (root) is both plan and log: Track A (Lambda Lab, A1–A8, complete),
   Track B (TFL Courses 3–4, B1–B9, complete), Track C (housekeeping, complete), and
   Track D (TFL^PL — a term-logic programming language / Aristotelian database lab):
-  D1–D6 complete (parser/printer, inference core, deep relational layer, program/query
-  layer, Aristotelian layer, and the lab UI — §6), D7–D10 ahead, with the full
-  design-decision record in the track's preamble. Completed steps carry implementation
+  D1–D7 complete (parser/printer, inference core, deep relational layer, program/query
+  layer, Aristotelian layer, the lab UI, and lesson chips — §6), D8–D10 ahead, with the
+  full design-decision record in the track's preamble. Completed steps carry implementation
   notes recording decisions made along the way — it's the closest thing to an ADR log;
   read it before re-deciding anything.
 - `term-functor-logic/ROADMAP.md` maps book chapters to courses/lessons, records firm
