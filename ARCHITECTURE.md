@@ -100,7 +100,7 @@ The hardcoded counts on tiers 1–2 are the one piece of intentional duplication
 
 ## 3. The course runtime (`engine.js`)
 
-The whole interactive experience is one file, ~380 lines, no framework. A course page
+The whole interactive experience is one file, ~515 lines, no framework. A course page
 loads scripts in this order (order matters — see §10):
 
 ```html
@@ -176,8 +176,10 @@ Built-in kinds (in engine.js):
 Two more kinds are registered by side modules, never by engine.js — the mechanism that
 keeps it subject-agnostic (see §5.3): **`write-expression`** from
 `lambda-calculus/lab/write-exercise.js` (lambda pages only), and **`tfl-expression`** from
-`term-functor-logic/lab/tfl-exercise.js` (TFL pages only). Both are thin DOM shells over a
-pure grader in their engine module (`Lambda.checkExpression` / `TFL.checkExpression`); the
+`term-functor-logic/lab/tfl-exercise.js` (TFL pages only). Both are thin registrations of
+engine.js's `makeFreeInputExercise` scaffold (which owns the input/Check/retry/reveal
+shell) over a pure grader in their engine module (`Lambda.checkExpression` /
+`TFL.checkExpression`); the
 TFL one has three modes — `transcribe` (equal up to the immediate rules),
 `derive` (the conclusion from given premises), `premise` (any consistent premise that
 completes the argument). Neither leaks the answer on a wrong attempt; both offer an
@@ -315,10 +317,12 @@ and requires both globals). This file is the bridge that lets the shared engine 
 lambda-free: TFL pages never load it, so the kind simply doesn't exist there.
 
 Item shape: `{ prompt | promptHtml, answer, explanation, check?: 'beta'|'alpha',
-tests?: [{args, expect}] }`. Users type into a text input (same `\`→λ rewriting) and may
-retry freely; after 3 misses a "Show answer" button appears, and revealing scores the item
-as incorrect (stored answer `'__revealed__'`, which fails the engine's `countCorrect`
-comparison by construction). On completion, an "open in λ Lab" chip lets the user explore
+tests?: [{args, expect}] }`. The input/Check/retry shell is engine.js's
+`makeFreeInputExercise` (unit-tested in engine.test.js); this file supplies the lambda
+specifics — the `\`→λ input rewriting, the `Lambda.checkExpression` grading call, and the
+lab chip. Users may retry freely; after 3 misses a "Show answer" button appears, and
+revealing scores the item as incorrect (stored answer `'__revealed__'`, which fails the
+engine's `countCorrect` comparison by construction). On completion, an "open in λ Lab" chip lets the user explore
 their own submission. First real usage: Foundations Lesson 5 ("Write It Yourself").
 
 ## 6. The TFL Lab engine (Track D, complete)
@@ -406,9 +410,9 @@ It follows the Lambda Lab split exactly — pure-logic module, UI module, node d
   whose text *validates* as a program, plus per-course example dropdowns. Exposes
   `window.TFLLab.load(src, qry)`.
 
-- **`tfl-exercise.js`** — the D8 DOM handler that registers the `tfl-expression` exercise
-  kind (TFL course pages only; §3's exercise-kind registry), a thin shell over the engine's
-  `checkExpression` grader. Finished items offer an "open in the TFL Lab" button via
+- **`tfl-exercise.js`** — the D8 handler that registers the `tfl-expression` exercise
+  kind (TFL course pages only; §3's exercise-kind registry): engine.js's
+  `makeFreeInputExercise` scaffold configured with the engine's `checkExpression` grader. Finished items offer an "open in the TFL Lab" button via
   `window.TFLLab.load`.
 
 Track D is complete (D1–D10). The intermediate-quantifier lesson (Statement Logic Lesson 6)
@@ -460,7 +464,7 @@ There is no package.json; all scripts run on bare node:
   exhaustion, alpha-equivalence, program/prelude semantics, readback, printHtml,
   checkExpression. **Run this after any change to lambda.js.** The bar is absolute: an
   incorrect reducer teaches students wrong lessons.
-- **`node engine.test.js`** — 15 plain-assert tests for the course runtime, loaded in a
+- **`node engine.test.js`** — 19 plain-assert tests for the course runtime, loaded in a
   `vm` context with a minimal hand-rolled DOM stub. Covers `countCorrect`,
   `shuffledIndices` (permutation invariant), `h`/`setFeedback`, and both built-in exercise
   handlers — including the multiple-choice shuffle-remap (clicking the visually-correct

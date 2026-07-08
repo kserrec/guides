@@ -4,8 +4,8 @@
 // engine.js is a browser script (no module exports, DOM-dependent). We load
 // it in a `vm` context with a tiny hand-rolled DOM stub — just enough of the
 // element API the runtime touches — and append an export line so the top-level
-// bindings (h, countCorrect, shuffledIndices, setFeedback, ExerciseHandlers)
-// become reachable. The stub is intentionally minimal; it models exactly the
+// bindings (h, countCorrect, shuffledIndices, setFeedback, ExerciseHandlers,
+// makeFreeInputExercise) become reachable. The stub is intentionally minimal; it models exactly the
 // surface the tested code uses (append/classList/addEventListener/
 // querySelectorAll/textContent/innerHTML), no more.
 
@@ -91,10 +91,10 @@ const sandbox = { document: documentStub, window: { scrollTo() {} }, localStorag
 sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
 vm.runInContext(
-  src + '\nglobalThis.__engine = { h, countCorrect, shuffledIndices, setFeedback, ExerciseHandlers, CourseApp };',
+  src + '\nglobalThis.__engine = { h, countCorrect, shuffledIndices, setFeedback, ExerciseHandlers, CourseApp, makeFreeInputExercise };',
   sandbox
 );
-const { h, countCorrect, shuffledIndices, setFeedback, ExerciseHandlers, CourseApp } = sandbox.__engine;
+const { h, countCorrect, shuffledIndices, setFeedback, ExerciseHandlers, CourseApp, makeFreeInputExercise } = sandbox.__engine;
 
 // A callbacks object that counts onItemAnswered calls.
 const makeCallbacks = () => { const c = { n: 0, onItemAnswered() { c.n++; } }; return c; };
@@ -261,6 +261,86 @@ test('multiple-choice: promptHtml path does not throw', () => {
   const { root, exState } = renderMC(item);
   root.querySelectorAll('.btn-choice').find((b) => b.textContent === 'B').click();
   assert.strictEqual(exState.answers[0], 1);
+});
+
+// ── makeFreeInputExercise (the write-expression / tfl-expression shell) ──────
+// The shell owns the retry loop, the Show-answer reveal after 3 misses, and
+// the lock-on-finish semantics; graders and lab chips come in via config.
+
+function renderFreeInput(item, configOverrides = {}) {
+  const handler = makeFreeInputExercise({
+    placeholder: () => 'type here',
+    grade: (src, it) => src === it.answer ? { ok: true } : { ok: false, message: 'Not it.' },
+    labChip: () => null,
+    ...configOverrides,
+  });
+  const exState = { answers: {} };
+  const cb = makeCallbacks();
+  const root = handler.render({ items: [item] }, exState, cb);
+  return {
+    root, exState, cb,
+    input: root.querySelectorAll('.we-input')[0],
+    checkBtn: root.querySelectorAll('.we-check')[0],
+    revealBtn: root.querySelectorAll('.we-reveal')[0],
+  };
+}
+
+test('free-input: a correct answer scores, locks the item, reports once', () => {
+  const item = { prompt: 'q', answer: 'yes', explanation: 'e' };
+  const { exState, cb, input, checkBtn } = renderFreeInput(item);
+  input.value = ' yes ';                 // grading sees the trimmed source
+  checkBtn.click();
+  assert.strictEqual(exState.answers[0], 'yes');
+  assert.ok(input.disabled && checkBtn.disabled);
+  assert.strictEqual(cb.n, 1);
+  checkBtn.click();                      // locked — a second check is ignored
+  assert.strictEqual(cb.n, 1);
+  assert.strictEqual(countCorrect(exState.answers, [item]), 1);
+});
+
+test('free-input: empty input is ignored, wrong answers retry without scoring', () => {
+  const item = { prompt: 'q', answer: 'yes', explanation: 'e' };
+  const { exState, cb, input, checkBtn } = renderFreeInput(item);
+  input.value = '   ';
+  checkBtn.click();                      // blank — no attempt, no answer
+  assert.strictEqual(cb.n, 0);
+  input.value = 'no';
+  checkBtn.click();                      // wrong — feedback, but still answerable
+  assert.strictEqual(exState.answers[0], undefined);
+  assert.strictEqual(cb.n, 0);
+  input.value = 'yes';
+  checkBtn.click();
+  assert.strictEqual(exState.answers[0], 'yes');
+});
+
+test('free-input: Show answer appears after 3 misses; revealing scores incorrect', () => {
+  const item = { prompt: 'q', answer: 'yes', explanation: 'e' };
+  const { exState, cb, input, checkBtn, revealBtn } = renderFreeInput(item);
+  assert.strictEqual(revealBtn.style.display, 'none');
+  input.value = 'no';
+  checkBtn.click(); checkBtn.click();
+  assert.strictEqual(revealBtn.style.display, 'none');
+  checkBtn.click();                      // third miss
+  assert.strictEqual(revealBtn.style.display, '');
+  revealBtn.click();
+  assert.strictEqual(exState.answers[0], '__revealed__');
+  assert.strictEqual(cb.n, 1);
+  assert.strictEqual(countCorrect(exState.answers, [item]), 0);
+});
+
+test('free-input: Enter checks; the lab chip appears on finish when configured', () => {
+  const item = { prompt: 'q', answer: 'yes', explanation: 'e' };
+  let loadedWith = null;
+  const { root, exState, input } = renderFreeInput(item, {
+    labChip: (it, src) => ({ label: '▸ open', load: () => { loadedWith = src; } }),
+  });
+  input.value = 'yes';
+  input.dispatch('keydown', { preventDefault() {}, key: 'Enter' });
+  assert.strictEqual(exState.answers[0], 'yes');
+  const chip = root.querySelectorAll('.lab-try')[0];
+  assert.ok(chip, 'lab chip rendered into the feedback');
+  chip.click();
+  assert.strictEqual(loadedWith, 'yes');
 });
 
 // ── Hardening: one malformed block must not blank the whole lesson ───────────

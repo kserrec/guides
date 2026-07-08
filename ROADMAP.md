@@ -1,7 +1,7 @@
 # Ham Calculus — Project Roadmap
 
 Live site: **https://kserrec.github.io/guides/** (GitHub Pages from `main`; pushes deploy in ~1 min)
-Last updated: 2026-07-05
+Last updated: 2026-07-07
 
 ## Step-sizing rule
 
@@ -44,14 +44,21 @@ is fully executed. The only work left in the roadmap is optional polish (see Gap
 
 ### Gaps / debt
 
-1. ~~No unit tests for `engine.js`~~ ✅ Addressed. `engine.test.js` (15 tests, `node
+1. ~~No unit tests for `engine.js`~~ ✅ Addressed. `engine.test.js` (19 tests, `node
    engine.test.js`) loads the runtime in a `vm` context with a minimal DOM stub and covers
    `countCorrect`, `shuffledIndices` (permutation invariant), `h`/`setFeedback`, the
    valid-or-invalid and multiple-choice handlers (including the shuffle-remap: clicking the
    visually-correct choice scores by the *authored* index under 50 random shuffles), and the
    graceful per-block failure hardening (a bad block kind/type renders a skippable placeholder
-   instead of blanking the lesson).
-2. **Everything in the roadmap is now built.** Optional future work, none blocking: exact and
+   instead of blanking the lesson), and the shared `makeFreeInputExercise` scaffold (correct/
+   retry/reveal paths, input guards, the lab chip).
+2. **Housekeeping 2026-07-07** (post-roadmap session): project `CLAUDE.md` written; full
+   security audit — no real or ship-time findings, the one optional hardening item (SHA-pinning
+   the deploy workflow's actions) applied; non-functional refactor extracted the duplicated
+   free-input exercise shell from write-exercise.js / tfl-exercise.js into engine.js's
+   `makeFreeInputExercise` (+4 engine tests), verified by all suites plus headless-Chrome
+   drives of both exercise kinds.
+3. **Everything in the roadmap is now built.** Optional future work, none blocking: exact and
    comparative counting (Murphree's numerical term logic — the frontier Course 4 Lesson 6 now
    names), and a finite-model oracle for the intermediate-quantifier semantics (the numerical
    decision method is currently gated by the paper's Tables 10–13 and condition-isolation

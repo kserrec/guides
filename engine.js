@@ -144,6 +144,96 @@ const ExerciseHandlers = {
   }
 };
 
+// ── Free-input exercise scaffold ──────────────────────────────────────────────
+// Shared shell for engine-graded type-in kinds ('write-expression' on lambda
+// pages, 'tfl-expression' on TFL pages): a text input with Check, unlimited
+// retries, and a Show-answer option after 3 misses (revealing scores the item
+// as incorrect). Page-scoped registrars supply the subject specifics:
+//   placeholder(item)  → the input's placeholder text
+//   setupInput(input)? → extra wiring on the input (e.g. \ → λ replacement)
+//   grade(src, item)   → { ok, message } — message must not leak the answer
+//   labChip(item, src) → { label, load } | null — "open in the lab" button
+
+function makeFreeInputExercise(config) {
+  const MAX_ATTEMPTS_BEFORE_REVEAL = 3;
+
+  return {
+    render(block, exState, callbacks) {
+      const itemsEl = h('div', { className: 'exercise-items' });
+
+      block.items.forEach((item, i) => {
+        const feedbackEl = h('div', { className: 'feedback' });
+        const input = h('input', {
+          className: 'we-input',
+          spellcheck: false,
+          placeholder: config.placeholder(item),
+        });
+        const checkBtn  = h('button', { className: 'we-check' }, 'Check');
+        const revealBtn = h('button', { className: 'we-reveal' }, 'Show answer');
+        revealBtn.style.display = 'none';
+
+        const qEl = h('div', { className: 'we-prompt' });
+        if (item.promptHtml) qEl.innerHTML = item.promptHtml; // authored HTML — trusted
+        else qEl.textContent = item.prompt;
+
+        const itemEl = h('div', { className: 'exercise-item' },
+          qEl,
+          h('div', { className: 'we-row' }, input, checkBtn, revealBtn),
+          feedbackEl);
+        itemsEl.append(itemEl);
+
+        let attempts = 0;
+
+        if (config.setupInput) config.setupInput(input);
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); check(); }
+        });
+
+        // `stored` feeds countCorrect: the item's own answer string counts as
+        // correct, anything else as incorrect.
+        function finish(correct, stored, explanation) {
+          exState.answers[i] = stored;
+          itemEl.classList.add(correct ? 'correct' : 'incorrect');
+          setFeedback(feedbackEl, correct, explanation);
+          input.disabled = true;
+          checkBtn.disabled = true;
+          revealBtn.remove();
+          const src = input.value.trim();
+          const chip = src ? config.labChip(item, src) : null;
+          if (chip) {
+            const tryBtn = h('button', { className: 'lab-try' }, chip.label);
+            tryBtn.addEventListener('click', chip.load);
+            feedbackEl.append(tryBtn);
+          }
+          callbacks.onItemAnswered();
+        }
+
+        function check() {
+          if (exState.answers[i] !== undefined) return;
+          const src = input.value.trim();
+          if (!src) return;
+          const r = config.grade(src, item);
+          if (r.ok) {
+            finish(true, item.answer, item.explanation);
+            return;
+          }
+          attempts++;
+          setFeedback(feedbackEl, false, `${r.message} Edit your answer and check again.`);
+          if (attempts >= MAX_ATTEMPTS_BEFORE_REVEAL) revealBtn.style.display = '';
+        }
+
+        checkBtn.addEventListener('click', check);
+        revealBtn.addEventListener('click', () => {
+          finish(false, '__revealed__',
+            `One correct answer: ${item.answer}. ${item.explanation}`);
+        });
+      });
+
+      return itemsEl;
+    }
+  };
+}
+
 // ── App ───────────────────────────────────────────────────────────────────────
 
 class CourseApp {
@@ -187,7 +277,7 @@ class CourseApp {
   renderNav() {
     const nav = document.getElementById('lesson-nav');
     if (!nav) return;
-    nav.innerHTML = '';
+    nav.replaceChildren();
 
     this.curriculum.lessons.forEach((lesson, i) => {
       const isActive   = i === this.lessonIndex;
@@ -209,7 +299,7 @@ class CourseApp {
 
   renderLesson() {
     if (!this.stage) { console.error('No #stage element — cannot render the lesson.'); return; }
-    this.stage.innerHTML = '';
+    this.stage.replaceChildren();
     this.blockEls = [];
     this.exerciseState = {};
 
